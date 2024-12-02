@@ -1,11 +1,16 @@
-import org.springframework.cglib.core.Local;
+package com.barber.barberBackend.model;
+
+import java.time.LocalDate;
 
 import jakarta.persistence.Basic;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Temporal;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.TemporalType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,20 +21,13 @@ import lombok.Setter;
 public class Turno {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Basic
     private long id;
+    @Basic
     private boolean cancelado; 
     @Temporal(TemporalType.DATE)
     private LocalDate fecha;
     @OneToOne
     private Cliente cliente;
-
-    // Constructor
-    public Turno(long id, Date fecha, Cliente cliente) {
-        this.id = id;
-        this.fecha = fecha;
-        this.cancelado = false;
-        this.cliente = cliente;
-    }
-
+    @ManyToOne
+    private Servicio servicio;
 }
