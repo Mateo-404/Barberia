@@ -1,7 +1,6 @@
 package com.barber.barberBackend.model;
 
 import java.time.LocalDate;
-
 import jakarta.persistence.Basic;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,16 +10,17 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
 @Getter @Setter
-@NoArgsConstructor
+@NoArgsConstructor @AllArgsConstructor
+@Entity
 public class Turno {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     @Basic
     private boolean cancelado; 
