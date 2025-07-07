@@ -16,7 +16,8 @@ import lombok.Setter;
 public class Administrador extends Persona {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     @Basic
     private String nombreUsuario;
+    private String contrasenia;
 }

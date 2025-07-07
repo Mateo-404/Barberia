@@ -21,7 +21,7 @@ import lombok.Setter;
 public class Turno {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private Long id;
     @Basic
     private boolean cancelado; 
     @Temporal(TemporalType.DATE)

@@ -24,6 +24,7 @@
 ## Definición del Alcance
 Se desarrollará un sistema para gestionar reservas en una barbería. Permitirá optimizar la experiencia del cliente y la administración del negocio, resolviendo problemas actuales como confusiones en las reservas y falta de estadísticas claras.
 
+El sistema está orientado a pequeñas barberías, pero su estructura permite escalar a otros rubros. El proyecto se desarrolla como parte de la Práctica Profesional Supervisada de la Tecnicatura Universitaria en Programación (UTN - Rafaela).
 ---
 
 ## Breve Descripción del Problema
@@ -33,7 +34,6 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 
 ## Qué Tiene que Hacer el Sistema
 - Reservas en línea con selección de servicios, fechas y horarios.
-- Confirmaciones y recordatorios automáticos por WhatsApp.
 - Gestión de datos de clientes.
 - Panel de control para el administrador con calendario visual, estadísticas y reportes.
 
@@ -44,9 +44,7 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 2. Selección de tipo de servicio.
 3. Selección de fecha y hora con disponibilidad en tiempo real.
 4. Recopilación segura de datos del cliente.
-5. Confirmaciones y recordatorios automáticos.
-6. Cancelación de reservas con anticipación mínima de 2 horas.
-7. Panel administrativo para gestionar turnos y reportes.
+5. Panel administrativo para gestionar turnos y reportes.
 
 ---
 
@@ -55,14 +53,11 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 ### Requerimientos del Usuario
 1. **Reserva de turnos**: Selección de servicio, fecha y hora.
 2. **Gestión de servicios**: Visualización de opciones con descripciones y precios.
-3. **Confirmaciones por WhatsApp**: Detalles enviados automáticamente tras la reserva.
-4. **Recordatorios automáticos**: Envío de notificaciones antes de la cita.
-5. **Cancelación flexible**: Hasta 2 horas antes del turno.
 
 ### Requerimientos de Sistema
 - **Usuario**: Selección de servicio, calendario interactivo, formulario de datos.
 - **Administrador**: Panel de control para gestionar reservas, modificar o cancelar citas, y acceder a estadísticas.
-- **Sistema**: Automatización de notificaciones y recopilación de datos para reportes.
+- **Sistema**: Recopilación de datos para reportes.
 
 ### Requerimientos No Funcionales
 - **Compatibilidad y diseño responsivo**: Uso óptimo en cualquier dispositivo.
@@ -76,17 +71,14 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 1. Selección de servicio.
 2. Selección de fecha y hora en un calendario interactivo.
 3. Registro de datos personales en un formulario.
-4. Confirmación de la reserva a través de WhatsApp.
-5. Cancelación de la reserva mediante mensaje.
 
 ### Administrador
 1. **Gestión de reservas**: Modificar o cancelar citas a través del panel.
 2. **Reportes**: Visualización de estadísticas y gráficos de ganancias, servicios más solicitados, y clientes frecuentes.
 
 ### Sistema
-1. Envío de recordatorios automáticos.
-2. Generación de reportes.
-3. Sincronización de datos en tiempo real.
+1. Generación de reportes.
+2. Sincronización de datos en tiempo real.
 
 ---
 
@@ -108,7 +100,7 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 - **ID**: CP-003
 - **Descripción**: Comprobar que los datos del cliente se registren con éxito.
 - **Prioridad**: Alta
-- **Resultados Esperados**: Los datos se almacenan y se confirma la reserva por WhatsApp.
+- **Resultados Esperados**: Los datos se almacenan correctamente.
 
 ---
 
