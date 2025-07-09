@@ -5,6 +5,4 @@ import com.barber.barberBackend.model.Turno;
 
 public interface ITurnoService extends IGenericService<Turno, Long> {
     
-    
-    
 }

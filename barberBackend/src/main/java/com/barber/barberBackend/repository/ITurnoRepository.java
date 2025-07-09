@@ -7,6 +7,5 @@ import com.barber.barberBackend.model.Turno;
 
 @Repository
 public interface ITurnoRepository extends GenericRepository<Turno, Long> {
-    
-    
+     
 }
