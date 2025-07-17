@@ -13,5 +13,5 @@ import lombok.Setter;
 @Entity
 public class Cliente extends Persona {
     @Id
-    private Integer telefono;
+    private String telefono;
 }

@@ -6,6 +6,6 @@ import com.barber.barberBackend.generics.GenericRepository;
 import com.barber.barberBackend.model.Cliente;
 
 @Repository
-public interface IClienteRepository extends GenericRepository<Cliente, Integer> {
-    
+public interface IClienteRepository extends GenericRepository<Cliente, String> {
+    Cliente findByTelefono(String telefono);
 }

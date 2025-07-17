@@ -1,0 +1,60 @@
+/* Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+body {
+  background-color: #1c1c1c;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+}
+
+footer {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+h1 {
+  font-weight: bold;
+}
+
+/* Botones */
+.btn-primario {
+  background-color: #ff6600;
+  color: white;
+  border-radius: 30px;
+  padding: 0.8rem 2rem;
+  font-weight: bold;
+}
+.btn-primario:hover {
+  background-color: #e65500;
+}
+
+.btn-secundario {
+  border: 1px solid #ff6600;
+  color: #ff6600;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0.4rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* Test */
+.seccion {
+  display: none;
+}
+.seccion.activa {
+  display: block;
+}
+.input-opcion {
+  border: 2px solid #ff6600;
+  border-radius: 20px;
+  padding: 0.8rem;
+  text-align: center;
+  color: white;
+  background: transparent;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+.input-opcion.selected {
+  background-color: #ff6600;
+  color: white;
+}

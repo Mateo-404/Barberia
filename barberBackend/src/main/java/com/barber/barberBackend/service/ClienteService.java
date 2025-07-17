@@ -7,6 +7,6 @@ import com.barber.barberBackend.model.Cliente;
 import com.barber.barberBackend.repository.IClienteRepository;
 
 @Service
-public class ClienteService extends GenericService<Cliente, Integer, IClienteRepository> implements IClienteService {
+public class ClienteService extends GenericService<Cliente, String, IClienteRepository> implements IClienteService {
 
 }

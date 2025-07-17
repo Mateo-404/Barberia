@@ -9,6 +9,6 @@ import com.barber.barberBackend.service.ClienteService;
 
 @RestController
 @RequestMapping("/clientes")
-public class ClienteController extends GenericController<Cliente, Integer, ClienteService> {
+public class ClienteController extends GenericController<Cliente, String, ClienteService> {
     
 }
