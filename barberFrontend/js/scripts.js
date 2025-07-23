@@ -1,102 +1,177 @@
-// scripts.js
+import { ENDPOINTS, HORARIOS_LABORALES, MENSAJES } from "./config.js";
 
-let pasoActual = 1;
-let horarioSeleccionado = null;
-
-function siguientePaso(paso) {
-  document.getElementById(`paso-${paso}`).classList.remove('activa');
-  document.getElementById(`paso-${paso + 1}`).classList.add('activa');
-}
-
-function volverPaso(paso) {
-  document.getElementById(`paso-${paso + 1}`).classList.remove('activa');
-  document.getElementById(`paso-${paso}`).classList.add('activa');
-}
-
-// Cargar horarios disponibles dinámicamente
-async function cargarHorariosDisponibles() {
-  const fecha = document.getElementById('fecha').value;
-  const horariosDiv = document.getElementById('horarios');
-  horariosDiv.innerHTML = '';
-
-  if (!fecha) return;
-
+// <-- Servicios -->
+const obtenerServicios = async () => {
   try {
-    const response = await fetch(`/turnos/ocupados?fecha=${fecha}`);
-    const datos = await response.json(); // ["13:00", "14:30", ...]
-
-    const horariosTrabajo = generarHorarios("13:00", "20:00", 30);
-    horariosTrabajo.forEach(hora => {
-      if (!datos.includes(hora)) {
-        const btn = document.createElement('button');
-        btn.textContent = hora;
-        btn.type = 'button';
-        btn.classList.add('btn');
-        btn.onclick = () => seleccionarHorario(btn, hora);
-        horariosDiv.appendChild(btn);
-      }
-    });
+    const response = await fetch(ENDPOINTS.servicios);
+    if (!response.ok) throw new Error("Error al obtener los servicios");
+    return await response.json();
   } catch (error) {
-    console.error('Error cargando horarios:', error);
+    console.error(error);
+    return [];
   }
+};
+
+// <-- Turnos -->
+const obtenerTurnosOcupados = async () => {
+  try {
+    const response = await fetch(ENDPOINTS.turnos + "/findDateTimes");
+    if (!response.ok) throw new Error("Error al obtener los turnos ocupados");
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+/**
+ * Formatea un arreglo como ['2025-08-15T10:00'] a:
+ * {
+ *   '2025-08-15': ['10:00'],
+ *   '2025-08-16': ['11:30']
+ * }
+ */
+function mapearTurnosOcupados(arr) {
+  const mapa = {};
+  arr.forEach((item) => {
+    const [fecha, hora] = item.split("T");
+    if (!mapa[fecha]) mapa[fecha] = [];
+    mapa[fecha].push(hora);
+  });
+  return mapa;
 }
 
-// Generador de horarios en intervalos de 30 minutos
-function generarHorarios(inicio, fin, intervaloMin) {
-  const horarios = [];
-  let [h, m] = inicio.split(':').map(Number);
-  const [hf, mf] = fin.split(':').map(Number);
+// Iniciar app una vez que DOM y datos estén listos
+document.addEventListener("DOMContentLoaded", async function () {
+  // Cargar servicios en el select
+  const servicios = await obtenerServicios();
+  const selectServicio = document.getElementById("servicio");
+  servicios.forEach((servicio) => {
+    const option = document.createElement("option");
+    option.value = servicio.id;
+    option.textContent = servicio.tipo;
+    selectServicio.appendChild(option);
+  });
 
-  while (h < hf || (h === hf && m < mf)) {
-    horarios.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-    m += intervaloMin;
-    if (m >= 60) {
-      h += 1;
-      m = m % 60;
+  //* Habria que optimizar para que solo haga el fetch cuando está en la pantalla de fecha
+  const turnosOcupadosRaw = await obtenerTurnosOcupados();
+  const turnosOcupadosPorFecha = mapearTurnosOcupados(turnosOcupadosRaw);
+
+  const secciones = document.querySelectorAll(".seccion");
+  let pasoActual = 0;
+
+  /**
+   * Muestra los horarios disponibles para la fecha seleccionada,
+   * ocultando los que ya están ocupados y mostrando un mensaje si no hay disponibles.
+   */
+  window.cargarHorariosDisponibles = function () {
+    const contenedor = document.getElementById("horarios");
+    contenedor.innerHTML = "";
+
+    const fechaSeleccionada = document.getElementById("fecha").value;
+    if (!fechaSeleccionada) return;
+
+    const ocupados = turnosOcupadosPorFecha[fechaSeleccionada] || [];
+    const horariosLibres = HORARIOS_LABORALES.filter(
+      (hora) => !ocupados.includes(hora)
+    );
+
+    if (horariosLibres.length === 0) {
+      const mensaje = document.createElement("p");
+      mensaje.textContent = MENSAJES.fechaSinTurnos;
+      mensaje.className = "text-warning mt-3";
+      contenedor.appendChild(mensaje);
+      return;
     }
-  }
 
-  return horarios;
-}
+    horariosLibres.forEach((hora) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "input-opcion";
+      btn.textContent = hora;
 
-function seleccionarHorario(boton, hora) {
-  document.querySelectorAll('#horarios button').forEach(b => b.classList.remove('selected'));
-  boton.classList.add('selected');
-  horarioSeleccionado = hora;
-}
+      btn.onclick = () => {
+        document
+          .querySelectorAll(".input-opcion")
+          .forEach((b) => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        btn.dataset.selected = true;
+      };
 
-// Enviar formulario
-document.getElementById('form-turno').addEventListener('submit', async function (e) {
-  e.preventDefault();
-
-  const data = {
-    cliente: {
-      nombre: document.getElementById('nombre').value,
-      apellido: document.getElementById('apellido').value,
-      telefono: document.getElementById('telefono').value,
-      email: document.getElementById('email').value
-    },
-    fechaHora: `${document.getElementById('fecha').value}T${horarioSeleccionado}`,
-    servicioId: parseInt(document.getElementById('servicio').value)
+      contenedor.appendChild(btn);
+    });
   };
 
-  try {
-    const res = await fetch('/turnos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
+  // Navegación entre pasos
+  window.siguientePaso = function (paso) {
+    secciones[paso - 1].classList.remove("activa");
+    secciones[paso].classList.add("activa");
+    pasoActual = paso;
+  };
 
-    if (res.ok) {
-      alert('Turno reservado con éxito.');
-      window.location.href = 'index.html';
-    } else {
-      alert('Error al reservar turno');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Error de conexión.');
+  window.volverPaso = function (paso) {
+    secciones[pasoActual].classList.remove("activa");
+    secciones[paso - 1].classList.add("activa");
+    pasoActual = paso - 1;
+  };
+
+  /**
+   * Captura los datos del formulario y los muestra en consola
+   */
+  function obtenerHorarioSeleccionado() {
+    const seleccionado = document.querySelector(".input-opcion.selected");
+    return seleccionado ? seleccionado.textContent : null;
   }
+
+  document.getElementById("form-turno").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      // Formato de los datos a enviar
+      const data = {
+        fechaHora: `${
+          document.getElementById("fecha").value
+        }T${obtenerHorarioSeleccionado()}`, // ejemplo: "2025-08-16T14:00"
+        cliente: {
+          nombre: document.getElementById("nombre").value,
+          apellido: document.getElementById("apellido").value,
+          telefono: document.getElementById("telefono").value,
+          email: document.getElementById("email").value,
+        },
+        servicio: {
+          id: parseInt(document.getElementById("servicio").value),
+        },
+      };
+
+      console.log("🧾 Datos del turno a enviar:", data);
+      
+
+      // Fetch a la API para reservar el turno
+      fetch(ENDPOINTS.turnos, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Error al reservar turno");
+
+          // Verificamos si hay contenido en la respuesta
+          const text = await res.text();
+          if (text) {
+            const json = JSON.parse(text);
+            console.log("✅ JSON recibido:", json);
+          } else {
+            console.log(
+              "✅ Turno reservado. No se recibió cuerpo en la respuesta."
+            );
+          }
+
+          alert(MENSAJES.turnoConfirmado);
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Hubo un error al reservar el turno.");
+        });
+    });
 });

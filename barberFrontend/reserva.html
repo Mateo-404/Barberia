@@ -10,27 +10,53 @@
 <body>
   <div class="container py-5">
     <!-- Navbar -->
-    <nav class="navbar d-flex justify-content-between align-items-center px-4" style="height: 10vh;">
-      <!-- Flecha izquierda -->
-      <a href="#" class="me-4">
+    <nav class="navbar d-flex justify-content-between align-items-center px-4 mb-4" style="height: 10vh;">
+      <a class="me-4" onclick="volverPaso(1)">
         <img src="/img/flecha.svg" alt="Volver" style="height: 4vh">
       </a>
-  
-      <!-- Logo centrado -->
       <div class="mx-auto">
         <img src="/img/logo.svg" alt="Logo Barber Club" style="height: 6vh;">
       </div>
-  
-      <!-- Icono de Instagram -->
       <a href="https://instagram.com" target="_blank" class="ms-4">
         <img src="/img/icono-instagram.svg" alt="Instagram" style="height: 4vh">
       </a>
     </nav>
+
     <h1 class="text-center mb-4">¡Reservá tu turno!</h1>
     <p class="text-center mb-4">Completá el siguiente formulario para agendar tu cita en TH Barber Club.</p>
+
     <form id="form-turno">
-      <!-- Sección 1: Datos del cliente -->
-      <div class="seccion activa" id="paso-1">
+      <!-- Sección 1: Servicio -->
+      <div class="seccion activa form-section" id="paso-1">
+        <div class="mb-3">
+          <label for="servicio" class="form-label">Servicio</label>
+          <select class="form-select" id="servicio" required>
+            <option value="">Seleccionar servicio</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primario" onclick="siguientePaso(1)">Siguiente</button>
+      </div>
+
+      <!-- Sección 2: Fecha y horario -->
+      <div class="seccion form-section" id="paso-2">
+        <div class="calendar-horarios">
+          <div>
+            <label for="fecha" class="form-label">Seleccionar fecha</label>
+            <input type="date" class="form-control" id="fecha" min="2025-08-14" required onchange="cargarHorariosDisponibles()" />
+          </div>
+          <div>
+            <label class="form-label">Horarios disponibles</label>
+            <div id="horarios" class="d-flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <button type="button" class="btn btn-secundario me-2" onclick="volverPaso(1)">Atrás</button>
+          <button type="button" class="btn btn-primario" onclick="siguientePaso(2)">Siguiente</button>
+        </div>
+      </div>
+
+      <!-- Sección 3: Datos del cliente -->
+      <div class="seccion form-section" id="paso-3">
         <div class="mb-3">
           <label for="nombre" class="form-label">Nombre</label>
           <input type="text" class="form-control" id="nombre" required />
@@ -47,42 +73,14 @@
           <label for="email" class="form-label">Correo electrónico</label>
           <input type="email" class="form-control" id="email" required />
         </div>
-        <button type="button" class="btn btn-primario" onclick="siguientePaso(1)">Siguiente</button>
-      </div>
-
-      <!-- Sección 2: Selección de servicio -->
-      <div class="seccion" id="paso-2">
-        <div class="mb-3">
-          <label for="servicio" class="form-label">Servicio</label>
-          <select class="form-select" id="servicio" required>
-            <option value="">Seleccionar servicio</option>
-            <option value="1">Corte de pelo</option>
-            <option value="2">Barba</option>
-            <option value="3">Corte + Barba</option>
-          </select>
+        <div class="mt-4">
+          <button type="button" class="btn btn-secundario me-2" onclick="volverPaso(2)">Atrás</button>
+          <button type="submit" class="btn btn-primario">Reservar</button>
         </div>
-        <button type="button" class="btn btn-secundario me-2" onclick="volverPaso(1)">Atrás</button>
-        <button type="button" class="btn btn-primario" onclick="siguientePaso(2)">Siguiente</button>
-      </div>
-
-      <!-- Sección 3: Fecha y horario -->
-      <div class="seccion" id="paso-3">
-        <div class="mb-3">
-          <label for="fecha" class="form-label">Seleccionar fecha</label>
-          <input type="date" class="form-control" id="fecha" min="2025-08-14" required onchange="cargarHorariosDisponibles()" />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Horario disponible</label>
-          <div id="horarios" class="d-flex flex-wrap gap-2"></div>
-        </div>
-
-        <button type="button" class="btn btn-secundario me-2" onclick="volverPaso(2)">Atrás</button>
-        <button type="submit" class="btn btn-primario">Reservar</button>
       </div>
     </form>
   </div>
 
-  <script src="/js/scripts.js"></script>
+  <script type="module" src="/js/scripts.js"></script>
 </body>
 </html>

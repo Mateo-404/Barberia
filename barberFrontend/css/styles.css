@@ -12,9 +12,18 @@ footer {
   color: #999;
 }
 
-h1 {
-  font-weight: bold;
+.form-control {
+  border: 2px solid #ff6600;
+  border-radius: 12px;
+  padding: 4px 8px;
+  display: inline-block;
 }
+
+.form-control:focus {
+  border-color: #ffc494;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
 
 /* Botones */
 .btn-primario {

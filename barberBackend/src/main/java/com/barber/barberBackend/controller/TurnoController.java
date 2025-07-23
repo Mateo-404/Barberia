@@ -2,6 +2,7 @@ package com.barber.barberBackend.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,9 +21,12 @@ public class TurnoController extends GenericController<Turno, Long, TurnoService
     private TurnoService service;
 
     @GetMapping("/findDateTimes")
-    public String getMethodName() {
+    public List<String> getFechasOcupadas() {
         List<LocalDateTime> dateTimes = service.findDateTimes();
-        return dateTimes.toString();
+        return dateTimes.stream()
+            .map(LocalDateTime::toString)
+            .collect(Collectors.toList());
     }
+
     
 }

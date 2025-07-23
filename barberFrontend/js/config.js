@@ -1,0 +1,17 @@
+const API_BASE_URL = "http://localhost:8080";
+
+export const ENDPOINTS = {
+  turnos: `${API_BASE_URL}/turnos`,
+  clientes: `${API_BASE_URL}/clientes`,
+  servicios: `${API_BASE_URL}/servicios`,
+};
+
+export const HORARIOS_LABORALES = [
+  '13:00', '13:30', '14:00', '14:30','15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'
+];
+
+export const MENSAJES = {
+  fechaSinTurnos: "Lo lamentamos, pero en esta fecha están todos los turnos ocupados.",
+  turnoConfirmado: "Turno reservado con éxito."
+};
