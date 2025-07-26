@@ -65,6 +65,15 @@ document.addEventListener("DOMContentLoaded", async function () {
    * ocultando los que ya están ocupados y mostrando un mensaje si no hay disponibles.
    */
   window.cargarHorariosDisponibles = function () {
+    // Establecer la fecha mínima como hoy
+    const inputFecha = document.getElementById('fecha');
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    inputFecha.min = `${yyyy}-${mm}-${dd}`;
+    
+    // Llamada a la API
     const contenedor = document.getElementById("horarios");
     contenedor.innerHTML = "";
 
@@ -104,6 +113,36 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Navegación entre pasos
   window.siguientePaso = function (paso) {
+    const seccionActiva = document.querySelector(".seccion.activa");
+    const inputs = seccionActiva.querySelectorAll("input, select");
+    let valido = true; 
+
+    // Verificamos que hayan inputs requeridos y que estén completos
+    inputs.forEach((input) => {
+      if (input.hasAttribute("required") && !input.value) {
+        input.classList.add("is-invalid");
+        valido = false;
+      } else {
+        input.classList.remove("is-invalid");
+      }
+    });
+    
+    
+    // Validar selección de horario en el paso de horarios (paso 2)
+    if (seccionActiva.id === "paso-2") {
+      const horarioSeleccionado = seccionActiva.querySelector(".input-opcion.selected");
+      if (!horarioSeleccionado) {
+        valido = false;
+        alert("Por favor, seleccioná un horario.");
+        return;
+      }
+    }
+    
+    if (!valido) {
+      alert("maquinola, no estan completos los campos requeridos");
+      return;
+    }
+    
     secciones[paso - 1].classList.remove("activa");
     secciones[paso].classList.add("activa");
     pasoActual = paso;
