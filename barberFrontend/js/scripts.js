@@ -1,7 +1,25 @@
 import { ENDPOINTS, HORARIOS_LABORALES, MENSAJES } from "./config.js";
 
-// <-- Servicios -->
+//<-- Constantes globales -->
+
+
+//<-- Utilidades (formato, validación, etc.) -->
+// 2. Fechas
+// Convierte un array de 'YYYY-MM-DDTHH:mm' a un objeto agrupado por fecha con arrays de horas.
+function mapearTurnosOcupados(arr) {
+  const mapa = {};
+  arr.forEach((item) => {
+    const [fecha, hora] = item.split("T");
+    if (!mapa[fecha]) mapa[fecha] = [];
+    mapa[fecha].push(hora);
+  });
+  return mapa;
+}
+
+//<-- Lógica de negocio (manejo de turnos, cliente, etc.) -->
+// 1. Servicios 
 const obtenerServicios = async () => {
+  //! Implementar modal de error
   try {
     const response = await fetch(ENDPOINTS.servicios);
     if (!response.ok) throw new Error("Error al obtener los servicios");
@@ -12,7 +30,7 @@ const obtenerServicios = async () => {
   }
 };
 
-// <-- Turnos -->
+// 2. Fechas
 const obtenerTurnosOcupados = async () => {
   try {
     const response = await fetch(ENDPOINTS.turnos + "/findDateTimes");
@@ -24,24 +42,7 @@ const obtenerTurnosOcupados = async () => {
   }
 };
 
-/**
- * Formatea un arreglo como ['2025-08-15T10:00'] a:
- * {
- *   '2025-08-15': ['10:00'],
- *   '2025-08-16': ['11:30']
- * }
- */
-function mapearTurnosOcupados(arr) {
-  const mapa = {};
-  arr.forEach((item) => {
-    const [fecha, hora] = item.split("T");
-    if (!mapa[fecha]) mapa[fecha] = [];
-    mapa[fecha].push(hora);
-  });
-  return mapa;
-}
-
-// Iniciar app una vez que DOM y datos estén listos
+//<-- Eventos y DOM -->
 document.addEventListener("DOMContentLoaded", async function () {
   // Cargar servicios en el select
   const servicios = await obtenerServicios();
@@ -111,13 +112,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   };
 
-  // Navegación entre pasos
+  // Navegación entre secciones
   window.siguientePaso = function (paso) {
     const seccionActiva = document.querySelector(".seccion.activa");
     const inputs = seccionActiva.querySelectorAll("input, select");
     let valido = true; 
 
-    // Verificamos que hayan inputs requeridos y que estén completos
+    // <-- Validaciones -->
+    // 1. Inputs completos
     inputs.forEach((input) => {
       if (input.hasAttribute("required") && !input.value) {
         input.classList.add("is-invalid");
@@ -127,8 +129,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     });
     
-    
-    // Validar selección de horario en el paso de horarios (paso 2)
+    // 2. Selección de horario
     if (seccionActiva.id === "paso-2") {
       const horarioSeleccionado = seccionActiva.querySelector(".input-opcion.selected");
       if (!horarioSeleccionado) {
@@ -142,45 +143,84 @@ document.addEventListener("DOMContentLoaded", async function () {
       alert("maquinola, no estan completos los campos requeridos");
       return;
     }
-    
+
     secciones[paso - 1].classList.remove("activa");
     secciones[paso].classList.add("activa");
     pasoActual = paso;
   };
-
+  
   window.volverPaso = function (paso) {
     secciones[pasoActual].classList.remove("activa");
     secciones[paso - 1].classList.add("activa");
     pasoActual = paso - 1;
   };
-
+  
   /**
    * Captura los datos del formulario y los muestra en consola
-   */
-  function obtenerHorarioSeleccionado() {
-    const seleccionado = document.querySelector(".input-opcion.selected");
+  */
+ function obtenerHorarioSeleccionado() {
+   const seleccionado = document.querySelector(".input-opcion.selected");
     return seleccionado ? seleccionado.textContent : null;
   }
 
   document.getElementById("form-turno").addEventListener("submit", function (e) {
-      e.preventDefault();
+    e.preventDefault();
 
-      // Formato de los datos a enviar
-      const data = {
-        fechaHora: `${
-          document.getElementById("fecha").value
-        }T${obtenerHorarioSeleccionado()}`, // ejemplo: "2025-08-16T14:00"
-        cliente: {
-          nombre: document.getElementById("nombre").value,
-          apellido: document.getElementById("apellido").value,
-          telefono: document.getElementById("telefono").value,
-          email: document.getElementById("email").value,
-        },
-        servicio: {
-          id: parseInt(document.getElementById("servicio").value),
-        },
-      };
+    const seccionActiva = document.querySelector(".seccion.activa");
+    const inputsVisibles = seccionActiva.querySelectorAll("input, select");
+    
+    // Esto evita el error "Un control de formulario no válido no puede tener foco", que ocurre
+    // cuando el navegador intenta validar inputs con `required` que están ocultos en otros pasos.
+    // La validación usa `.checkValidity()` y `.reportValidity()` para integrar con la validación nativa de HTML.
 
+    // Validación nativa solo de los visibles
+    for (let input of inputsVisibles) {
+      if (!input.checkValidity()) {
+        input.reportValidity(); // muestra el mensaje del navegador
+        return;
+      }
+    }
+
+    const telefono = document.getElementById("telefono").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const nombre = document.getElementById("nombre").value.trim();
+    const apellido = document.getElementById("apellido").value.trim();
+    const servicioId = parseInt(document.getElementById("servicio").value);
+    const fecha = document.getElementById("fecha").value;
+    const hora = obtenerHorarioSeleccionado();
+    
+    const regexTelefono = /^[0-9]{7,15}$/;
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    // Validación de datos
+    if (!nombre || !apellido || !telefono || !email || !fecha || !hora || !servicioId) {
+      alert("Por favor, completá todos los campos obligatorios.");
+      return;
+    }
+
+    if (!regexTelefono.test(telefono)) {
+      alert("Por favor, ingresá un teléfono válido (solo números, 7 a 15 dígitos).");
+      return;
+    }
+
+    if (!regexEmail.test(email)) {
+      alert("Por favor, ingresá un correo electrónico válido.");
+      return;
+    }
+
+    // Formato de los datos a enviar
+    const data = {
+      fechaHora: `${fecha}T${hora}`,
+      cliente: {
+        nombre,
+        apellido,
+        telefono,
+        email,
+      },
+      servicio: {
+        id: servicioId,
+      },
+    };
       console.log("🧾 Datos del turno a enviar:", data);
       
 
@@ -194,7 +234,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       })
         .then(async (res) => {
           if (!res.ok) throw new Error("Error al reservar turno");
-
           // Verificamos si hay contenido en la respuesta
           const text = await res.text();
           if (text) {

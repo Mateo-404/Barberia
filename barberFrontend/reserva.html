@@ -39,12 +39,12 @@
 
       <!-- Sección 2: Fecha y horario -->
       <div class="seccion form-section" id="paso-2">
-        <div class="calendar-horarios">
-          <div>
+        <div class="calendar-horarios row">
+          <div class="col">
             <label for="fecha" class="form-label">Seleccionar fecha</label>
             <input type="date" class="form-control" id="fecha" required onchange="cargarHorariosDisponibles()" />
           </div>
-          <div>
+          <div class="col">
             <label class="form-label">Horarios disponibles</label>
             <div id="horarios" class="d-flex flex-wrap gap-2"></div>
           </div>
