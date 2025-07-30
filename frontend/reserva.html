@@ -59,23 +59,23 @@
       <div class="seccion form-section" id="paso-3">
         <div class="mb-3">
           <label for="nombre" class="form-label">Nombre</label>
-          <input type="text" class="form-control" id="nombre" required />
+          <input type="text" class="form-control" id="nombre" autocomplete="given-name" required />
         </div>
         <div class="mb-3">
           <label for="apellido" class="form-label">Apellido</label>
-          <input type="text" class="form-control" id="apellido" required />
+          <input type="text" class="form-control" id="apellido" autocomplete="family-name" required />
         </div>
         <div class="mb-3">
           <label for="telefono" class="form-label">Teléfono</label>
-          <input type="tel" class="form-control" id="telefono" required />
+          <input type="tel" class="form-control" id="telefono" autocomplete="tel" required />
         </div>
         <div class="mb-3">
           <label for="email" class="form-label">Correo electrónico</label>
-          <input type="email" class="form-control" id="email" required />
+          <input type="email" class="form-control" id="email" autocomplete="email" required />
         </div>
         <div class="mt-4">
           <button type="button" class="btn btn-secundario me-2" onclick="volverPaso(2)">Atrás</button>
-          <button type="submit" class="btn btn-primario">Reservar</button>
+          <button type="button" class="btn btn-primario" onclick="enviarForm()">Reservar</button>
         </div>
       </div>
     </form>
