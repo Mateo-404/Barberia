@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacto</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <style>
+    .btn-instagram {
+      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+      color: white;
+      border: none;
+    }
+    .btn-instagram:hover {
+      opacity: 0.9;
+    }
+
+    .contacto-hero-img {
+      max-width: 400px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .contacto-hero-img {
+        max-width: 100%;
+        margin-bottom: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <!-- Logo y encabezado -->
+    <header class="text-center mb-5">
+      <a href="index.html" class="d-inline-block mb-3">
+        <img src="/img/logo.svg" alt="Logo de TH Barber Club" style="max-width: 150px;" />
+      </a>
+      <h1 class="fw-bold">Contacto</h1>
+      <p class="lead">Elegí el medio que prefieras para comunicarte con nosotros.</p>
+    </header>
+
+    <!-- Ilustración decorativa -->
+    <div class="text-center mb-5">
+      <img src="/img/contacto.svg" alt="Ilustración de contacto" class="img-fluid" style="max-width: 400px" />
+    </div>
+
+    <!-- Opciones de contacto -->
+    <div class="row justify-content-center g-4">
+      <!-- WhatsApp -->
+      <div class="col-12 col-md-6">
+        <a href="https://wa.me/5491234567890" target="_blank" class="btn btn-outline-success w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+          <i class="bi bi-whatsapp fs-4"></i>
+          <span>Enviar mensaje por WhatsApp</span>
+        </a>
+      </div>
+        <!-- Instagram (minimalista) -->
+        <div class="col-12 col-md-6">
+        <a href="https://instagram.com" target="_blank" class="btn btn-outline-danger w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+            <i class="bi bi-instagram fs-4"></i>
+            <span>Ver perfil en Instagram</span>
+        </a>
+        </div>
+
+
+      <!-- Dirección -->
+      <div class="col-12">
+        <a href="https://www.google.com/maps?q=Humboldt,+Santa+Fe" target="_blank" class="btn btn-outline-warning w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+          <i class="bi bi-geo-alt-fill fs-4"></i>
+          <span>Humboldt, Santa Fe - Ver en Google Maps</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
