@@ -25,6 +25,7 @@
 Se desarrollará un sistema para gestionar reservas en una barbería. Permitirá optimizar la experiencia del cliente y la administración del negocio, resolviendo problemas actuales como confusiones en las reservas y falta de estadísticas claras.
 
 El sistema está orientado a pequeñas barberías, pero su estructura permite escalar a otros rubros. El proyecto se desarrolla como parte de la Práctica Profesional Supervisada de la Tecnicatura Universitaria en Programación (UTN - Rafaela).
+
 ---
 
 ## Breve Descripción del Problema
