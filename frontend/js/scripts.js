@@ -1,4 +1,4 @@
-import { ENDPOINTS, HORARIOS_LABORALES, MENSAJES } from "./config.js";
+import { ENDPOINTS, HORARIOS_LABORALES } from "./config.js";
 
 //<-- Constantes globales -->
 let pasoActual = 0; // Controla el paso actual del formulario
@@ -21,7 +21,6 @@ const data = {
 
 // <-- API -->
 const API = {
-  //! Implementar modal para errores
   async obtenerServicios() {
     try {
       const response = await fetch(ENDPOINTS.servicios);
@@ -29,6 +28,7 @@ const API = {
       return await response.json();
     } catch (error) {
       console.error(error);
+      mostrarError("Hubo un error al cargar los servicios.");
       return [];
     }
   },
@@ -39,6 +39,7 @@ const API = {
       return await response.json();
     } catch (error) {
       console.error(error);
+      mostrarError("Hubo un error al cargar los turnos ocupados.");
       return [];
     }
   },
@@ -60,10 +61,10 @@ const API = {
         console.log("✅ Turno reservado. No se recibió cuerpo en la respuesta.");
         document.getElementById("form-turno").reset();
       }
-      alert(MENSAJES.turnoConfirmado);
+      alert("Turno reservado con éxito. 🎉");
     } catch (err) {
       console.error(err);
-      alert("Hubo un error al reservar el turno.");
+      mostrarError("Hubo un error al reservar el turno.");
     }
   }
 };
@@ -109,18 +110,27 @@ const tieneValor = (input) => {
 };
 const validarTelefono = (telefono) => {
   if (!regexTelefono.test(telefono)) {
-    alert("Por favor, ingresá un teléfono válido (solo números, 7 a 15 dígitos).");
+    mostrarError("Por favor, ingresá un teléfono válido (solo números, 7 a 15 dígitos).");
     return false;
   }
   return true;
 };
 const validarEmail = (email) => {
   if (!regexEmail.test(email)) {
-    alert("Por favor, ingresá un correo electrónico válido.");
+    mostrarError("Por favor, ingresá un correo electrónico válido.");
     return false;
   }
   return true;
 };
+
+const mostrarError = (mensaje) => {
+  const modalMensaje = document.getElementById("modalErrorMensaje");
+  modalMensaje.textContent = mensaje;
+
+  const modal = new bootstrap.Modal(document.getElementById("modalError"));
+  modal.show();
+}
+
 
 
 //<-- Eventos y DOM -->
@@ -158,7 +168,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // 4. Mostrar mensaje si no hay horarios
     if (libres.length === 0) {
-      contenedor.innerHTML = `<p class="text-warning mt-3">${MENSAJES.fechaSinTurnos}</p>`;
+      contenedor.innerHTML = `<p class="text-warning mt-3">${"No quedan turnos disponibles para esta fecha, seleccione otra"}</p>`;
       return;
     }
 
@@ -189,18 +199,18 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // <-- Validaciones -->
     // 1. Inputs completos
-    inputs.forEach((input) => {
+    for (let input of inputs) {
       if (!tieneValor(input)) {
-        alert("Error: Por favor, completá todos los campos obligatorios.");
+        mostrarError("Por favor, completá todos los campos obligatorios.");
         return;
       }
-    });
+    }
     
     // 2. Selección de horario
     if (seccionActiva.id === "paso-2") {
       const horarioSeleccionado = seccionActiva.querySelector(".input-opcion.selected");
       if (!horarioSeleccionado) {
-        alert("Error: Por favor, seleccioná un horario.");
+        mostrarError("Por favor, seleccioná un horario.");
         return;
       }
     }
@@ -228,7 +238,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Validación de datos
     //! Revisar si no se puede reemplazar por funcion
     if (!nombre || !apellido || !telefono || !email || !fecha || !hora || !servicioId) {
-      alert("Por favor, completá todos los campos obligatorios.");
+      mostrarError("Por favor, completá todos los campos obligatorios.");
       return;
     }
 
@@ -250,5 +260,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     window.addEventListener("beforeunload", () => {
     document.getElementById("form-turno").reset();
     });
+
+    window.location.href = "reserva-confirmada.html";
   }
 });

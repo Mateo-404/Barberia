@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>¡Reserva Confirmada! - TH Barber Club</title>
+  
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Estilos personalizados -->
+  <link href="/css/styles.css" rel="stylesheet">
+
+  <!-- Animación opcional -->
+  <style>
+    @keyframes pop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="d-flex justify-content-center mb-3">
+    <a href="index.html">
+      <img src="/img/logo.svg" alt="Logo de TH Barber Club" style="max-width: 150px;" />
+    </a>
+  </div>
+  <div class="container py-5 text-center">      
+      <!-- Ilustración -->
+      <div class="mb-4">
+        <img src="/img/ok.svg"
+             alt="Reserva confirmada exitosamente"
+             class="img-fluid"
+             style="max-width: 180px; box-shadow: 0 4px 24px rgba(0,0,0,0.15); animation: pop 0.7s;">
+      </div>
+
+      <!-- Mensaje principal -->
+      <h1 class="fw-bold mb-3">¡Tu reserva está confirmada!</h1>
+      <p class="lead mb-4">Gracias por elegirnos. Pronto nos estaremos viendo en el sillón. 💈</p>
+
+      <!-- Acciones -->
+      <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mb-5">
+        <a href="/" class="btn btn-primario px-4 py-3 fw-bold">
+          🏠 Volver al inicio
+        </a>
+        <a href="https://wa.me/XXXXXXXXXXX?text=Hola,%20acabo%20de%20hacer%20una%20reserva%20y%20tengo%20una%20consulta"
+           target="_blank"
+           class="btn btn-secundario px-4 py-3">
+          💬 Consultas por WhatsApp
+        </a>
+      </div>
+
+      <!-- Info adicional -->
+      <div class="row text-center border-top border-secondary pt-4">
+        <div class="col-12 col-md-4 mb-3 d-flex justify-content-center">
+          <div class="card" style="width: 18rem;">
+        <div class="card-body">
+          <h5 class="card-title text-warning">📍 Ubicación</h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Humboldt, Santa Fe</h6>
+          <p class="card-text text-muted small mb-0">Nuestra barbería está ubicada en Humboldt, Santa Fe.</p>
+        </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4 mb-3 d-flex justify-content-center">
+          <div class="card" style="width: 18rem;">
+        <div class="card-body">
+          <h5 class="card-title text-warning">⏰ Puntualidad</h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Llegá al menos 5 minutos antes</h6>
+          <p class="card-text text-muted small mb-0">Te recomendamos llegar unos minutos antes de tu turno.</p>
+        </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4 mb-3 d-flex justify-content-center">
+          <div class="card" style="width: 18rem;">
+        <div class="card-body">
+          <h5 class="card-title text-warning">💳 Métodos de pago</h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Efectivo, tarjeta o transferencia</h6>
+          <p class="card-text text-muted small mb-0">Aceptamos efectivo, tarjeta y transferencia.</p>
+        </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cierre -->
+      <div class="mt-4">
+        <p class="text-white">¡Te esperamos en TH Barber Club!</p>
+      </div>
+  </div>
+
+</body>
+</html>
