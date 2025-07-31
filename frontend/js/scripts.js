@@ -44,6 +44,7 @@ const API = {
     }
   },
   async reservarTurno(data) {
+    console.log("URL a la que va el POST:", ENDPOINTS.turnos);
     try {
       const res = await fetch(ENDPOINTS.turnos, {
         method: "POST",
@@ -54,6 +55,7 @@ const API = {
       });
       if (!res.ok) throw new Error("Error al reservar turno");
       const text = await res.text();
+      // Si la respuesta del servidor es JSON, lo parseamos
       if (text) {
         const json = JSON.parse(text);
         console.log("✅ JSON recibido:", json);
@@ -61,7 +63,6 @@ const API = {
         console.log("✅ Turno reservado. No se recibió cuerpo en la respuesta.");
         document.getElementById("form-turno").reset();
       }
-      alert("Turno reservado con éxito. 🎉");
     } catch (err) {
       console.error(err);
       mostrarError("Hubo un error al reservar el turno.");
@@ -226,7 +227,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     pasoActual = paso - 1;
   };
 
-  window.enviarForm = function () {
+  window.enviarForm = async function () {
     const telefono = document.getElementById("telefono").value.trim();
     const email = document.getElementById("email").value.trim();
     const nombre = document.getElementById("nombre").value.trim();
@@ -250,16 +251,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     data.cliente.telefono = telefono;
     data.cliente.email = email;
     data.servicio.id = servicioId;
-
-    API.reservarTurno(data);
-
+    
     //* Log de datos para depuración
     console.log("🧾 Datos del turno a enviar:", data);
-  
-    // Reseteo del formulario al salir de la página
-    window.addEventListener("beforeunload", () => {
-    document.getElementById("form-turno").reset();
-    });
+    
+    await API.reservarTurno(data);
 
     window.location.href = "reserva-confirmada.html";
   }
