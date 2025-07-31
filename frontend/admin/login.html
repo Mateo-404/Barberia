@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar Sesión - TH Barber Club</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="row w-100 justify-content-center">
+      <div class="col-12 col-md-6 col-lg-4">
+        
+        <!-- Header con logo -->
+        <div class="text-center mb-5">
+          <a href="../index.html" class="d-block mb-3">
+            <img src="../img/logo.svg" alt="TH Barber Club" class="img-fluid mb-3" style="max-height: 80px;">
+          </a>
+          <h1 class="h3 mb-2 fw-bold">¡Bienvenido de vuelta 💈!</h1>
+          <p class="text-white">Inicia sesión para acceder a tu cuenta</p>
+        </div>
+
+        <!-- Formulario de login -->
+        <form id="loginForm" class="needs-validation" novalidate>
+          
+          <!-- Email -->
+          <div class="mb-4">
+            <label for="email" class="form-label">Correo electrónico</label>
+            <input type="email" 
+                   class="form-control" 
+                   id="email" 
+                   autocomplete="email" 
+                   required>
+            <div class="invalid-feedback">
+              Por favor, ingresa un correo electrónico válido.
+            </div>
+          </div>
+
+          <!-- Contraseña -->
+          <div class="mb-4">
+            <label for="password" class="form-label">Contraseña</label>
+            <div class="position-relative">
+              <input type="password" 
+                     class="form-control" 
+                     id="password" 
+                     autocomplete="current-password" 
+                     required>
+              <button type="button" 
+                      class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 p-1" 
+                      id="togglePassword"
+                      style="color: #ff6600; text-decoration: none;">
+                👁️
+              </button>
+            </div>
+            <div class="invalid-feedback">
+              La contraseña es obligatoria.
+            </div>
+          </div>
+
+          <!-- Recordarme y Olvidé contraseña -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="form-check">
+              <input class="form-check-input" 
+                     type="checkbox" 
+                     id="rememberMe"
+                     style="border-color: #ff6600;">
+              <label class="form-check-label small" for="rememberMe">
+                Recordarme
+              </label>
+            </div>
+            <a href="/recuperar-password" class="text-decoration-none small" style="color: #ff6600;">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+          <!-- Botón de login -->
+          <button type="submit" class="btn btn-primario w-100 py-3 mb-4">
+            <span class="login-text">Iniciar Sesión</span>
+            <div class="spinner-border spinner-border-sm d-none" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+          </button>
+          
+        </form>
+
+        <!-- Footer -->
+        <div class="text-center mt-5">
+          <div class="d-flex justify-content-center gap-4 mb-3">
+            <a href="/terminos" class="text-white small text-decoration-none">Términos</a>
+            <a href="/privacidad" class="text-white small text-decoration-none">Privacidad</a>
+            <a href="/contacto" class="text-white small text-decoration-none">Contacto</a>
+          </div>
+          <p class="text-white small">© 2025 TH Barber Club. Todos los derechos reservados.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const password = document.getElementById('password');
+      const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+      password.setAttribute('type', type);
+      this.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+
+    // Form validation and submission
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const form = this;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const loginText = submitBtn.querySelector('.login-text');
+      const spinner = submitBtn.querySelector('.spinner-border');
+      
+      // Validate form
+      if (!form.checkValidity()) {
+        e.stopPropagation();
+        form.classList.add('was-validated');
+        return;
+      }
+
+      // Show loading state
+      submitBtn.disabled = true;
+      loginText.classList.add('d-none');
+      spinner.classList.remove('d-none');
+
+      // Get form data
+      const formData = {
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        rememberMe: document.getElementById('rememberMe').checked
+      };
+
+      // Simulate API call
+      setTimeout(() => {
+        // Replace with actual API call
+        fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Credenciales incorrectas');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Success - redirect to dashboard
+          window.location.href = '/dashboard';
+        })
+        .catch(error => {
+          // Error handling
+          console.error('Error:', error);
+          alert('Error al iniciar sesión. Verifica tus credenciales.');
+        })
+        .finally(() => {
+          // Reset button state
+          submitBtn.disabled = false;
+          loginText.classList.remove('d-none');
+          spinner.classList.add('d-none');
+        });
+      }, 1000);
+    });
+
+    // Clear validation on input
+    document.querySelectorAll('.form-control').forEach(input => {
+      input.addEventListener('input', function() {
+        if (this.classList.contains('is-invalid')) {
+          this.classList.remove('is-invalid');
+        }
+      });
+    });
+
+    // Auto-focus email field
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('email').focus();
+    });
+  </script>
+</body>
+</html>

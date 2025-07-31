@@ -18,6 +18,5 @@ public class Administrador extends Persona {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Basic
-    private String nombreUsuario;
     private String contrasenia;
 }
