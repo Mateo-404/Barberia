@@ -4,6 +4,7 @@ export const ENDPOINTS = {
   turnos: `${API_BASE_URL}/turnos`,
   clientes: `${API_BASE_URL}/clientes`,
   servicios: `${API_BASE_URL}/servicios`,
+  administradores: `${API_BASE_URL}/administradores`,
 };
 
 export const HORARIOS_LABORALES = [
