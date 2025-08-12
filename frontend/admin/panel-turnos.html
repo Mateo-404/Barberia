@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Gestión de Turnos | TH Barber Club</title>
+  <link rel="icon" href="../img/logo.svg" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <!-- Navbar -->
+    <nav class="navbar d-flex justify-content-between align-items-center px-4 mb-4" style="height: 10vh;">
+      <div class="d-flex align-items-center">
+        <a href="./panel-estadisticas.html" class="me-4">
+          <img src="../img/flecha.svg" alt="Estadísticas" style="height: 4vh" title="Ver Estadísticas">
+        </a>
+        <h5 class="mb-0 text-white">Gestión de Turnos</h5>
+      </div>
+      <div class="mx-auto">
+        <a href="../index.html">
+          <img src="../img/logo.svg" alt="TH Barber Club" style="height: 8vh; cursor: pointer;">
+        </a>
+      </div>
+      <a href="https://instagram.com" target="_blank" class="ms-4">
+        <img src="../img/icono-instagram.svg" alt="Instagram" style="height: 4vh">
+      </a>
+    </nav>
+
+    <!-- Controles de vista -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-primario active" id="btn-lista" onclick="cambiarVista('lista')">
+            <i class="bi bi-list-ul me-1"></i> Lista
+          </button>
+          <button type="button" class="btn btn-secundario" id="btn-calendario" onclick="cambiarVista('calendario')">
+            <i class="bi bi-calendar3 me-1"></i> Calendario
+          </button>
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div class="input-group" style="max-width: 300px; margin-left: auto;">
+          <input type="text" class="form-control" id="buscar-turno" placeholder="Buscar por cliente...">
+          <button class="btn btn-secundario" type="button">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card card-hover">
+          <div class="card-body py-3">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <select class="form-select" id="filtro-fecha">
+                  <option value="hoy">Hoy</option>
+                  <option value="manana">Mañana</option>
+                  <option value="semana">Esta Semana</option>
+                  <option value="mes">Este Mes</option>
+                  <option value="todos" selected>Todos</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="filtro-estado">
+                  <option value="todos" selected>Todos los estados</option>
+                  <option value="confirmado">Confirmados</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="cancelado">Cancelados</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="filtro-servicio">
+                  <option value="todos" selected>Todos los servicios</option>
+                  <option value="corte">Corte</option>
+                  <option value="barba">Barba</option>
+                  <option value="combo">Corte + Barba</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-secundario w-100" onclick="limpiarFiltros()">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Lista -->
+    <div id="vista-lista" class="vista-activa">
+      <div class="card card-hover">
+        <div class="card-header bg-transparent border-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Historial de Turnos</h5>
+            <span class="badge" style="background-color: #ff6600;" id="total-turnos">0 turnos</span>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Estado</th>
+                  <th>Precio</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-turnos">
+                <!-- Se llenará dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Calendario -->
+    <div id="vista-calendario" class="vista-oculta">
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card card-hover">
+            <div class="card-header bg-transparent border-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Calendario de Turnos</h5>
+                <div class="d-flex align-items-center">
+                  <button class="btn btn-sm btn-secondary me-2" onclick="navegarMes(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <span id="mes-actual" class="me-2">Agosto 2025</span>
+                  <button class="btn btn-sm btn-secondary" onclick="navegarMes(1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="calendario-container">
+                <!-- Calendario se genera dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4">
+          <div class="card card-hover">
+            <div class="card-header bg-transparent border-0">
+              <h5 class="mb-0">Turnos del Día</h5>
+              <small class="text-muted" id="fecha-seleccionada">Selecciona una fecha</small>
+            </div>
+            <div class="card-body">
+              <div id="turnos-dia">
+                <p class="text-muted text-center">Selecciona un día en el calendario</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enlaces de navegación -->
+    <div class="row mt-4">
+      <div class="col-12 text-center">
+        <a href="./panel-estadisticas.html" class="btn btn-primario me-3">
+          Ver Estadísticas
+        </a>
+        <a href="index.html" class="btn btn-secundario">
+          Volver al Inicio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Editar Turno -->
+  <div class="modal fade" id="modalEditarTurno" tabindex="-1" aria-labelledby="modalEditarTurnoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark border-warning">
+        <div class="modal-header border-warning">
+          <h5 class="modal-title text-warning" id="modalEditarTurnoLabel">Editar Turno</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formEditarTurno">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarFecha" class="form-label">Fecha</label>
+                <input type="date" class="form-control" id="editarFecha" required>
+              </div>
+              <div class="col-md-6">
+                <label for="editarHora" class="form-label">Hora</label>
+                <select class="form-select" id="editarHora" required>
+                  <option value="">Seleccionar hora</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarNombre" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="editarNombre" required>
+              </div>
+              <div class="col-md-6">
+                <label for="editarTelefono" class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" id="editarTelefono" required>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarServicio" class="form-label">Servicio</label>
+                <select class="form-select" id="editarServicio" required>
+                  <option value="">Seleccionar servicio</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="editarEstado" class="form-label">Estado</label>
+                <select class="form-select" id="editarEstado" required>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+            </div>
+            <input type="hidden" id="editarTurnoId">
+          </form>
+        </div>
+        <div class="modal-footer border-warning">
+          <button type="button" class="btn btn-secundario" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primario" onclick="guardarEdicionTurno()">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación -->
+  <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark border-danger">
+        <div class="modal-header border-danger">
+          <h5 class="modal-title text-danger" id="modalConfirmarLabel">Confirmar Acción</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-white" id="modalConfirmarTexto">
+          ¿Estás seguro de que deseas realizar esta acción?
+        </div>
+        <div class="modal-footer border-danger">
+          <button type="button" class="btn btn-secundario" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmarAccion">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/panel-turnos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+</body>
+</html>
