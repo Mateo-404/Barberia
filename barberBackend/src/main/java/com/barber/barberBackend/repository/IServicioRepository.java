@@ -7,5 +7,4 @@ import com.barber.barberBackend.model.Servicio;
 
 @Repository
 public interface IServicioRepository extends GenericRepository<Servicio, Long> {
-
 }

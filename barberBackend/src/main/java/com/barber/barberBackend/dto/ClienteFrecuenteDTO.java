@@ -1,5 +1,10 @@
 package com.barber.barberBackend.dto;
 
-public class ClienteFrecuenteDTO {
+import com.barber.barberBackend.model.Cliente;
 
-}
+public record ClienteFrecuenteDTO (
+    long id,
+    String nombre,
+    String apellido,
+    long cantidadTurnos
+) {}

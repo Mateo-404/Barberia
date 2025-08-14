@@ -1,5 +1,8 @@
 package com.barber.barberBackend.dto;
 
-public class IngresoDiarioDTO {
+import java.time.LocalDateTime;
 
-}
+public record IngresoDiarioDTO (
+    LocalDateTime fecha,
+    double ingresoTotal
+) {}

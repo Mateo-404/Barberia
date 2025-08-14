@@ -1,5 +1,7 @@
 package com.barber.barberBackend.dto;
 
-public class ServicioEstadisticaDTO {
-
-}
+public record ServicioEstadisticaDTO (
+    Long id,
+    String nombre,
+    long cantidadRealizado
+) {}
