@@ -7,12 +7,10 @@ public record PanelEstadisticaDTO (
     int turnosAyer,
     double ingresosMes,
     double ingresosMesAnterior,
-    int cantClientes,
+    long cantClientes,
     // 
     List<IngresoDiarioDTO> ingresosDiarios,
     List<ServicioEstadisticaDTO> servicios,
     List<HorarioEstadisticaDTO> horarios,
-    List<ClienteFrecuenteDTO> clientesFrecuentes,
-    
-    double ocupacionPromedio
+    List<ClienteFrecuenteDTO> clientesFrecuentes
 ) {}

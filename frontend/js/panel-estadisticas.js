@@ -1,3 +1,21 @@
+import {ENDPOINTS} from './endpoints.js';
+
+// <-- API -->
+async function obtenerDatosEstadisticas() {
+    try {
+        const response = await fetch(ENDPOINTS.estadisticas);
+        if (!response.ok) {
+            throw new Error('Error al obtener datos de estadísticas');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error al llamar a la API:', error);
+        alert('Hubo un error de sistema al obtener las estadísticas. Por favor, inténtelo más tarde.');
+        return null;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Datos simulados - reemplazar con datos reales de la API
     const datosSimulados = {

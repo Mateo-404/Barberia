@@ -71,13 +71,25 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                 fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
             );
 
-            //double ocupacionPromedio = turnoRepository.calculateOcupacionPromedio();
+            if (ingresosDiarios == null || servicios == null || horarios == null || clientesFrecuentes == null) {
+                throw new IllegalStateException("ERROR: Algun valor de los atributos es nulo");
+            }
 
-            return null;
-            
+            return new PanelEstadisticaDTO(
+                turnosHoy,
+                turnosAyer,
+                ingresosMes,
+                ingresosMesAnterior,
+                cantClientes,
+                ingresosDiarios,
+                servicios,
+                horarios,
+                clientesFrecuentes
+            );            
         } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        throw new UnsupportedOperationException("Unimplemented method 'obtenerPanelEstadisticaDTO'");
     }
     
 }

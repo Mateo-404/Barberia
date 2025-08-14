@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import com.barber.barberBackend.dto.ClienteFrecuenteDTO;
 import com.barber.barberBackend.dto.HorarioEstadisticaDTO;
-import com.barber.barberBackend.dto.PanelEstadisticaDTO;
 import com.barber.barberBackend.dto.ServicioEstadisticaDTO;
 import com.barber.barberBackend.generics.GenericRepository;
 import com.barber.barberBackend.model.Turno;
