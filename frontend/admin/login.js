@@ -59,7 +59,7 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
       })
       .then((data) => {
         // Success - redirect to dashboard
-        window.location.href = "/dashboard";
+        window.location.href = "/admin/panel-estadisticas.html";
       })
       .catch((error) => {
         // Error handling

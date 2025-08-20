@@ -11,6 +11,6 @@ public record PanelEstadisticaDTO (
     // 
     List<IngresoDiarioDTO> ingresosDiarios,
     List<ServicioEstadisticaDTO> servicios,
-    List<HorarioEstadisticaDTO> horarios,
-    List<ClienteFrecuenteDTO> clientesFrecuentes
+    List<HorarioEstadisticaDTO> horarios
+    //List<ClienteFrecuenteDTO> clientesFrecuentes
 ) {}

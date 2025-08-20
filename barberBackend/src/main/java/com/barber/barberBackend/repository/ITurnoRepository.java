@@ -18,16 +18,17 @@ public interface ITurnoRepository extends GenericRepository<Turno, Long> {
      @Query("SELECT COUNT(t) FROM Turno t WHERE DATE(t.fechaHora) = DATE(:fecha)")
      int countByFecha(@Param("fecha") LocalDateTime fecha);
      @Query("""
-          SELECT SUM(s.precio)
-          FROM Turno t
-          JOIN t.servicio s
-          WHERE t.fechaHora >= :inicio
-               AND t.fechaHora < :fin
+     SELECT COALESCE(SUM(s.precio), 0)
+     FROM Turno t
+     JOIN t.servicio s
+     WHERE t.fechaHora >= :inicio
+          AND t.fechaHora < :fin
      """)
      Double findIngresosByFecha(
-          @Param("inicio") LocalDateTime inicio,
-          @Param("fin") LocalDateTime fin
+     @Param("inicio") LocalDateTime inicio,
+     @Param("fin") LocalDateTime fin
      );
+
      // cant Servicios por fecha
      @Query("""
           SELECT COUNT(s)
@@ -46,47 +47,54 @@ public interface ITurnoRepository extends GenericRepository<Turno, Long> {
      @Query("""
           SELECT new com.barber.barberBackend.dto.ServicioEstadisticaDTO(
                s.id,
-               s.nombre,
+               s.tipo,
                COUNT(s)
           )
           FROM Turno t
           JOIN t.servicio s
           WHERE t.fechaHora >= :desde
                AND t.fechaHora < :hasta
-          GROUP BY s.id, s.nombre
+          GROUP BY s.id, s.tipo
           ORDER BY COUNT(s) DESC
      """)
      List<ServicioEstadisticaDTO> countServiciosByFecha(
           @Param("desde") LocalDateTime desde,
           @Param("hasta") LocalDateTime hasta
      );
-     
+
      @Query("""
           SELECT new com.barber.barberBackend.dto.HorarioEstadisticaDTO(
-               t.fechaHora,
+               EXTRACT(HOUR FROM t.fechaHora),
                COUNT(t)
           )
           FROM Turno t
           WHERE t.fechaHora >= :desde
-          GROUP BY HOUR(t.fechaHora)
-          ORDER BY HOUR(t.fechaHora)
+          GROUP BY EXTRACT(HOUR FROM t.fechaHora)
+          ORDER BY EXTRACT(HOUR FROM t.fechaHora)
      """)
-     List<HorarioEstadisticaDTO> countTurnosByHorario(@Param("desde") LocalDateTime desde); 
+     List<HorarioEstadisticaDTO> countTurnosByHorario(@Param("desde") LocalDateTime desde);
 
-     @Query("""
-          SELECT new com.barber.barberBackend.dto.ClienteFrecuenteDTO(
-               c.id,
-               c.nombre,
-               c.apellido,
-               COUNT(t)
-     )
-          FROM Turno t
-          JOIN t.cliente c
-          WHERE t.fechaHora >= :desde
-          GROUP BY c.id, c.nombre
-          ORDER BY COUNT(t) DESC
-     """)
-     List<ClienteFrecuenteDTO> findClientesFrecuentes(@Param("desde") LocalDateTime desde);
+
+     //! Error: El psql se pone quisquilloso
+     /*
+      * 
+      @Query("""
+      SELECT new com.barber.barberBackend.dto.ClienteFrecuenteDTO(
+           c.id,
+           c.nombre,
+           c.apellido,
+           CAST(COUNT(t) AS long)
+      )
+      FROM Turno t
+      JOIN t.cliente c
+      WHERE t.fechaHora >= :desde
+      GROUP BY c.id, c.nombre, c.apellido
+      ORDER BY COUNT(t) DESC
+      """)
+      List<ClienteFrecuenteDTO> findClientesFrecuentes(@Param("desde") LocalDateTime desde);
+      */
+
+
 
      // Turnos Ocupados
      @Query("SELECT t.fechaHora FROM Turno t WHERE t.fechaHora >= :desde")

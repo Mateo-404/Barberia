@@ -59,21 +59,29 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                 fechaActual.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
             );
 
-            List<HorarioEstadisticaDTO> horarios = new ArrayList<>();
-            horarios = turnoRepository.countTurnosByHorario(
-                //Año actual
-                fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
-            );
 
-            List<ClienteFrecuenteDTO> clientesFrecuentes = new ArrayList<>();
-            clientesFrecuentes = turnoRepository.findClientesFrecuentes(
-                //Año actual
-                fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
-            );
+             List<HorarioEstadisticaDTO> horarios = new ArrayList<>();
+             horarios = turnoRepository.countTurnosByHorario(
+                 //Año actual
+                 fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
+             );
 
-            if (ingresosDiarios == null || servicios == null || horarios == null || clientesFrecuentes == null) {
-                throw new IllegalStateException("ERROR: Algun valor de los atributos es nulo");
-            }
+            //! El psql se pone quisquilloso
+            /*
+             * 
+             List<ClienteFrecuenteDTO> clientesFrecuentes = new ArrayList<>();
+             clientesFrecuentes = turnoRepository.findClientesFrecuentes(
+                 //Año actual
+                 fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
+             );
+             */
+
+             /*
+              * 
+              if (ingresosDiarios == null || servicios == null || horarios == null) {
+                  throw new IllegalStateException("ERROR: Algun valor de los atributos es nulo");
+              }
+              */
 
             return new PanelEstadisticaDTO(
                 turnosHoy,
@@ -83,8 +91,8 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                 cantClientes,
                 ingresosDiarios,
                 servicios,
-                horarios,
-                clientesFrecuentes
+                horarios
+                //clientesFrecuentes
             );            
         } catch (Exception e) {
             e.printStackTrace();
