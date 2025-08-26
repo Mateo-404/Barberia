@@ -376,15 +376,34 @@ class TurnosManager {
 
         const confirmados = turnosFiltrados.filter(t => t.estado === 'confirmado').length;
         const pendientes = turnosFiltrados.filter(t => t.estado === 'pendiente').length;
-        //? Chequear
+        
+        //? Chequear - CORREGIDO
         const ingresosHoy = turnosFiltrados.reduce((total, t) => {
-            const fechaTurno = new Date(t.fecha);
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            if (fechaTurno.toDateString() === hoy.toDateString()) {
-                return total + t.precio;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        // Función helper para crear fecha local desde string
+        const crearFechaLocal = (fechaString) => {
+            const fecha = new Date(fechaString);
+            // Si la fecha viene en formato ISO, asegurar que se interprete como local
+            if (fechaString.includes('T')) {
+            return new Date(fecha.getTime() + fecha.getTimezoneOffset() * 60000);
             }
-            return total;
+            // Si solo es fecha (YYYY-MM-DD), crear fecha local
+            const partes = fechaString.split('-');
+            if (partes.length === 3) {
+            return new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            }
+            return fecha;
+        };
+
+        const fechaTurno = crearFechaLocal(t.fecha);
+        fechaTurno.setHours(0, 0, 0, 0);
+        
+        if (fechaTurno.getTime() === hoy.getTime()) {
+            return total + t.precio;
+        }
+        return total;
         }, 0);
         
         if (statsConfirmados) {
@@ -472,39 +491,65 @@ class TurnosManager {
         }
 
         if (filtroFecha) {
-            const hoy = new Date();
-            const manana = new Date(hoy);
-            manana.setDate(hoy.getDate() + 1);
-            
-            switch (filtroFecha) {
-                case 'hoy':
-                    turnosFiltrados = turnosFiltrados.filter(t => 
-                        new Date(t.fecha).toDateString() === hoy.toDateString()
-                    );
-                    break;
-                case 'manana':
-                    turnosFiltrados = turnosFiltrados.filter(t => 
-                        new Date(t.fecha).toDateString() === manana.toDateString()
-                    );
-                    break;
-                case 'semana':
-                    const inicioSemana = new Date(hoy);
-                    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
-                    const finSemana = new Date(inicioSemana);
-                    finSemana.setDate(inicioSemana.getDate() + 6);
-                    turnosFiltrados = turnosFiltrados.filter(t => {
-                        const fechaTurno = new Date(t.fecha);
-                        return fechaTurno >= inicioSemana && fechaTurno <= finSemana;
-                    });
-                    break;
-                case 'mes':
-                    turnosFiltrados = turnosFiltrados.filter(t => {
-                        const fechaTurno = new Date(t.fecha);
-                        return fechaTurno.getMonth() === hoy.getMonth() && 
-                               fechaTurno.getFullYear() === hoy.getFullYear();
-                    });
-                    break;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const manana = new Date(hoy);
+        manana.setDate(hoy.getDate() + 1);
+
+        // Función helper para crear fecha local desde string
+        const crearFechaLocal = (fechaString) => {
+            const fecha = new Date(fechaString);
+            // Si la fecha viene en formato ISO, asegurar que se interprete como local
+            if (fechaString.includes('T')) {
+            // Si tiene información de tiempo, usar como está
+            return new Date(fecha.getTime() + fecha.getTimezoneOffset() * 60000);
             }
+            // Si solo es fecha (YYYY-MM-DD), crear fecha local
+            const partes = fechaString.split('-');
+            if (partes.length === 3) {
+            return new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            }
+            return fecha;
+        };
+
+        switch (filtroFecha) {
+            case 'hoy':
+            turnosFiltrados = turnosFiltrados.filter(t => {
+                const fechaTurno = crearFechaLocal(t.fecha);
+                fechaTurno.setHours(0, 0, 0, 0);
+                return fechaTurno.getTime() === hoy.getTime();
+            });
+            break;
+            
+            case 'manana':
+            turnosFiltrados = turnosFiltrados.filter(t => {
+                const fechaTurno = crearFechaLocal(t.fecha);
+                fechaTurno.setHours(0, 0, 0, 0);
+                return fechaTurno.getTime() === manana.getTime();
+            });
+            break;
+            
+            case 'semana':
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+            const finSemana = new Date(inicioSemana);
+            finSemana.setDate(inicioSemana.getDate() + 6);
+            finSemana.setHours(23, 59, 59, 999);
+            
+            turnosFiltrados = turnosFiltrados.filter(t => {
+                const fechaTurno = crearFechaLocal(t.fecha);
+                return fechaTurno >= inicioSemana && fechaTurno <= finSemana;
+            });
+            break;
+            
+            case 'mes':
+            turnosFiltrados = turnosFiltrados.filter(t => {
+                const fechaTurno = crearFechaLocal(t.fecha);
+                return fechaTurno.getMonth() === hoy.getMonth() &&
+                    fechaTurno.getFullYear() === hoy.getFullYear();
+            });
+            break;
+        }
         }
         
         // Filtro por estado

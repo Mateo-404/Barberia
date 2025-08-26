@@ -1,6 +1,5 @@
 package com.barber.barberBackend.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
