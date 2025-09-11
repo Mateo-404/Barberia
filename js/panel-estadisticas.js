@@ -19,6 +19,7 @@ async function cargarEstadisticas() {
         
         // Validar y normalizar datos antes de usarlos
         const datosNormalizados = normalizarDatos(datos);
+        console.log('Datos normalizados:', datosNormalizados);
         
         actualizarResumen(datosNormalizados);
         crearGraficos(datosNormalizados);
@@ -75,7 +76,7 @@ function actualizarResumen(datos) {
     document.getElementById('clientes-unicos').textContent = datos.cantClientes || 0;
     
     // Cancelaciones (estimadas por días sin ingresos)
-    const diasSinIngresos = datos.ingresosDiarios.filter(d => d.ingresoTotal === 0).length || 0;
+    const diasSinIngresos = datos.ingresosDiarios.filter(d => (d.ingresoTotal || 0) === 0).length || 0;
     const cancelacionesEstimadas = Math.floor(diasSinIngresos / 7);
     document.getElementById('cancelaciones').textContent = cancelacionesEstimadas;
     
@@ -87,21 +88,37 @@ function actualizarResumen(datos) {
 // Crear todos los gráficos
 function crearGraficos(datos) {
     // Destruir gráficos existentes antes de crear nuevos
-    Object.values(charts).forEach(chart => chart?.destroy());
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+        }
+    });
     charts = {};
     
-    crearGraficoIngresos(datos.ingresosDiarios);
-    crearGraficoServicios(datos.servicios);
-    crearGraficoHorarios(datos.horarios);
-    crearGraficoOcupacion(datos.horarios);
-    crearGraficoSemanal(datos.ingresosDiarios);
-    llenarTablaClientes(datos);
+    // Esperar un momento para que se destruyan completamente
+    setTimeout(() => {
+        crearGraficoIngresos(datos.ingresosDiarios);
+        crearGraficoServicios(datos.servicios);
+        crearGraficoHorarios(datos.horarios);
+        crearGraficoOcupacion(datos.horarios);
+        crearGraficoSemanal(datos.ingresosDiarios);
+        llenarTablaClientes(datos);
+    }, 100);
 }
 
 // Gráfico de ingresos diarios
 function crearGraficoIngresos(ingresosDiarios) {
-    const ctx = document.getElementById('grafico-ingresos')?.getContext('2d');
-    if (!ctx) return;
+    const canvas = document.getElementById('grafico-ingresos');
+    if (!canvas) {
+        console.error('Canvas grafico-ingresos no encontrado');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Contexto 2d no disponible para grafico-ingresos');
+        return;
+    }
     
     // Tomar últimos 15 días y ordenar
     const datos15Dias = ingresosDiarios.slice(0, 15).reverse();
@@ -120,7 +137,7 @@ function crearGraficoIngresos(ingresosDiarios) {
             }),
             datasets: [{
                 label: 'Ingresos',
-                data: datos15Dias.map(d => d.ingresoTotal),
+                data: datos15Dias.map(d => d.ingresoTotal || 0),
                 borderColor: '#ff6600',
                 backgroundColor: 'rgba(255, 102, 0, 0.1)',
                 borderWidth: 3,
@@ -154,32 +171,62 @@ function crearGraficoIngresos(ingresosDiarios) {
 
 // Gráfico de servicios (dona)
 function crearGraficoServicios(servicios) {
-    const ctx = document.getElementById('grafico-servicios')?.getContext('2d');
-    if (!ctx) return;
+    const canvas = document.getElementById('grafico-servicios');
+    if (!canvas) {
+        console.error('Canvas grafico-servicios no encontrado');
+        return;
+    }
     
-    const colores = ['#ff6600', '#ffc494', '#ff9933'];
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Contexto 2d no disponible para grafico-servicios');
+        return;
+    }
+    
+    console.log('Datos de servicios recibidos:', servicios);
+    
+    // Generar más colores para cubrir todos los servicios
+    const generarColores = (cantidad) => {
+        const coloresBase = ['#ff6600', '#ffc494', '#ff9933', '#ffb366', '#ff8533', '#cc5200', '#ff7f00', '#ffad33'];
+        const colores = [];
+        for (let i = 0; i < cantidad; i++) {
+            colores.push(coloresBase[i % coloresBase.length]);
+        }
+        return colores;
+    };
     
     // Si no hay servicios, mostrar datos por defecto
     const datosServicios = servicios.length > 0 ? servicios : [
         { nombre: 'Sin datos', cantidadRealizado: 1 }
     ];
     
+    console.log('Datos procesados para servicios:', datosServicios);
+    
+    const colores = generarColores(datosServicios.length);
+    
     charts.servicios = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: datosServicios.map(s => s.nombre),
+            labels: datosServicios.map(s => s.nombre || 'Sin nombre'),
             datasets: [{
-                data: datosServicios.map(s => s.cantidadRealizado),
+                data: datosServicios.map(s => s.cantidadRealizado || 0),
                 backgroundColor: colores,
                 borderWidth: 0
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: 'white', padding: 15 }
+                    labels: { 
+                        color: 'white', 
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
                 }
             }
         }
@@ -188,8 +235,19 @@ function crearGraficoServicios(servicios) {
 
 // Gráfico de horarios (barras)
 function crearGraficoHorarios(horarios) {
-    const ctx = document.getElementById('grafico-horarios')?.getContext('2d');
-    if (!ctx) return;
+    const canvas = document.getElementById('grafico-horarios');
+    if (!canvas) {
+        console.error('Canvas grafico-horarios no encontrado');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Contexto 2d no disponible para grafico-horarios');
+        return;
+    }
+    
+    console.log('Datos de horarios recibidos:', horarios);
     
     // Si no hay horarios, crear datos por defecto
     const datosHorarios = horarios.length > 0 ? horarios : [
@@ -198,13 +256,15 @@ function crearGraficoHorarios(horarios) {
         { hora: 11, cantidadRealizado: 0 }
     ];
     
+    console.log('Datos procesados para horarios:', datosHorarios);
+    
     charts.horarios = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: datosHorarios.map(h => `${h.hora}:00`),
+            labels: datosHorarios.map(h => `${h.hora || 0}:00`),
             datasets: [{
                 label: 'Turnos',
-                data: datosHorarios.map(h => h.cantidadRealizado),
+                data: datosHorarios.map(h => h.cantidadRealizado || 0),
                 backgroundColor: '#ff6600',
                 borderRadius: 8
             }]
@@ -212,11 +272,18 @@ function crearGraficoHorarios(horarios) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { 
+                legend: { 
+                    display: false 
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { color: 'white' },
+                    ticks: { 
+                        color: 'white',
+                        stepSize: 1
+                    },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
                 x: {
@@ -230,8 +297,17 @@ function crearGraficoHorarios(horarios) {
 
 // Gráfico de ocupación
 function crearGraficoOcupacion(horarios) {
-    const ctx = document.getElementById('grafico-ocupacion')?.getContext('2d');
-    if (!ctx) return;
+    const canvas = document.getElementById('grafico-ocupacion');
+    if (!canvas) {
+        console.error('Canvas grafico-ocupacion no encontrado');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Contexto 2d no disponible para grafico-ocupacion');
+        return;
+    }
     
     const totalTurnos = horarios.length > 0 
         ? horarios.reduce((sum, h) => sum + (h.cantidadRealizado || 0), 0)
@@ -239,7 +315,10 @@ function crearGraficoOcupacion(horarios) {
     const capacidadMaxima = horarios.length > 0 ? horarios.length * 3 : 24; // 3 turnos por hora estimado
     const ocupacion = capacidadMaxima > 0 ? Math.round((totalTurnos / capacidadMaxima) * 100) : 0;
     
-    document.getElementById('porcentaje-ocupacion').textContent = `${ocupacion}%`;
+    const elementoPorcentaje = document.getElementById('porcentaje-ocupacion');
+    if (elementoPorcentaje) {
+        elementoPorcentaje.textContent = `${ocupacion}%`;
+    }
     
     charts.ocupacion = new Chart(ctx, {
         type: 'doughnut',
@@ -260,8 +339,17 @@ function crearGraficoOcupacion(horarios) {
 
 // Gráfico semanal (últimos 7 días)
 function crearGraficoSemanal(ingresosDiarios) {
-    const ctx = document.getElementById('grafico-semanal')?.getContext('2d');
-    if (!ctx) return;
+    const canvas = document.getElementById('grafico-semanal');
+    if (!canvas) {
+        console.error('Canvas grafico-semanal no encontrado');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Contexto 2d no disponible para grafico-semanal');
+        return;
+    }
     
     const ultimos7 = ingresosDiarios.length > 0 
         ? ingresosDiarios.slice(0, 7).reverse()
@@ -349,8 +437,17 @@ function llenarTablaClientes(datos) {
 
 // Función para mostrar errores
 function mostrarError() {
-    document.querySelectorAll('h2[id]').forEach(el => el.textContent = 'Error');
-    document.querySelectorAll('.badge').forEach(el => el.textContent = '--');
+    const elementos = document.querySelectorAll('#turnos-hoy, #ingresos-mes, #clientes-unicos, #cancelaciones');
+    elementos.forEach(el => {
+        if (el) el.textContent = 'Error';
+    });
+    
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(el => {
+        if (el) el.textContent = '--';
+    });
+    
+    console.error('Error mostrado en la interfaz');
 }
 
 // Función global para refrescar
