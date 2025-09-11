@@ -83,3 +83,239 @@ footer {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
+/* PANEL */
+/* Estilos adicionales para el dashboard - agregar al archivo styles.css existente */
+
+/* Vistas del dashboard */
+.vista-activa { 
+    display: block !important; 
+}
+
+.vista-oculta { 
+    display: none !important; 
+}
+
+/* Estadísticas Cards */
+.card-estadistica {
+    background: linear-gradient(135deg, #2c2c2c 0%, #1c1c1c 100%);
+    border: 1px solid rgba(255, 102, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card-estadistica:hover {
+    border-color: rgba(255, 102, 0, 0.3);
+    box-shadow: 0 8px 25px rgba(255, 102, 0, 0.1);
+}
+
+/* Badges personalizados */
+.badge-dashboard {
+    background-color: #ff6600;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.25em 0.6em;
+    border-radius: 0.5rem;
+}
+
+/* Calendario */
+.calendario-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calendario-header {
+    background-color: #ff6600 !important;
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+    padding: 0.75rem 0;
+}
+
+.calendario-dia {
+    background-color: #1c1c1c;
+    min-height: 80px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.calendario-dia:hover {
+    background-color: #333 !important;
+}
+
+.calendario-dia.hoy {
+    border-color: #ff6600;
+    background-color: rgba(255, 102, 0, 0.1);
+}
+
+/* Turnos en el calendario */
+.turno-calendario {
+    background-color: #ff6600;
+    color: white;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    margin: 1px 0;
+    display: block;
+    text-align: center;
+}
+
+.turno-calendario.confirmado {
+    background-color: #28a745;
+}
+
+.turno-calendario.pendiente {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.turno-calendario.cancelado {
+    background-color: #dc3545;
+}
+
+/* Tabla de turnos responsiva */
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Modal personalizado */
+.modal-content {
+    background-color: #1c1c1c;
+    border: 1px solid #ff6600;
+}
+
+.modal-header {
+    border-bottom-color: rgba(255, 102, 0, 0.2);
+}
+
+.modal-footer {
+    border-top-color: rgba(255, 102, 0, 0.2);
+}
+
+/* Filtros compactos */
+.filtros-container {
+    background-color: rgba(255, 102, 0, 0.05);
+    border: 1px solid rgba(255, 102, 0, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Gráficos contenedor */
+.grafico-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Animaciones suaves */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botones de acción */
+.btn-accion {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+}
+
+/* Estados de turno */
+.estado-confirmado {
+    background-color: #28a745;
+}
+
+.estado-pendiente {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.estado-cancelado {
+    background-color: #dc3545;
+}
+
+/* Navegación del dashboard */
+.dashboard-nav {
+    background-color: rgba(255, 102, 0, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Métricas destacadas */
+.metrica-principal {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ff6600;
+}
+
+.metrica-cambio {
+    font-size: 0.875rem;
+    color: #999;
+}
+
+/* Progress bars personalizadas */
+.progress {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, #ff6600 0%, #ff9933 100%);
+    border-radius: 0.5rem;
+}
+
+/* Alertas de éxito temporales */
+.alert-flotante {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 300px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .calendario-grid {
+        gap: 0;
+    }
+    
+    .calendario-dia {
+        min-height: 60px;
+        padding: 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .metrica-principal {
+        font-size: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+}
