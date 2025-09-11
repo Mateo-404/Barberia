@@ -19,7 +19,7 @@ public class CorsConfig {
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://127.0.0.1:3000",
-            "barberia-production-547f.up.railway.app" // reemplazá con tu URL pública de frontend
+            "https://mateo-404.github.io" // reemplazá con tu URL pública de frontend
         ));
 
         // Métodos permitidos
