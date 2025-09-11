@@ -1,0 +1,6 @@
+[build]
+  builder = "maven"
+
+[deploy]
+  command = "./mvnw spring-boot:run"
+
