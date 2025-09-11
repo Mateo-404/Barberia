@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "https://barberia-production-547f.up.railway.app";
 
 export const ENDPOINTS = {
   turnos: `${API_BASE_URL}/turnos`,

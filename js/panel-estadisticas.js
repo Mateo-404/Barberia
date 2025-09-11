@@ -17,13 +17,30 @@ async function cargarEstadisticas() {
         const datos = await response.json();
         console.log('Datos cargados:', datos);
         
-        actualizarResumen(datos);
-        crearGraficos(datos);
+        // Validar y normalizar datos antes de usarlos
+        const datosNormalizados = normalizarDatos(datos);
+        
+        actualizarResumen(datosNormalizados);
+        crearGraficos(datosNormalizados);
         
     } catch (error) {
         console.error('Error:', error);
         mostrarError();
     }
+}
+
+// Función para normalizar y validar datos
+function normalizarDatos(datos) {
+    return {
+        turnosHoy: datos.turnosHoy || 0,
+        turnosAyer: datos.turnosAyer || 0,
+        ingresosMes: datos.ingresosMes || 0,
+        ingresosMesAnterior: datos.ingresosMesAnterior || 0,
+        cantClientes: datos.cantClientes || 0,
+        ingresosDiarios: Array.isArray(datos.ingresosDiarios) ? datos.ingresosDiarios : [],
+        servicios: Array.isArray(datos.servicios) ? datos.servicios : [],
+        horarios: Array.isArray(datos.horarios) ? datos.horarios : []
+    };
 }
 
 // Actualizar métricas principales
@@ -58,7 +75,7 @@ function actualizarResumen(datos) {
     document.getElementById('clientes-unicos').textContent = datos.cantClientes || 0;
     
     // Cancelaciones (estimadas por días sin ingresos)
-    const diasSinIngresos = datos.ingresosDiarios?.filter(d => d.ingresoTotal === 0).length || 0;
+    const diasSinIngresos = datos.ingresosDiarios.filter(d => d.ingresoTotal === 0).length || 0;
     const cancelacionesEstimadas = Math.floor(diasSinIngresos / 7);
     document.getElementById('cancelaciones').textContent = cancelacionesEstimadas;
     
@@ -88,6 +105,11 @@ function crearGraficoIngresos(ingresosDiarios) {
     
     // Tomar últimos 15 días y ordenar
     const datos15Dias = ingresosDiarios.slice(0, 15).reverse();
+    
+    // Si no hay datos, mostrar datos vacíos
+    if (datos15Dias.length === 0) {
+        datos15Dias.push({ fecha: new Date().toISOString(), ingresoTotal: 0 });
+    }
     
     charts.ingresos = new Chart(ctx, {
         type: 'line',
@@ -137,12 +159,17 @@ function crearGraficoServicios(servicios) {
     
     const colores = ['#ff6600', '#ffc494', '#ff9933'];
     
+    // Si no hay servicios, mostrar datos por defecto
+    const datosServicios = servicios.length > 0 ? servicios : [
+        { nombre: 'Sin datos', cantidadRealizado: 1 }
+    ];
+    
     charts.servicios = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: servicios.map(s => s.nombre),
+            labels: datosServicios.map(s => s.nombre),
             datasets: [{
-                data: servicios.map(s => s.cantidadRealizado),
+                data: datosServicios.map(s => s.cantidadRealizado),
                 backgroundColor: colores,
                 borderWidth: 0
             }]
@@ -164,13 +191,20 @@ function crearGraficoHorarios(horarios) {
     const ctx = document.getElementById('grafico-horarios')?.getContext('2d');
     if (!ctx) return;
     
+    // Si no hay horarios, crear datos por defecto
+    const datosHorarios = horarios.length > 0 ? horarios : [
+        { hora: 9, cantidadRealizado: 0 },
+        { hora: 10, cantidadRealizado: 0 },
+        { hora: 11, cantidadRealizado: 0 }
+    ];
+    
     charts.horarios = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: horarios.map(h => `${h.hora}:00`),
+            labels: datosHorarios.map(h => `${h.hora}:00`),
             datasets: [{
                 label: 'Turnos',
-                data: horarios.map(h => h.cantidadRealizado),
+                data: datosHorarios.map(h => h.cantidadRealizado),
                 backgroundColor: '#ff6600',
                 borderRadius: 8
             }]
@@ -199,9 +233,11 @@ function crearGraficoOcupacion(horarios) {
     const ctx = document.getElementById('grafico-ocupacion')?.getContext('2d');
     if (!ctx) return;
     
-    const totalTurnos = horarios.reduce((sum, h) => sum + h.cantidadRealizado, 0);
-    const capacidadMaxima = horarios.length * 3; // 3 turnos por hora estimado
-    const ocupacion = Math.round((totalTurnos / capacidadMaxima) * 100);
+    const totalTurnos = horarios.length > 0 
+        ? horarios.reduce((sum, h) => sum + (h.cantidadRealizado || 0), 0)
+        : 0;
+    const capacidadMaxima = horarios.length > 0 ? horarios.length * 3 : 24; // 3 turnos por hora estimado
+    const ocupacion = capacidadMaxima > 0 ? Math.round((totalTurnos / capacidadMaxima) * 100) : 0;
     
     document.getElementById('porcentaje-ocupacion').textContent = `${ocupacion}%`;
     
@@ -227,7 +263,9 @@ function crearGraficoSemanal(ingresosDiarios) {
     const ctx = document.getElementById('grafico-semanal')?.getContext('2d');
     if (!ctx) return;
     
-    const ultimos7 = ingresosDiarios.slice(0, 7).reverse();
+    const ultimos7 = ingresosDiarios.length > 0 
+        ? ingresosDiarios.slice(0, 7).reverse()
+        : [{ fecha: new Date().toISOString(), ingresoTotal: 0 }];
     const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     
     charts.semanal = new Chart(ctx, {
@@ -238,7 +276,7 @@ function crearGraficoSemanal(ingresosDiarios) {
                 return dias[fecha.getDay()];
             }),
             datasets: [{
-                data: ultimos7.map(d => d.ingresoTotal),
+                data: ultimos7.map(d => d.ingresoTotal || 0),
                 borderColor: '#ff6600',
                 backgroundColor: 'rgba(255, 102, 0, 0.2)',
                 borderWidth: 3,
@@ -270,13 +308,25 @@ function llenarTablaClientes(datos) {
     const tbody = document.getElementById('tabla-clientes-frecuentes');
     if (!tbody) return;
     
-    const servicioTop = datos.servicios.reduce((max, s) => 
-        s.cantidadRealizado > max.cantidadRealizado ? s : max);
+    // Verificar que los arrays no estén vacíos antes de usar reduce
+    let servicioTop = { nombre: 'Sin datos', cantidadRealizado: 0 };
+    if (datos.servicios.length > 0) {
+        servicioTop = datos.servicios.reduce((max, s) => 
+            (s.cantidadRealizado || 0) > (max.cantidadRealizado || 0) ? s : max);
+    }
     
-    const horarioTop = datos.horarios.reduce((max, h) => 
-        h.cantidadRealizado > max.cantidadRealizado ? h : h);
+    let horarioTop = { hora: 0, cantidadRealizado: 0 };
+    if (datos.horarios.length > 0) {
+        horarioTop = datos.horarios.reduce((max, h) => 
+            (h.cantidadRealizado || 0) > (max.cantidadRealizado || 0) ? h : max);
+    }
     
-    const diasActivos = datos.ingresosDiarios.filter(d => d.ingresoTotal > 0).length;
+    const diasActivos = datos.ingresosDiarios.filter(d => {
+        const fechaDato = new Date(d.fecha);
+        return fechaDato.getMonth() === new Date().getMonth() && 
+               fechaDato.getFullYear() === new Date().getFullYear() && 
+               (d.ingresoTotal || 0) > 0;
+    }).length;
     
     tbody.innerHTML = `
         <tr>
