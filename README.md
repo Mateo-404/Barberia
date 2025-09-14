@@ -120,7 +120,7 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 
 🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
-🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html]([https://barberia-api.railway.app](https://mateo-404.github.io/Barberia/admin/login.html)) *(El usuario es *admin@admin.com* y la contraseña *admin*)*  
+🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html) *(El usuario es *admin@admin.com* y la contraseña *admin*)*  
 
 👉 Nota: el despliegue se realiza directamente desde las ramas:  
 - `frontend` → para GitHub Pages.  
