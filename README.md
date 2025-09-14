@@ -18,6 +18,9 @@
    - [Sistema](#sistema)
 7. [Pruebas de Requerimientos](#pruebas-de-requerimientos-del-sistema)
 8. [Diagramas](#diagramas)
+9. [Demo en linea](#demo-en-línea)
+10. [Capturas de Pantalla](#capturas-de-pantalla)
+11. [Organización del Proyecto](#organización-del-proyecto)
 
 ---
 
@@ -110,3 +113,37 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 ![](public/Diagrama_Barberia-Casos%20de%20Uso.jpg)
 ### Diagrama de Clases
 ![](public/Diagrama_Barberia-Clases.jpg)
+
+---
+
+## Demo en Línea
+El sistema se encuentra hosteado y disponible de forma pública para pruebas:
+
+🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
+🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html]([https://barberia-api.railway.app](https://mateo-404.github.io/Barberia/admin/login.html)) *(El usuario es *admin@admin.com* y la contraseña *admin*)*  
+
+👉 Nota: el despliegue se realiza directamente desde las ramas:  
+- `frontend` → para GitHub Pages.  
+- `backend` → para Railway u otro servicio de hosting del API.  
+
+---
+
+## Capturas de Pantalla
+
+### 1. Reserva de Turno (Cliente)
+![Reserva de turno](public/screenshots/reserva_turno.png)
+
+### 2. Panel de Administración
+![Panel de administración](public/screenshots/panel_admin.png)
+
+### 3. Estadísticas
+![Estadísticas](public/screenshots/estadisticas.png)
+
+---
+
+## Organización del Proyecto
+
+- **Repositorio en GitHub:** [Barberia](https://github.com/Mateo-404/Barberia)  
+- **Tablero de Tareas:** [GitHub Projects](https://github.com/users/Mateo-404/projects/9)  
+
+---
