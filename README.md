@@ -145,5 +145,3 @@ El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 
 - **Repositorio en GitHub:** [Barberia](https://github.com/Mateo-404/Barberia)  
 - **Tablero de Tareas:** [GitHub Projects](https://github.com/users/Mateo-404/projects/9)  
-
----
