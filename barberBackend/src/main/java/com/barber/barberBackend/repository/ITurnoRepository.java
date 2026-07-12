@@ -15,7 +15,7 @@ import com.barber.barberBackend.model.Turno;
 
 @Repository
 public interface ITurnoRepository extends GenericRepository<Turno, Long> {
-     @Query("SELECT COUNT(t) FROM Turno t WHERE DATE(t.fechaHora) = DATE(:fecha)")
+     @Query("SELECT COUNT(t) FROM Turno t WHERE CAST(t.fechaHora AS date) = CAST(:fecha AS date)")
      int countByFecha(@Param("fecha") LocalDateTime fecha);
      @Query("""
      SELECT COALESCE(SUM(s.precio), 0)
