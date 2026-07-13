@@ -3,7 +3,6 @@ package com.barber.barberBackend.generics;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,8 +17,11 @@ import java.util.Set;
 
 @Transactional
 public abstract class GenericService<T, ID extends Serializable, R extends GenericRepository<T, ID>> implements IGenericService<T, ID> {
-    @Autowired
-    private R repository;
+    protected final R repository;
+
+    public GenericService(R repository) {
+        this.repository = repository;
+    }
 
     public void save(T entity) {
         repository.save(entity);

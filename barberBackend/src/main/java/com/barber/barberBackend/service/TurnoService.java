@@ -14,11 +14,12 @@ import com.barber.barberBackend.repository.ITurnoRepository;
 @Service
 public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> implements ITurnoService {
 
-    private final ITurnoRepository repository;
+    private final ITurnoRepository turnoRepository;
     private final IClienteRepository clienteRepository;
 
     public TurnoService(ITurnoRepository repository, IClienteRepository clienteRepository) {
-        this.repository = repository;
+        super(repository);
+        this.turnoRepository = repository;
         this.clienteRepository = clienteRepository;
     }
 
@@ -34,7 +35,7 @@ public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> 
             // Validamos que la fecha y hora del turno sea válida
             validateDateTime(entity.getFechaHora());
             // Validamos que el turno no esté dado a otro cliente
-            boolean turnoExists = repository.findDateTimes(entity.getFechaHora())
+            boolean turnoExists = turnoRepository.findDateTimes(entity.getFechaHora())
                                             .stream()
                                             .anyMatch(fechaHora -> fechaHora.equals(entity.getFechaHora()));
             if (turnoExists) {throw new IllegalArgumentException("Ya existe un turno para la fecha y hora especificada. Fecha y hora: " + entity.getFechaHora());}
@@ -91,7 +92,7 @@ public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> 
     public List<LocalDateTime> findDateTimes() {
         try {
             LocalDateTime ahora = LocalDateTime.now();
-            List<LocalDateTime> turnos = repository.findDateTimes(ahora);
+            List<LocalDateTime> turnos = turnoRepository.findDateTimes(ahora);
             
             return turnos;
         } catch (Exception e) {

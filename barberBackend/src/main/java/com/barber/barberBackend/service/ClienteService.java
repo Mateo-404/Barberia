@@ -9,4 +9,7 @@ import com.barber.barberBackend.repository.IClienteRepository;
 @Service
 public class ClienteService extends GenericService<Cliente, String, IClienteRepository> implements IClienteService {
 
+    public ClienteService(IClienteRepository repository) {
+        super(repository);
+    }
 }

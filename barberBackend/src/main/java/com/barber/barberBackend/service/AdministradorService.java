@@ -11,11 +11,12 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 public class AdministradorService extends GenericService<Administrador, Long, IAdministradorRepository> implements IAdministradorService {
 
     private final Argon2PasswordEncoder passwordEncoder;
-    private final IAdministradorRepository repository;
+    private final IAdministradorRepository adminRepository;
 
     public AdministradorService(Argon2PasswordEncoder passwordEncoder, IAdministradorRepository repository) {
+        super(repository);
         this.passwordEncoder = passwordEncoder;
-        this.repository = repository;
+        this.adminRepository = repository;
     }
 
     @Override
@@ -30,7 +31,7 @@ public class AdministradorService extends GenericService<Administrador, Long, IA
             throw new IllegalArgumentException("El email y la contraseña no pueden ser nulos");
         }
 
-        Administrador administrador = repository.findByEmail(email);
+        Administrador administrador = adminRepository.findByEmail(email);
 
         if (administrador == null || !passwordEncoder.matches(contrasenia, administrador.getContrasenia())) {
             throw new IllegalArgumentException("Credenciales inválidas");

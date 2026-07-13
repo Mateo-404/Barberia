@@ -8,4 +8,8 @@ import com.barber.barberBackend.repository.IServicioRepository;
 
 @Service
 public class ServicioService extends GenericService<Servicio, Long, IServicioRepository> implements IServicioService {
+
+    public ServicioService(IServicioRepository repository) {
+        super(repository);
+    }
 }
