@@ -61,9 +61,9 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
         @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<T> create(@RequestBody T entity) {
-        service.save(entity);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<DTO> create(@RequestBody T entity) {
+        T saved = service.save(entity);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
     }
 
     @Operation(summary = "Crear múltiples registros")
@@ -72,9 +72,11 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
         @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
     })
     @PostMapping("/all")
-    public ResponseEntity<List<T>> createAll(@RequestBody List<T> entities) {
-        service.saveAll(entities);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<List<DTO>> createAll(@RequestBody List<T> entities) {
+        List<T> saved = service.saveAll(entities);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            saved.stream().map(this::toDTO).toList()
+        );
     }
 
     @Operation(summary = "Actualizar parcialmente un registro por ID")

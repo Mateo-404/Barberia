@@ -20,9 +20,9 @@ public class AdministradorService extends GenericService<Administrador, Long, IA
     }
 
     @Override
-    public void save(Administrador admin) {
+    public Administrador save(Administrador admin) {
         admin.setContrasenia(passwordEncoder.encode(admin.getContrasenia()));
-        super.save(admin);
+        return super.save(admin);
     }
 
     @Override

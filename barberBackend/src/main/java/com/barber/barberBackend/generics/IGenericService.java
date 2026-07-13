@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface IGenericService<T, ID extends Serializable> {
     // Create
-    void save(T entity);
+    T save(T entity);
     List<T> saveAll(List<T> entities);
     // Read
     List<T> findAll();

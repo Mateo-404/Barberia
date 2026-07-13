@@ -24,7 +24,7 @@ public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> 
     }
 
     @Override
-    public void save(Turno entity) {
+    public Turno save(Turno entity) {
         try {
             Cliente cliente = entity.getCliente();
             
@@ -63,7 +63,7 @@ public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> 
                 entity.setCliente(cliente);
             }
             
-            repository.save(entity);
+            return repository.save(entity);
 
         } catch (Exception e) {
             throw new RuntimeException("Error al guardar el turno: " + e.getMessage(), e);
