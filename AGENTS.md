@@ -43,9 +43,44 @@ Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no
 - The `public/` directory at root contains diagrams and screenshots only — not served by any server.
 - No CI, no linter, no formatter config.
 
-## Commits
+## Flujo de ramas
+- main: SOLO recibe código estable, ya probado. NUNCA se commitea
+  directo a main durante desarrollo activo.
+- backend / frontend: ramas de trabajo activo para cada área. Todo
+  desarrollo (fases, fixes, features) va acá primero.
+- Sync a main: solo cuando el trabajo está confirmado como estable,
+  vía comando explícito aprobado por el usuario, sincronizando SOLO
+  la carpeta correspondiente (barberBackend/ o frontend/), nunca un
+  merge completo de rama.
 
-Commits MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-`<type>: <description>`
+## Convenciones de commit
+- Conventional Commits obligatorio: <type>: <description>
+  Tipos permitidos: feat, fix, ci, refactor, test, docs, chore
+- Mensajes en español, consistente con el resto del proyecto
 
-Allowed types: `feat`, `fix`, `ci`, `refactor`, `test`, `docs`, `chore`.
+## Principio de dependencias
+- Preferir librerías estándar y mantenidas activamente sobre código
+  custom, SIEMPRE que resuelvan un problema genérico (seguridad,
+  validación, serialización, mapeo, manejo de errores).
+- Ejemplos ya aplicados: spring-security-crypto (Argon2), Bean
+  Validation (Jakarta), ProblemDetail nativo de Spring (RFC 7807)
+  en vez de formato de error custom.
+- NO aplica a lógica de negocio específica del dominio (reglas de
+  horario de turnos, validaciones de la barbería) — eso siempre
+  queda en código propio.
+- Antes de escribir una utilidad o mapper a mano, evaluar si existe
+  una librería estándar del ecosistema Spring que ya resuelva el
+  problema (ej: MapStruct para mapeo DTO↔Entity en vez de mappers
+  manuales).
+
+## Proceso de trabajo por fases
+- Cada fase se planea antes de implementar, mostrando diseño +
+  archivos afectados + impacto en tests existentes, ANTES de
+  escribir código.
+- Cambios que afecten firmas de métodos existentes requieren
+  verificar tests que dependan de la firma/mensaje actual, con
+  evidencia real (mostrar el archivo, no asumir).
+- Build completo (./mvnw clean package) + resultado de los 33 tests
+  se muestra después de cada fase, no solo al final de una sesión.
+- No se avanza a la siguiente fase sin confirmación explícita del
+  usuario.
