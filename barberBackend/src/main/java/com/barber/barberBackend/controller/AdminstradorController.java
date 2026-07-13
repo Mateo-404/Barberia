@@ -11,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.barber.barberBackend.dto.AdministradorResponseDTO;
 import com.barber.barberBackend.generics.GenericController;
 import com.barber.barberBackend.model.Administrador;
+import com.barber.barberBackend.service.AdministradorMapper;
 import com.barber.barberBackend.service.AdministradorService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +22,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/administradores")
 @Tag(name = "Administradores", description = "Gestión de administradores")
-public class AdminstradorController extends GenericController<Administrador, Long, AdministradorService> {
+public class AdminstradorController extends GenericController<Administrador, AdministradorResponseDTO, Long, AdministradorService> {
     private final AdministradorService service;
+    private final AdministradorMapper mapper;
 
-    public AdminstradorController(AdministradorService service) {
+    public AdminstradorController(AdministradorService service, AdministradorMapper mapper) {
         this.service = service;
+        this.mapper = mapper;
+    }
+
+    @Override
+    protected AdministradorResponseDTO toDTO(Administrador entity) {
+        return mapper.toResponseDTO(entity);
     }
 
     @Operation(summary = "Iniciar sesión", description = "Autentica un administrador por email y contraseña")
@@ -36,7 +45,7 @@ public class AdminstradorController extends GenericController<Administrador, Lon
     public ResponseEntity<?> login(@RequestBody Administrador request) {
         try {
             Administrador admin = service.login(request.getEmail(), request.getContrasenia());
-            return ResponseEntity.ok(admin);
+            return ResponseEntity.ok(mapper.toResponseDTO(admin));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }

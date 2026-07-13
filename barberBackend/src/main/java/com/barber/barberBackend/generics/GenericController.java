@@ -14,15 +14,19 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
-public abstract class GenericController<T, ID extends Serializable, S extends IGenericService<T, ID>> {
+public abstract class GenericController<T, DTO, ID extends Serializable, S extends IGenericService<T, ID>> {
     @Autowired
     private S service;
+
+    protected abstract DTO toDTO(T entity);
 
     @Operation(summary = "Obtener todos los registros")
     @ApiResponse(responseCode = "200", description = "Lista de registros")
     @GetMapping
-    public ResponseEntity<List<T>> getAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<DTO>> getAll() {
+        return ResponseEntity.ok(
+            service.findAll().stream().map(this::toDTO).toList()
+        );
     }
 
     @Operation(summary = "Obtener un registro por ID")

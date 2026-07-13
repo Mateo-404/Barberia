@@ -12,5 +12,11 @@ import com.barber.barberBackend.service.ClienteService;
 @RestController
 @RequestMapping("/clientes")
 @Tag(name = "Clientes", description = "Gestión de clientes")
-public class ClienteController extends GenericController<Cliente, String, ClienteService> {
+public class ClienteController extends GenericController<Cliente, Cliente, String, ClienteService> {
+
+    @Override
+    protected Cliente toDTO(Cliente entity) {
+        // FIXME: temporal — DTO = T pass-through until Cliente has its own DTO
+        return entity;
+    }
 }

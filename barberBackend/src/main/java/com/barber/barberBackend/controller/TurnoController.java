@@ -19,11 +19,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RestController
 @RequestMapping("/turnos")
 @Tag(name = "Turnos", description = "Gestión de turnos")
-public class TurnoController extends GenericController<Turno, Long, TurnoService> {
+public class TurnoController extends GenericController<Turno, Turno, Long, TurnoService> {
     private final TurnoService service;
 
     public TurnoController(TurnoService service) {
         this.service = service;
+    }
+
+    @Override
+    protected Turno toDTO(Turno entity) {
+        // FIXME: temporal — DTO = T pass-through until Turno has its own DTO
+        return entity;
     }
 
     @Operation(summary = "Obtener fechas y horas ocupadas", description = "Devuelve una lista con las fechas y horas que ya tienen turno asignado")
