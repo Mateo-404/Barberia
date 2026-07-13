@@ -42,3 +42,10 @@ Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no
 - `.gitignore` at repo root combines rules for both Java/Maven and IDE artifacts.
 - The `public/` directory at root contains diagrams and screenshots only — not served by any server.
 - No CI, no linter, no formatter config.
+
+## Commits
+
+Commits MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+`<type>: <description>`
+
+Allowed types: `feat`, `fix`, `ci`, `refactor`, `test`, `docs`, `chore`.
