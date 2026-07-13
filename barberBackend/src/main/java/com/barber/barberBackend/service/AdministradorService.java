@@ -1,6 +1,5 @@
 package com.barber.barberBackend.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.barber.barberBackend.generics.GenericService;
@@ -12,13 +11,12 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 public class AdministradorService extends GenericService<Administrador, Long, IAdministradorRepository> implements IAdministradorService {
 
     private final Argon2PasswordEncoder passwordEncoder;
+    private final IAdministradorRepository repository;
 
-    public AdministradorService(Argon2PasswordEncoder passwordEncoder) {
+    public AdministradorService(Argon2PasswordEncoder passwordEncoder, IAdministradorRepository repository) {
         this.passwordEncoder = passwordEncoder;
+        this.repository = repository;
     }
-
-    @Autowired
-    private IAdministradorRepository repository;
 
     @Override
     public void save(Administrador admin) {

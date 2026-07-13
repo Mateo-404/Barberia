@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +21,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/administradores")
 @Tag(name = "Administradores", description = "Gestión de administradores")
 public class AdminstradorController extends GenericController<Administrador, Long, AdministradorService> {
-    @Autowired
-    private AdministradorService service;
+    private final AdministradorService service;
+
+    public AdminstradorController(AdministradorService service) {
+        this.service = service;
+    }
 
     @Operation(summary = "Iniciar sesión", description = "Autentica un administrador por email y contraseña")
     @ApiResponses({

@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.barber.barberBackend.generics.GenericService;
@@ -15,11 +14,13 @@ import com.barber.barberBackend.repository.ITurnoRepository;
 @Service
 public class TurnoService extends GenericService<Turno, Long, ITurnoRepository> implements ITurnoService {
 
-    @Autowired
-    ITurnoRepository repository;
+    private final ITurnoRepository repository;
+    private final IClienteRepository clienteRepository;
 
-    @Autowired
-    IClienteRepository clienteRepository;
+    public TurnoService(ITurnoRepository repository, IClienteRepository clienteRepository) {
+        this.repository = repository;
+        this.clienteRepository = clienteRepository;
+    }
 
     @Override
     public void save(Turno entity) {

@@ -2,14 +2,12 @@ package com.barber.barberBackend.service;
 
 import com.barber.barberBackend.model.Administrador;
 import com.barber.barberBackend.repository.IAdministradorRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
-
-import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -24,15 +22,8 @@ class AdministradorServiceTest {
     @Mock
     private Argon2PasswordEncoder passwordEncoder;
 
+    @InjectMocks
     private AdministradorService service;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        service = new AdministradorService(passwordEncoder);
-        Field repoField = AdministradorService.class.getDeclaredField("repository");
-        repoField.setAccessible(true);
-        repoField.set(service, repository);
-    }
 
     @Test
     void login_whenCredentialsMatch_returnsAdmin() {
