@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.barber.barberBackend.dto.ClienteFrecuenteDTO;
+
+import lombok.extern.slf4j.Slf4j;
 import com.barber.barberBackend.dto.HorarioEstadisticaDTO;
 import com.barber.barberBackend.dto.IngresoDiarioDTO;
 import com.barber.barberBackend.dto.PanelEstadisticaDTO;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
     private final ITurnoRepository turnoRepository;
     private final IClienteRepository clienteRepository;
@@ -95,7 +98,7 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                 //clientesFrecuentes
             );            
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error al obtener panel de estadísticas", e);
             return null;
         }
     }

@@ -1,6 +1,7 @@
 package com.barber.barberBackend.controller;
 
 import com.barber.barberBackend.dto.AdministradorResponseDTO;
+import com.barber.barberBackend.exception.InvalidCredentialsException;
 import com.barber.barberBackend.model.Administrador;
 import com.barber.barberBackend.service.AdministradorMapper;
 import com.barber.barberBackend.service.AdministradorService;
@@ -47,7 +48,7 @@ class AdminstradorControllerTest {
     @Test
     void login_withInvalidCredentials_returnsUnauthorized() throws Exception {
         when(administradorService.login(anyString(), anyString()))
-                .thenThrow(new IllegalArgumentException("Credenciales inválidas"));
+                .thenThrow(new InvalidCredentialsException("Credenciales inválidas"));
 
         mockMvc.perform(post("/administradores/login")
                         .contentType(MediaType.APPLICATION_JSON)

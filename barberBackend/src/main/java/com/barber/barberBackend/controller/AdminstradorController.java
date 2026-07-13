@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,12 +41,8 @@ public class AdminstradorController extends GenericController<Administrador, Adm
         @ApiResponse(responseCode = "401", description = "Credenciales inválidas", content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Administrador request) {
-        try {
-            Administrador admin = service.login(request.getEmail(), request.getContrasenia());
-            return ResponseEntity.ok(mapper.toResponseDTO(admin));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
-        }
+    public ResponseEntity<AdministradorResponseDTO> login(@RequestBody Administrador request) {
+        Administrador admin = service.login(request.getEmail(), request.getContrasenia());
+        return ResponseEntity.ok(mapper.toResponseDTO(admin));
     }
 }
