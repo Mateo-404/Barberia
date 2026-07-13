@@ -49,3 +49,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Environment files (secrets)
+.env
+.env.local
+.env.production
