@@ -6,12 +6,12 @@ Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no
 
 | Directory | Tech | Entrypoint |
 |---|---|---|
-| `barberBackend/` | Spring Boot 3.4, Java 21, Maven, JPA, PostgreSQL | `BarberBackendApplication.java` |
+| `backend/` | Spring Boot 3.4, Java 21, Maven, JPA, PostgreSQL | `BarberBackendApplication.java` |
 | `frontend/` | Vanilla HTML/CSS/JS (ES modules), Bootstrap 5 | `index.html` (client), `admin/login.html` (admin) |
 
 ## Backend
 
-- **Build & run:** `./mvnw spring-boot:run` (from `barberBackend/`)
+- **Build & run:** `./mvnw spring-boot:run` (from `backend/`)
 - **Test:** `./mvnw test` (single test class, context-loads only)
 - **Port:** 8080 (default Spring Boot)
 - **DB:** PostgreSQL at `localhost:5432/barber` (user/pass: `postgres`/`postgres`). H2 also on classpath as runtime dep.
@@ -50,7 +50,7 @@ Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no
   desarrollo (fases, fixes, features) va acá primero.
 - Sync a main: solo cuando el trabajo está confirmado como estable,
   vía comando explícito aprobado por el usuario, sincronizando SOLO
-  la carpeta correspondiente (barberBackend/ o frontend/), nunca un
+  la carpeta correspondiente (backend/ o frontend/), nunca un
   merge completo de rama.
 
 ## Convenciones de commit

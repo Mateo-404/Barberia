@@ -1,0 +1,29 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, backend]
+    paths: ['backend/**']
+  pull_request:
+    branches: [main, backend]
+    paths: ['backend/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build & Test
+        run: ./mvnw -B clean package
