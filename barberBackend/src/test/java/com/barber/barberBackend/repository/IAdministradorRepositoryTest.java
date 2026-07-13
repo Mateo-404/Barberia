@@ -19,7 +19,7 @@ class IAdministradorRepositoryTest {
     private IAdministradorRepository repository;
 
     @Test
-    void findByEmailAndContrasenia_whenExists_returnsAdmin() {
+    void findByEmail_whenExists_returnsAdmin() {
         Administrador admin = new Administrador();
         admin.setNombre("Admin");
         admin.setApellido("Test");
@@ -27,15 +27,15 @@ class IAdministradorRepositoryTest {
         admin.setContrasenia("pass123");
         repository.save(admin);
 
-        Administrador found = repository.findByEmailAndContrasenia("admin@test.com", "pass123");
+        Administrador found = repository.findByEmail("admin@test.com");
 
         assertNotNull(found);
         assertEquals("admin@test.com", found.getEmail());
     }
 
     @Test
-    void findByEmailAndContrasenia_whenNotFound_returnsNull() {
-        Administrador found = repository.findByEmailAndContrasenia("noexiste@test.com", "pass");
+    void findByEmail_whenNotFound_returnsNull() {
+        Administrador found = repository.findByEmail("noexiste@test.com");
 
         assertNull(found);
     }

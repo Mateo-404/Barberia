@@ -2,11 +2,14 @@ package com.barber.barberBackend.service;
 
 import com.barber.barberBackend.model.Administrador;
 import com.barber.barberBackend.repository.IAdministradorRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+
+import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -18,14 +21,25 @@ class AdministradorServiceTest {
     @Mock
     private IAdministradorRepository repository;
 
-    @InjectMocks
+    @Mock
+    private Argon2PasswordEncoder passwordEncoder;
+
     private AdministradorService service;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        service = new AdministradorService(passwordEncoder);
+        Field repoField = AdministradorService.class.getDeclaredField("repository");
+        repoField.setAccessible(true);
+        repoField.set(service, repository);
+    }
 
     @Test
     void login_whenCredentialsMatch_returnsAdmin() {
-        Administrador admin = new Administrador(1L, "pass123");
+        Administrador admin = new Administrador(1L, "argon2hash");
         admin.setEmail("admin@test.com");
-        when(repository.findByEmailAndContrasenia("admin@test.com", "pass123")).thenReturn(admin);
+        when(repository.findByEmail("admin@test.com")).thenReturn(admin);
+        when(passwordEncoder.matches("pass123", "argon2hash")).thenReturn(true);
 
         Administrador result = service.login("admin@test.com", "pass123");
 
@@ -49,7 +63,7 @@ class AdministradorServiceTest {
 
     @Test
     void login_whenNoMatch_throwsException() {
-        when(repository.findByEmailAndContrasenia(anyString(), anyString())).thenReturn(null);
+        when(repository.findByEmail(anyString())).thenReturn(null);
 
         Exception e = assertThrows(RuntimeException.class,
                 () -> service.login("wrong@test.com", "wrong"));
