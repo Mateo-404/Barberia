@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.barber.barberBackend.dto.ClienteFrecuenteDTO;
 import com.barber.barberBackend.dto.HorarioEstadisticaDTO;
 import com.barber.barberBackend.dto.ServicioEstadisticaDTO;
 import com.barber.barberBackend.generics.GenericRepository;
@@ -73,26 +72,6 @@ public interface ITurnoRepository extends GenericRepository<Turno, Long> {
           ORDER BY EXTRACT(HOUR FROM t.fechaHora)
      """)
      List<HorarioEstadisticaDTO> countTurnosByHorario(@Param("desde") LocalDateTime desde);
-
-
-     //! Error: El psql se pone quisquilloso
-     /*
-      * 
-      @Query("""
-      SELECT new com.barber.barberBackend.dto.ClienteFrecuenteDTO(
-           c.id,
-           c.nombre,
-           c.apellido,
-           CAST(COUNT(t) AS long)
-      )
-      FROM Turno t
-      JOIN t.cliente c
-      WHERE t.fechaHora >= :desde
-      GROUP BY c.id, c.nombre, c.apellido
-      ORDER BY COUNT(t) DESC
-      """)
-      List<ClienteFrecuenteDTO> findClientesFrecuentes(@Param("desde") LocalDateTime desde);
-      */
 
 
 

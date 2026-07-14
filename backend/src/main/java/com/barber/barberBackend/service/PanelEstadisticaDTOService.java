@@ -6,8 +6,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.barber.barberBackend.dto.ClienteFrecuenteDTO;
-
 import lombok.extern.slf4j.Slf4j;
 import com.barber.barberBackend.dto.HorarioEstadisticaDTO;
 import com.barber.barberBackend.dto.IngresoDiarioDTO;
@@ -69,23 +67,6 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                  fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
              );
 
-            //! El psql se pone quisquilloso
-            /*
-             * 
-             List<ClienteFrecuenteDTO> clientesFrecuentes = new ArrayList<>();
-             clientesFrecuentes = turnoRepository.findClientesFrecuentes(
-                 //Año actual
-                 fechaActual.withYear(fechaActual.getYear()).withMonth(1).withDayOfMonth(1)
-             );
-             */
-
-             /*
-              * 
-              if (ingresosDiarios == null || servicios == null || horarios == null) {
-                  throw new IllegalStateException("ERROR: Algun valor de los atributos es nulo");
-              }
-              */
-
             return new PanelEstadisticaDTO(
                 turnosHoy,
                 turnosAyer,
@@ -95,8 +76,7 @@ public class PanelEstadisticaDTOService implements IPanelEstadisticaDTO {
                 ingresosDiarios,
                 servicios,
                 horarios
-                //clientesFrecuentes
-            );            
+            );
         } catch (Exception e) {
             log.error("Error al obtener panel de estadísticas", e);
             return null;
