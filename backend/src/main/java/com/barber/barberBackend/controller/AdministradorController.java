@@ -29,12 +29,12 @@ import com.barber.barberBackend.service.AdministradorService;
 @RestController
 @RequestMapping("/administradores")
 @Tag(name = "Administradores", description = "Gestión de administradores")
-public class AdminstradorController extends GenericController<Administrador, AdministradorResponseDTO, Long, AdministradorService> {
+public class AdministradorController extends GenericController<Administrador, AdministradorResponseDTO, Long, AdministradorService> {
     private final AdministradorService service;
     private final AdministradorMapper mapper;
     private final IAdministradorRepository adminRepository;
 
-    public AdminstradorController(AdministradorService service, AdministradorMapper mapper, IAdministradorRepository adminRepository) {
+    public AdministradorController(AdministradorService service, AdministradorMapper mapper, IAdministradorRepository adminRepository) {
         this.service = service;
         this.mapper = mapper;
         this.adminRepository = adminRepository;

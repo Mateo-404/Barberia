@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AdminstradorController.class)
+@WebMvcTest(AdministradorController.class)
 @ActiveProfiles("test")
-class AdminstradorControllerTest {
+class AdministradorControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
