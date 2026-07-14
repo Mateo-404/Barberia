@@ -8,4 +8,6 @@ import com.barber.barberBackend.model.Administrador;
 public interface IAdministradorRepository extends GenericRepository<Administrador, Long> {
     // Login
     Administrador findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }
