@@ -1,5 +1,7 @@
 package com.barber.barberBackend.controller;
 
+import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.AdministradorRequestDTO;
 import com.barber.barberBackend.dto.AdministradorResponseDTO;
 import com.barber.barberBackend.exception.InvalidCredentialsException;
@@ -11,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdministradorController.class)
+@Import(SecurityConfig.class)
 @ActiveProfiles("test")
 class AdministradorControllerTest {
 
@@ -37,7 +42,11 @@ class AdministradorControllerTest {
     @MockBean
     private IAdministradorRepository administradorRepository;
 
+    @MockBean
+    private JwtService jwtService;
+
     @Test
+    @WithMockUser
     void create_withValidData_returns201() throws Exception {
         AdministradorRequestDTO request = new AdministradorRequestDTO("Carlos", "López", "carlos@email.com", "pass1234");
         Administrador entity = new Administrador();
@@ -70,6 +79,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankNombre_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,6 +90,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankApellido_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,6 +101,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankEmail_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,6 +112,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withInvalidEmail_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,6 +123,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankContrasenia_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -120,6 +134,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withShortContrasenia_returns400() throws Exception {
         mockMvc.perform(post("/administradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -130,6 +145,7 @@ class AdministradorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withDuplicateEmail_returns409() throws Exception {
         when(administradorRepository.existsByEmail("carlos@email.com")).thenReturn(true);
 
@@ -145,10 +161,13 @@ class AdministradorControllerTest {
     @Test
     void login_withValidCredentials_returnsOk() throws Exception {
         Administrador admin = new Administrador(1L, "pass1234");
+        admin.setNombre("Admin");
+        admin.setApellido("Test");
         admin.setEmail("admin@test.com");
         when(administradorService.login("admin@test.com", "pass1234")).thenReturn(admin);
+        when(jwtService.generateToken(admin)).thenReturn("test-jwt-token");
         when(administradorMapper.toResponseDTO(admin)).thenReturn(
-            new AdministradorResponseDTO(1L, admin.getNombre(), admin.getApellido(), admin.getEmail()));
+            new AdministradorResponseDTO(1L, "Admin", "Test", "admin@test.com"));
 
         mockMvc.perform(post("/administradores/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,6 +183,14 @@ class AdministradorControllerTest {
         mockMvc.perform(post("/administradores/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"wrong@test.com\",\"contrasenia\":\"wrongpass\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void create_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(post("/administradores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Carlos\",\"apellido\":\"López\",\"email\":\"carlos@email.com\",\"contrasenia\":\"pass1234\"}"))
                 .andExpect(status().isUnauthorized());
     }
 }

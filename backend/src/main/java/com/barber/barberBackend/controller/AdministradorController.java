@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.barber.barberBackend.auth.JwtService;
 import com.barber.barberBackend.dto.AdministradorRequestDTO;
 import com.barber.barberBackend.dto.AdministradorResponseDTO;
 import com.barber.barberBackend.dto.LoginRequestDTO;
+import com.barber.barberBackend.dto.LoginResponseDTO;
 import com.barber.barberBackend.exception.ResourceAlreadyExistsException;
 import com.barber.barberBackend.generics.GenericController;
 import com.barber.barberBackend.model.Administrador;
@@ -36,11 +38,13 @@ public class AdministradorController extends GenericController<Administrador, Ad
     private final AdministradorService service;
     private final AdministradorMapper mapper;
     private final IAdministradorRepository adminRepository;
+    private final JwtService jwtService;
 
-    public AdministradorController(AdministradorService service, AdministradorMapper mapper, IAdministradorRepository adminRepository) {
+    public AdministradorController(AdministradorService service, AdministradorMapper mapper, IAdministradorRepository adminRepository, JwtService jwtService) {
         this.service = service;
         this.mapper = mapper;
         this.adminRepository = adminRepository;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -86,14 +90,17 @@ public class AdministradorController extends GenericController<Administrador, Ad
         );
     }
 
-    @Operation(summary = "Iniciar sesión", description = "Autentica un administrador por email y contraseña")
+    @Operation(summary = "Iniciar sesión", description = "Autentica un administrador por email y contraseña, devuelve JWT")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Inicio de sesión exitoso"),
         @ApiResponse(responseCode = "401", description = "Credenciales inválidas", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PostMapping("/login")
-    public ResponseEntity<AdministradorResponseDTO> login(@RequestBody @Valid LoginRequestDTO request) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO request) {
         Administrador admin = service.login(request.email(), request.contrasenia());
-        return ResponseEntity.ok(mapper.toResponseDTO(admin));
+        String token = jwtService.generateToken(admin);
+        AdministradorResponseDTO dto = mapper.toResponseDTO(admin);
+        return ResponseEntity.ok(new LoginResponseDTO(
+                dto.id(), dto.nombre(), dto.apellido(), dto.email(), token));
     }
 }
