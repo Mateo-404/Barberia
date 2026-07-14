@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel - Gestión de Turnos | TH Barber Club</title>
+  <link rel="icon" href="../img/logo.svg" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <!-- Navbar -->
+    <nav class="navbar d-flex justify-content-between align-items-center px-4 mb-4" style="height: 10vh;">
+      <div class="d-flex align-items-center">
+        <a href="./panel-estadisticas.html" class="me-4">
+          <img src="../img/flecha.svg" alt="Estadísticas" style="height: 4vh" title="Ver Estadísticas">
+        </a>
+        <h5 class="mb-0 text-white">Gestión de Turnos</h5>
+      </div>
+      <div class="mx-auto">
+        <a href="../index.html">
+          <img src="../img/logo.svg" alt="TH Barber Club" style="height: 8vh; cursor: pointer;">
+        </a>
+      </div>
+      <div class="d-flex align-items-center">
+        <button class="btn btn-outline-success btn-sm me-2" onclick="window.turnosManager?.refreshData()" title="Actualizar datos">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-outline-info btn-sm me-2" onclick="window.turnosManager?.exportToCSV()" title="Exportar CSV">
+          <i class="bi bi-download"></i>
+        </button>
+        <a href="https://instagram.com" target="_blank" class="ms-2">
+          <img src="../img/icono-instagram.svg" alt="Instagram" style="height: 4vh">
+        </a>
+      </div>
+    </nav>
+
+    <!-- Indicador de estado de conexión -->
+    <div id="connection-status" class="alert alert-info d-none" role="alert">
+      <i class="bi bi-wifi-off me-2"></i>
+      Trabajando sin conexión - Los datos se sincronizarán automáticamente
+    </div>
+
+    <!-- Controles de vista -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-primario active" id="btn-lista" onclick="cambiarVista('lista')">
+            <i class="bi bi-list-ul me-1"></i> Lista
+          </button>
+          <button type="button" class="btn btn-secundario" id="btn-calendario" onclick="cambiarVista('calendario')">
+            <i class="bi bi-calendar3 me-1"></i> Calendario
+          </button>
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <div class="input-group" style="max-width: 300px; margin-left: auto;">
+          <input type="text" class="form-control" id="buscar-turno" placeholder="Buscar por cliente o teléfono...">
+          <button class="btn btn-secundario" type="button">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen estadístico rápido -->
+    <div class="row mb-4" id="stats-summary">
+      <div class="col-md-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body text-center">
+            <h5 class="card-title" id="stats-total">0</h5>
+            <p class="card-text">Total Turnos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success text-white">
+          <div class="card-body text-center">
+            <h5 class="card-title" id="stats-confirmados">0</h5>
+            <p class="card-text">Confirmados</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+          <div class="card-body text-center">
+            <h5 class="card-title" id="stats-pendientes">0</h5>
+            <p class="card-text">Pendientes</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-info text-white">
+          <div class="card-body text-center">
+            <h5 class="card-title" id="stats-ingresos">$0</h5>
+            <p class="card-text">Ingresos Hoy</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-body py-3">
+            <div class="row align-items-center">
+              <div class="col-md-2">
+                <select class="form-select" id="filtro-fecha">
+                  <option value="hoy">Hoy</option>
+                  <option value="manana">Mañana</option>
+                  <option value="semana">Esta Semana</option>
+                  <option value="mes">Este Mes</option>
+                  <option value="todos" selected>Todos</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select" id="filtro-estado">
+                  <option value="todos" selected>Todos los estados</option>
+                  <option value="confirmado">Confirmados</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="cancelado">Cancelados</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select" id="filtro-servicio">
+                  <option value="todos" selected>Todos los servicios</option>
+                  <option value="corte">Corte de pelo</option>
+                  <option value="tintura">Tintura</option>
+                  <option value="barba">Perfilado de barba</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <input type="date" class="form-control" id="filtro-fecha-desde" placeholder="Desde">
+              </div>
+              <div class="col-md-2">
+                <input type="date" class="form-control" id="filtro-fecha-hasta" placeholder="Hasta">
+              </div>
+              <div class="col-md-2">
+                <button class="btn btn-secundario w-100" onclick="limpiarFiltros()">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Lista -->
+    <div id="vista-lista" class="vista-activa">
+      <div class="card">
+        <div class="card-header bg-transparent border-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Historial de Turnos</h5>
+            <div>
+              <span class="badge" style="background-color: #ff6600;" id="total-turnos">0 turnos</span>
+              <button class="btn btn-sm btn-outline-primary ms-2" onclick="toggleAdvancedFilters()">
+                <i class="bi bi-funnel"></i> Filtros Avanzados
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros avanzados (ocultos por defecto) -->
+        <div id="advanced-filters" class="card-header bg-transparent border-0 d-none">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Precio mínimo</label>
+              <input type="number" class="form-control" id="filtro-precio-min" placeholder="0">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Precio máximo</label>
+              <input type="number" class="form-control" id="filtro-precio-max" placeholder="10000">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Cliente</label>
+              <input type="text" class="form-control" id="filtro-cliente" placeholder="Nombre del cliente">
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary mt-4" onclick="applyAdvancedFilters()">
+                <i class="bi bi-search"></i> Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+              <thead>
+                <tr>
+                  <th style="cursor: pointer;" onclick="sortTable('fecha')">
+                    Fecha <i class="bi bi-arrow-up-down"></i>
+                  </th>
+                  <th style="cursor: pointer;" onclick="sortTable('hora')">
+                    Hora <i class="bi bi-arrow-up-down"></i>
+                  </th>
+                  <th style="cursor: pointer;" onclick="sortTable('cliente')">
+                    Cliente <i class="bi bi-arrow-up-down"></i>
+                  </th>
+                  <th>Servicio</th>
+                  <th>Estado</th>
+                  <th style="cursor: pointer;" onclick="sortTable('precio')">
+                    Precio <i class="bi bi-arrow-up-down"></i>
+                  </th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-turnos">
+                <!-- Se llenará dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Paginación -->
+        <div class="card-footer bg-transparent">
+          <nav aria-label="Paginación de turnos">
+            <ul class="pagination justify-content-center mb-0" id="pagination">
+              <!-- Se generará dinámicamente -->
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Calendario -->
+    <div id="vista-calendario" class="vista-oculta">
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card card-hover">
+            <div class="card-header bg-transparent border-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Calendario de Turnos</h5>
+                <div class="d-flex align-items-center">
+                  <button class="btn btn-sm btn-secondary me-2" onclick="navegarMes(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <span id="mes-actual" class="me-2">Agosto 2025</span>
+                  <button class="btn btn-sm btn-secondary me-2" onclick="navegarMes(1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-info" onclick="goToToday()">
+                    <i class="bi bi-calendar-check"></i> Hoy
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="calendario-container">
+                <!-- Calendario se genera dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4">
+          <div class="card card-hover">
+            <div class="card-header bg-transparent border-0">
+              <h5 class="mb-0">Turnos del Día</h5>
+              <small class="text-muted" id="fecha-seleccionada">Selecciona una fecha</small>
+            </div>
+            <div class="card-body">
+              <div id="turnos-dia">
+                <p class="text-muted text-center">Selecciona un día en el calendario</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel de estadísticas del día seleccionado -->
+          <div class="card card-hover mt-3" id="stats-dia" style="display: none;">
+            <div class="card-header bg-transparent border-0">
+              <h6 class="mb-0">Estadísticas del Día</h6>
+            </div>
+            <div class="card-body">
+              <div class="row text-center">
+                <div class="col-6">
+                  <div class="border-end">
+                    <h4 class="text-primary" id="dia-total-turnos">0</h4>
+                    <small>Total</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <h4 class="text-success" id="dia-ingresos">$0</h4>
+                  <small>Ingresos</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enlaces de navegación -->
+    <div class="row mt-4">
+      <div class="col-12 text-center">
+        <a href="./panel-estadisticas.html" class="btn btn-primario me-3">
+          Ver Estadísticas
+        </a>
+        <a href="index.html" class="btn btn-secundario">
+          Volver al Inicio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Editar Turno -->
+  <div class="modal fade" id="modalEditarTurno" tabindex="-1" aria-labelledby="modalEditarTurnoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark border-warning">
+        <div class="modal-header border-warning">
+          <h5 class="modal-title text-warning" id="modalEditarTurnoLabel">
+            <i class="bi bi-pencil-square me-2"></i>Editar Turno
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Indicador de carga -->
+          <div id="loading-indicator" class="text-center d-none">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Guardando...</span>
+            </div>
+            <p class="mt-2">Guardando cambios...</p>
+          </div>
+
+          <!-- Alertas de validación -->
+          <div id="validation-alerts"></div>
+
+          <form id="formEditarTurno">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarFecha" class="form-label">
+                  <i class="bi bi-calendar3 me-1"></i>Fecha *
+                </label>
+                <input type="date" class="form-control" id="editarFecha" required>
+                <div class="invalid-feedback">
+                  La fecha es obligatoria y debe ser futura
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="editarHora" class="form-label">
+                  <i class="bi bi-clock me-1"></i>Hora *
+                </label>
+                <select class="form-select" id="editarHora" required>
+                  <option value="">Seleccionar hora</option>
+                </select>
+                <div class="invalid-feedback">
+                  Debe seleccionar una hora válida
+                </div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarNombre" class="form-label">
+                  <i class="bi bi-person me-1"></i>Nombre *
+                </label>
+                <input type="text" class="form-control" id="editarNombre" required maxlength="50">
+                <div class="invalid-feedback">
+                  El nombre es obligatorio (máximo 50 caracteres)
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="editarApellido" class="form-label">
+                  <i class="bi bi-person me-1"></i>Apellido*
+                </label>
+                <input type="text" class="form-control" id="editarApellido" maxlength="50">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarTelefono" class="form-label">
+                  <i class="bi bi-telephone me-1"></i>Teléfono *
+                </label>
+                <input type="tel" class="form-control" id="editarTelefono" required 
+                       pattern="[\d\-\+\(\)\s]+" placeholder="351-123-4567">
+                <div class="invalid-feedback">
+                  El teléfono es obligatorio y debe ser válido
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="editarEmail" class="form-label">
+                  <i class="bi bi-envelope me-1"></i>Email*
+                </label>
+                <input type="email" class="form-control" id="editarEmail" 
+                       placeholder="cliente@email.com">
+                <div class="invalid-feedback">
+                  El formato del email no es válido
+                </div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarServicio" class="form-label">
+                  <i class="bi bi-scissors me-1"></i>Servicio *
+                </label>
+                <select class="form-select" id="editarServicio" required onchange="updatePrecio()">
+                  <option value="">Seleccionar servicio</option>
+                </select>
+                <div class="invalid-feedback">
+                  Debe seleccionar un servicio
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="editarEstado" class="form-label">
+                  <i class="bi bi-flag me-1"></i>Estado
+                </label>
+                <select class="form-select" id="editarEstado">
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editarPrecio" class="form-label">
+                  <i class="bi bi-currency-dollar me-1"></i>Precio
+                </label>
+                <input type="number" class="form-control" id="editarPrecio" readonly>
+                <div class="form-text">Se actualiza automáticamente según el servicio</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Vista Previa</label>
+                <div class="card bg-secondary">
+                  <div class="card-body p-2">
+                    <small id="preview-turno" class="text-muted">
+                      Complete los datos para ver la vista previa
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="editarTurnoId">
+          </form>
+        </div>
+        <div class="modal-footer border-warning">
+          <button type="button" class="btn btn-secundario" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancelar
+          </button>
+          <button type="button" class="btn btn-primario" onclick="guardarEdicionTurno()" id="btnGuardar">
+            <i class="bi bi-check-lg me-1"></i>Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación -->
+  <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark border-danger">
+        <div class="modal-header border-danger">
+          <h5 class="modal-title text-danger" id="modalConfirmarLabel">
+            <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Acción
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-white" id="modalConfirmarTexto">
+          ¿Estás seguro de que deseas realizar esta acción?
+        </div>
+        <div class="modal-footer border-danger">
+          <button type="button" class="btn btn-secundario" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancelar
+          </button>
+          <button type="button" class="btn btn-danger" id="btnConfirmarAccion">
+            <i class="bi bi-check-lg me-1"></i>Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Búsqueda Avanzada -->
+  <div class="modal fade" id="modalBusquedaAvanzada" tabindex="-1" aria-labelledby="modalBusquedaAvanzadaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark border-info">
+        <div class="modal-header border-info">
+          <h5 class="modal-title text-info" id="modalBusquedaAvanzadaLabel">
+            <i class="bi bi-search me-2"></i>Búsqueda Avanzada
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formBusquedaAvanzada">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="searchFechaDesde" class="form-label">Fecha desde</label>
+                <input type="date" class="form-control" id="searchFechaDesde">
+              </div>
+              <div class="col-md-6">
+                <label for="searchFechaHasta" class="form-label">Fecha hasta</label>
+                <input type="date" class="form-control" id="searchFechaHasta">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="searchCliente" class="form-label">Cliente</label>
+                <input type="text" class="form-control" id="searchCliente" placeholder="Nombre del cliente">
+              </div>
+              <div class="col-md-6">
+                <label for="searchServicio" class="form-label">Servicio</label>
+                <select class="form-select" id="searchServicio">
+                  <option value="todos">Todos los servicios</option>
+                  <option value="corte">Corte de pelo</option>
+                  <option value="tintura">Tintura</option>
+                  <option value="barba">Perfilado de barba</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="searchPrecioMin" class="form-label">Precio mínimo</label>
+                <input type="number" class="form-control" id="searchPrecioMin" min="0" placeholder="0">
+              </div>
+              <div class="col-md-4">
+                <label for="searchPrecioMax" class="form-label">Precio máximo</label>
+                <input type="number" class="form-control" id="searchPrecioMax" min="0" placeholder="10000">
+              </div>
+              <div class="col-md-4">
+                <label for="searchEstado" class="form-label">Estado</label>
+                <select class="form-select" id="searchEstado">
+                  <option value="todos">Todos los estados</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer border-info">
+          <button type="button" class="btn btn-secundario" onclick="limpiarBusquedaAvanzada()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+          </button>
+          <button type="button" class="btn btn-info" onclick="ejecutarBusquedaAvanzada()">
+            <i class="bi bi-search me-1"></i>Buscar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast para notificaciones -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <i class="bi bi-bell-fill me-2 text-primary"></i>
+        <strong class="me-auto">TH Barber Club</strong>
+        <small class="text-muted">ahora</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastMessage">
+        Mensaje de notificación
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+  <script src="../js/panel-turnos.js" type="module"></script>
+</body>
+</html>

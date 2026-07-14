@@ -55,23 +55,30 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
         return ResponseEntity.ok(service.existsById(id));
     }
 
+    // NOTA: @PostMapping removido intencionalmente.
+    // Cada subclase concreta declara su propio @PostMapping porque necesita
+    // su propio RequestDTO (ej: ServicioRequestDTO) en vez de la entidad JPA.
+    // Los 4 controllers actuales (Adminstrador, Cliente, Turno, Servicio)
+    // implementan la lógica completa sin llamar a super.create() — este método
+    // se conserva como referencia de la lógica base pero no tiene callers activos.
+    // Podría eliminarse si ningún controller futuro lo reutiliza vía super.create().
     @Operation(summary = "Crear un nuevo registro")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Registro creado"),
         @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
     })
-    @PostMapping
     public ResponseEntity<DTO> create(@RequestBody T entity) {
         T saved = service.save(entity);
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
     }
 
+    // NOTA: @PostMapping("/all") removido — misma razón que create().
+    // Cada subclase concreta declara su propio mapping.
     @Operation(summary = "Crear múltiples registros")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Registros creados"),
         @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
     })
-    @PostMapping("/all")
     public ResponseEntity<List<DTO>> createAll(@RequestBody List<T> entities) {
         List<T> saved = service.saveAll(entities);
         return ResponseEntity.status(HttpStatus.CREATED).body(
