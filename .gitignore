@@ -49,3 +49,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Frontend React ###
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.env
