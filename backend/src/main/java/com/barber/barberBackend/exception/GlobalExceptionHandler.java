@@ -34,6 +34,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return pd;
     }
 
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ProblemDetail handleResourceAlreadyExists(ResourceAlreadyExistsException ex) {
+        log.warn("Conflicto por recurso existente: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        pd.setTitle("El recurso ya existe");
+        pd.setDetail(ex.getMessage());
+        pd.setType(URI.create("/errors/resource-already-exists"));
+        return pd;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnhandled(Exception ex) {
         log.error("Error no controlado: ", ex);
