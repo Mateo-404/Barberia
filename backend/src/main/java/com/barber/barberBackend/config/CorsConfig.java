@@ -14,6 +14,8 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("http://127.0.0.1:3000");
+        config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("http://127.0.0.1:5173");
         config.addAllowedMethod("*"); // incluye GET, POST, PUT, PATCH, DELETE, OPTIONS
         config.addAllowedHeader("*");
         config.setAllowCredentials(true); // si vas a manejar cookies o auth
