@@ -2,8 +2,11 @@ package com.barber.barberBackend.generics;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import org.springframework.http.ProblemDetail;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +35,12 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
     @Operation(summary = "Obtener un registro por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Registro encontrado"),
-        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content)
+        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<T> getById(@PathVariable ID id) {
+    public ResponseEntity<DTO> getById(@PathVariable ID id) {
         return service.findById(id)
+                .map(this::toDTO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -65,7 +69,7 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
     @Operation(summary = "Crear un nuevo registro")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Registro creado"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public ResponseEntity<DTO> create(@RequestBody T entity) {
         T saved = service.save(entity);
@@ -77,7 +81,7 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
     @Operation(summary = "Crear múltiples registros")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Registros creados"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     public ResponseEntity<List<DTO>> createAll(@RequestBody List<T> entities) {
         List<T> saved = service.saveAll(entities);
@@ -89,11 +93,12 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
     @Operation(summary = "Actualizar parcialmente un registro por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Registro actualizado"),
-        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content)
+        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<T> update(@PathVariable ID id, @RequestBody T entity) {
+    public ResponseEntity<DTO> update(@PathVariable ID id, @RequestBody T entity) {
         return service.update(id, entity)
+                .map(this::toDTO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -101,7 +106,7 @@ public abstract class GenericController<T, DTO, ID extends Serializable, S exten
     @Operation(summary = "Eliminar un registro por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Registro eliminado"),
-        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content)
+        @ApiResponse(responseCode = "404", description = "Registro no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable ID id) {

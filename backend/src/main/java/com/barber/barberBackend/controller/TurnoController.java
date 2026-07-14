@@ -2,6 +2,7 @@ package com.barber.barberBackend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,8 +50,8 @@ public class TurnoController extends GenericController<Turno, TurnoResponseDTO, 
     @Operation(summary = "Crear un nuevo turno")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Turno creado"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Servicio no encontrado", content = @Content)
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+        @ApiResponse(responseCode = "404", description = "Servicio no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PostMapping
     public ResponseEntity<TurnoResponseDTO> create(@RequestBody @Valid TurnoRequestDTO request) {
@@ -61,8 +63,8 @@ public class TurnoController extends GenericController<Turno, TurnoResponseDTO, 
     @Operation(summary = "Crear múltiples turnos")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Turnos creados"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Servicio no encontrado", content = @Content)
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+        @ApiResponse(responseCode = "404", description = "Servicio no encontrado", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PostMapping("/all")
     public ResponseEntity<List<TurnoResponseDTO>> createMultiple(@RequestBody @Valid List<TurnoRequestDTO> requests) {
@@ -74,6 +76,7 @@ public class TurnoController extends GenericController<Turno, TurnoResponseDTO, 
     }
 
     @Operation(summary = "Obtener fechas y horas ocupadas", description = "Devuelve una lista con las fechas y horas que ya tienen turno asignado")
+    @ApiResponse(responseCode = "200", description = "Lista de fechas y horas ocupadas en formato ISO")
     @GetMapping("/findDateTimes")
     public List<String> getFechasOcupadas() {
         List<LocalDateTime> dateTimes = service.findDateTimes();

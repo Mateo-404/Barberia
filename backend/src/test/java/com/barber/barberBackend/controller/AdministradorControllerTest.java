@@ -163,7 +163,7 @@ class AdministradorControllerTest {
 
         mockMvc.perform(post("/administradores/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"wrong@test.com\",\"contrasenia\":\"wrong\"}"))
+                        .content("{\"email\":\"wrong@test.com\",\"contrasenia\":\"wrongpass\"}"))
                 .andExpect(status().isUnauthorized());
     }
 }
