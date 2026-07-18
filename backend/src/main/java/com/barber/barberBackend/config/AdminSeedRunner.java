@@ -35,6 +35,13 @@ public class AdminSeedRunner implements CommandLineRunner {
             return;
         }
 
+        if (seedPassword.length() < 8) {
+            log.error("ADMIN_SEED_PASSWORD debe tener al menos 8 caracteres (recibido: {}) — abortando seed", seedPassword.length());
+            throw new IllegalStateException(
+                "La contraseña del administrador semilla debe tener al menos 8 caracteres. "
+                + "Configurá ADMIN_SEED_PASSWORD en tus variables de entorno.");
+        }
+
         Administrador admin = new Administrador();
         admin.setNombre("Admin");
         admin.setApellido("Por Defecto");
