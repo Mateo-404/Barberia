@@ -61,6 +61,10 @@ public class TurnoController extends GenericController<Turno, Turno, Long, Turno
     }
 
     @Operation(summary = "Obtener fechas y horas ocupadas", description = "Devuelve una lista con las fechas y horas que ya tienen turno asignado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de fechas y horas ocupadas"),
+        @ApiResponse(responseCode = "401", description = "No autorizado", content = @Content)
+    })
     @GetMapping("/findDateTimes")
     public List<String> getFechasOcupadas() {
         List<LocalDateTime> dateTimes = service.findDateTimes();

@@ -2,6 +2,10 @@ package com.barber.barberBackend.controller;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
@@ -38,6 +42,11 @@ public class ServicioController extends GenericController<Servicio, ServicioResp
         return mapper.toResponseDTO(entity);
     }
 
+    @Operation(summary = "Crear un nuevo servicio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Servicio creado"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+    })
     @PostMapping
     public ResponseEntity<ServicioResponseDTO> create(@RequestBody @Valid ServicioRequestDTO request) {
         Servicio entity = mapper.toEntity(request);
@@ -45,6 +54,11 @@ public class ServicioController extends GenericController<Servicio, ServicioResp
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponseDTO(saved));
     }
 
+    @Operation(summary = "Crear múltiples servicios")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Servicios creados"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+    })
     @PostMapping("/all")
     public ResponseEntity<List<ServicioResponseDTO>> createMultiple(@RequestBody @Valid List<ServicioRequestDTO> requests) {
         List<Servicio> entities = requests.stream().map(mapper::toEntity).toList();
