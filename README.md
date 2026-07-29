@@ -21,6 +21,7 @@
 9. [Demo en linea](#demo-en-línea)
 10. [Capturas de Pantalla](#capturas-de-pantalla)
 11. [Organización del Proyecto](#organización-del-proyecto)
+12. [Instalación](#instalación)
 
 ---
 
@@ -120,7 +121,7 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 
 🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
-🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html) *(El usuario es *admin@admin.com* y la contraseña *admin*)*  
+🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html)  
 
 👉 Nota: el despliegue se realiza directamente desde las ramas:  
 - `frontend` → para GitHub Pages.  
@@ -144,4 +145,61 @@ El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 ## Organización del Proyecto
 
 - **Repositorio en GitHub:** [Barberia](https://github.com/Mateo-404/Barberia)  
-- **Tablero de Tareas:** [GitHub Projects](https://github.com/users/Mateo-404/projects/9)  
+- **Tablero de Tareas:** [GitHub Projects](https://github.com/users/Mateo-404/projects/9)
+
+---
+
+## Instalación
+
+### Prerrequisitos
+
+- **Java 21** (JDK)
+- **Maven Wrapper** (incluido en `backend/mvnw`)
+- **PostgreSQL** 15+ (o usar perfil H2 para desarrollo sin instalar PostgreSQL)
+
+### Variables de entorno
+
+El backend lee las siguientes variables para conectar a la base de datos:
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `DB_URL` | URL de conexión JDBC | `jdbc:postgresql://localhost:5432/barber` |
+| `DB_USER` | Usuario de base de datos | `postgres` |
+| `DB_PASSWORD` | Contraseña del usuario | `postgres` |
+
+Copiar `backend/.env.example` a `backend/.env` y completar los valores.
+
+### Desarrollo sin PostgreSQL (perfil H2)
+
+Activar el perfil `test` para usar H2 en memoria — ideal para desarrollo rápido sin instalar PostgreSQL:
+
+```bash
+SPRING_PROFILES_ACTIVE=test ./mvnw spring-boot:run
+```
+
+### Comandos
+
+```bash
+# Ejecutar el servidor (Postgres requerido)
+./mvnw spring-boot:run
+
+# Ejecutar con perfil H2 (sin Postgres)
+SPRING_PROFILES_ACTIVE=test ./mvnw spring-boot:run
+
+# Ejecutar tests
+./mvnw test
+
+# Build completo (package)
+./mvnw clean package
+```
+
+El servidor arranca en `http://localhost:8080`.  
+Documentación interactiva de la API: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+### Ramas
+
+| Rama | Propósito |
+|---|---|
+| `backend` | Desarrollo activo del backend (Spring Boot, JPA, API REST) |
+| `frontend` | Desarrollo activo del frontend (HTML/CSS/JS, GitHub Pages) |
+| `main` | Snapshot estable — solo recibe código probado vía sync manual |
