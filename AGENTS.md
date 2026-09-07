@@ -2,46 +2,55 @@
 
 ## Architecture
 
-Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no framework, no build step, no npm).
+Two-part project: **Spring Boot backend** + **frontend**. Hay dos frontends que conviven:
 
 | Directory | Tech | Entrypoint |
 |---|---|---|
-| `barberBackend/` | Spring Boot 3.4, Java 21, Maven, JPA, PostgreSQL | `BarberBackendApplication.java` |
-| `frontend/` | Vanilla HTML/CSS/JS (ES modules), Bootstrap 5 | `index.html` (client), `admin/login.html` (admin) |
+| `barberBackend/` (rama `backend`) | Spring Boot 3.4, Java 21, Maven, JPA, PostgreSQL | `BarberBackendApplication.java` |
+| `frontend/` | Vanilla HTML/CSS/JS (ES modules), Bootstrap 5 — sitio público legacy | `index.html` (client), `admin/login.html` (admin) |
+| `frontend-react/` (rama `frontend`) | **React 19 + Vite 8 + TypeScript 6 + Tailwind v4 + TanStack Query + RHF + Zod**. App moderna de reservas + panel admin. | `src/main.tsx` → `src/App.tsx` |
+
+> El frontend React es la app activa. `frontend/` (vanilla) queda solo como referencia/history.
 
 ## Backend
 
-- **Build & run:** `./mvnw spring-boot:run` (from `barberBackend/`)
-- **Test:** `./mvnw test` (single test class, context-loads only)
-- **Port:** 8080 (default Spring Boot)
-- **DB:** PostgreSQL at `localhost:5432/barber` (user/pass: `postgres`/`postgres`). H2 also on classpath as runtime dep.
-- **JPA:** `ddl-auto=update` — no migration tooling.
-- **CORS:** whitelists `localhost:3000` and `127.0.0.1:3000` only.
-- **API base:** `http://localhost:8080`
-- **Endpoints:** `/turnos`, `/clientes`, `/servicios`, `/administradores`, `/estadisticas`
-- **Custom endpoint:** `GET /turnos/findDateTimes` returns `List<String>` of occupied `LocalDateTime` in ISO format.
-- **Pattern:** Generic REST controller with `GenericController<T, ID, S>` — see `generics/` package. Custom controllers extend it.
-- **Models:** Lombok (`@Getter @Setter @NoArgsConstructor @AllArgsConstructor`). `Turno` has `@ManyToOne` to `Cliente` and `Servicio`.
+- **Ubicación clon independiente:** `~/Documentos/repositorios/Barberia-backend-run/` (rama `backend`). El frontend React NO edita archivos de backend.
+- **Build & run:** `./mvnw spring-boot:run` (desde `backend/`)
+- **Test:** `./mvnw test`
+- **Puerto:** 8080
+- **DB:** PostgreSQL en `localhost:5432/barber` (user/pass `postgres`/`postgres`). H2 en classpath.
+- **JPA:** `ddl-auto=update`
+- **CORS (dos perfiles):**
+  - `@Profile("!prod")` → `allowedOriginPatterns("http://localhost:*")` con credenciales
+  - `@Profile("prod")` → `allowedOrigin("https://mateo-404.github.io")` sin credenciales
+- **API base (frontend React):** `VITE_API_BASE_URL` (default `http://localhost:8080`)
+- **Endpoints clave:** `/turnos`, `/turnos/findDateTimes` (ocupados), `/servicios`, `/administradores/login` (JWT), `/estadisticas/panel`, `/clientes`.
+- **Auth:** Login devuelve `LoginResponseDTO { id, nombre, apellido, email, token }`. El frontend guarda admin + token en `sessionStorage` y envía `Authorization: Bearer <token>`. Ante `401 /errors/invalid-token` limpia sesión y redirige a `/login`.
+- **Seed:** `AdminSeedRunner` crea admin con `admin.seed.email` / `admin.seed.password` (defaults `admin@admin.com` / `admin1234`).
 
-## Frontend
+## Frontend React (`frontend-react/`)
 
-- **No build step** — served directly as static files.
-- **JS modules:** use `import`/`export` (ES module syntax in `config.js`).
-- **API config:** `API_BASE_URL` in `frontend/js/config.js` — change here for different backend origin.
-- **CORS note:** when developing, frontend must be served on `localhost:3000` (the CORS-allowed origin). Use e.g. `python3 -m http.server 3000` from `frontend/`.
-- **Admin login:** `admin/login.html` POSTs to `/administradores/login` with `{email, contrasenia}`. Uses temporary `setTimeout(1000)` wrapper around fetch.
-- **Reserva flow:** 3-step wizard (service → date/time → personal data), submits `POST /turnos`.
+- **Stack:** Vite 8, React 19, TypeScript 6 (strict), Tailwind v4, `@tanstack/react-query` v5, `react-hook-form` v7 + `zod` v4, `react-router-dom` v7, `class-variance-authority`, `lucide-react`.
+- **Comandos (Bun):** `bun run dev`, `bun run build` (`tsc -b && vite build`), `bun run lint` (oxlint), `bun run preview`.
+- **Alias:** `@/` → `src/`.
+- **Sistema de color:** Todo color vive en variables CSS en `src/index.css` (`:root`). Tailwind resuelve utilidades semánticas (`bg-primary`, `text-muted-foreground`, `border-border`, `ring-focus-ring`, etc.) a esas variables. **No hay hex hardcodeados en componentes.**
+  - Paleta: bg `#1c1c1c`, card `#2c2c2c`, primary `#ff6600` (hover `#e65500`), muted `#999`, success `#28a745`, warning `#ffc107`, destructive `#dc3545`.
+  - Variables útiles: `--nav-height` (4.5rem), `--focus-ring`, animación `.page-enter`.
+- **Rutas:** `/` (Reserva wizard 3 pasos), `/login`, `/admin` (protegida → `AdminDashboard` con KPIs + tabla de turnos + ranking de servicios).
+- **API:** `src/lib/api-client.ts` (fetch wrapper con Bearer token, timeout 15s vía AbortController, manejo de `401 invalid-token`). Hooks en `src/api/`.
+- **Tipos:** `src/types/api.ts` generado con `openapi-typescript` desde el spec del backend.
 
 ## Deployment
 
-- **`frontend` branch** → GitHub Pages (serves `frontend/` as root)
-- **`backend` branch** → Railway (or similar PaaS)
+- **`frontend` branch** → GitHub Pages (raíz del repo). La app React se sirve desde `frontend-react/` vía build estático.
+- **`backend` branch** → Railway (o PaaS similar).
 
 ## Notable quirks
 
-- `.gitignore` at repo root combines rules for both Java/Maven and IDE artifacts.
-- The `public/` directory at root contains diagrams and screenshots only — not served by any server.
-- No CI, no linter, no formatter config.
+- `.gitignore` raíz combina reglas de Java/Maven e IDE.
+- El backend y el frontend React viven en clones/distintas ramas; el session de frontend solo toca `frontend-react/` y archivos de infra raíz.
+- No hay tests E2E corriendo en CI todavía (handlers MSW presentes en `src/tests/`).
+- Commits: Conventional Commits (`feat`, `fix`, `ci`, `refactor`, `test`, `docs`, `chore`).
 
 ## Commits
 

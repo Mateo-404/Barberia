@@ -1,5 +1,7 @@
 # Sistema de Gestión de Barbería
 
+> **Frontend moderno:** el directorio `frontend-react/` contiene la app activa (React 19 + Vite + TypeScript + Tailwind), con wizard de reservas y panel de administración. El sitio `frontend/` (HTML/CSS/JS vanilla) queda como referencia histórica. Ver `AGENTS.md` para arquitectura y comandos.
+
 ---
 
 ## Tabla de Contenidos

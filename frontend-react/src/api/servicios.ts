@@ -8,5 +8,6 @@ export function useServicios() {
   return useQuery({
     queryKey: ["servicios"],
     queryFn: () => api<Servicio[]>("/servicios"),
+    retry: 1,
   })
 }

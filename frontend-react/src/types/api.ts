@@ -138,7 +138,7 @@ export interface paths {
         put?: never;
         /**
          * Iniciar sesión
-         * @description Autentica un administrador por email y contraseña
+         * @description Autentica un administrador por email y contraseña, devuelve JWT
          */
         post: operations["login"];
         delete?: never;
@@ -678,6 +678,35 @@ export interface components {
              */
             contrasenia: string;
         };
+        /** @description Respuesta de inicio de sesión con JWT */
+        LoginResponseDTO: {
+            /**
+             * Format: int64
+             * @description ID único del administrador
+             * @example 1
+             */
+            id?: number;
+            /**
+             * @description Nombre del administrador
+             * @example Carlos
+             */
+            nombre?: string;
+            /**
+             * @description Apellido del administrador
+             * @example López
+             */
+            apellido?: string;
+            /**
+             * @description Email del administrador
+             * @example carlos@barberia.com
+             */
+            email?: string;
+            /**
+             * @description Token JWT para autenticación
+             * @example eyJhbGciOiJIUzI1NiJ9...
+             */
+            token?: string;
+        };
         Cliente: {
             nombre?: string;
             apellido?: string;
@@ -712,9 +741,6 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -723,32 +749,32 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
-            paged?: boolean;
-            /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
-            pageNumber?: number;
-            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"];
+            paged?: boolean;
+            /** Format: int32 */
+            pageNumber?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            unpaged?: boolean;
         };
         SortObject: {
+            empty?: boolean;
             sorted?: boolean;
             unsorted?: boolean;
-            empty?: boolean;
         };
         PageServicio: {
             /** Format: int64 */
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -757,6 +783,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         /** @description Cantidad de turnos realizados en una hora específica */
@@ -840,9 +869,6 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -851,6 +877,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageAdministrador: {
@@ -858,9 +887,6 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -869,6 +895,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
     };
@@ -1255,7 +1284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"];
+                    "*/*": components["schemas"]["LoginResponseDTO"];
                 };
             };
             /** @description Credenciales inválidas */
