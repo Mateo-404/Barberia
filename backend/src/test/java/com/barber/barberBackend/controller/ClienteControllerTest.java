@@ -1,5 +1,8 @@
 package com.barber.barberBackend.controller;
 
+import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
+import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.ClienteRequestDTO;
 import com.barber.barberBackend.dto.ClienteResponseDTO;
 import com.barber.barberBackend.model.Cliente;
@@ -9,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ClienteController.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class ClienteControllerTest {
 
@@ -31,7 +37,11 @@ class ClienteControllerTest {
     @MockBean
     private ClienteMapper clienteMapper;
 
+    @MockBean
+    private JwtService jwtService;
+
     @Test
+    @WithMockUser
     void create_withValidData_returns201() throws Exception {
         ClienteRequestDTO request = new ClienteRequestDTO("123456789", "Juan", "Pérez", "juan@email.com");
         Cliente entity = new Cliente();
@@ -62,6 +72,7 @@ class ClienteControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankTelefono_returns400() throws Exception {
         mockMvc.perform(post("/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,6 +83,7 @@ class ClienteControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankNombre_returns400() throws Exception {
         mockMvc.perform(post("/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,6 +94,7 @@ class ClienteControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankApellido_returns400() throws Exception {
         mockMvc.perform(post("/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,6 +105,7 @@ class ClienteControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withInvalidEmail_returns400() throws Exception {
         mockMvc.perform(post("/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -102,6 +116,7 @@ class ClienteControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withDuplicateTelefono_returns409() throws Exception {
         when(clienteService.existsById("123456789")).thenReturn(true);
 
@@ -112,5 +127,13 @@ class ClienteControllerTest {
                 .andExpect(jsonPath("$.title").value("El recurso ya existe"))
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value("Ya existe un cliente con el teléfono 123456789"));
+    }
+
+    @Test
+    void create_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(post("/clientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"telefono\":\"123456789\",\"nombre\":\"Juan\",\"apellido\":\"Pérez\",\"email\":\"juan@email.com\"}"))
+                .andExpect(status().isUnauthorized());
     }
 }

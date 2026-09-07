@@ -1,5 +1,8 @@
 package com.barber.barberBackend.controller;
 
+import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
+import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.ServicioRequestDTO;
 import com.barber.barberBackend.dto.ServicioResponseDTO;
 import com.barber.barberBackend.model.Servicio;
@@ -9,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ServicioController.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class ServicioControllerTest {
 
@@ -31,7 +37,11 @@ class ServicioControllerTest {
     @MockBean
     private ServicioMapper servicioMapper;
 
+    @MockBean
+    private JwtService jwtService;
+
     @Test
+    @WithMockUser
     void create_withValidData_returns201() throws Exception {
         ServicioRequestDTO request = new ServicioRequestDTO("Corte", 500);
         Servicio entity = new Servicio(null, "Corte", 500);
@@ -52,6 +62,7 @@ class ServicioControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withBlankTipo_returns400() throws Exception {
         mockMvc.perform(post("/servicios")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,6 +73,7 @@ class ServicioControllerTest {
     }
 
     @Test
+    @WithMockUser
     void create_withNegativePrecio_returns400() throws Exception {
         mockMvc.perform(post("/servicios")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -69,5 +81,13 @@ class ServicioControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Bad Request"))
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void create_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(post("/servicios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tipo\":\"Corte\",\"precio\":500}"))
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -120,11 +120,23 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 
 🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
-🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html) *(El usuario es *admin@admin.com* y la contraseña *admin*)*  
+🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html)  
 
 👉 Nota: el despliegue se realiza directamente desde las ramas:  
 - `frontend` → para GitHub Pages.  
 - `backend` → para Railway u otro servicio de hosting del API.  
+
+> **🔐 Admin de prueba:** El primer administrador se crea automáticamente al iniciar el backend
+> por primera vez si la base de datos está vacía (`AdminSeedRunner`). Las credenciales se
+> configuran vía variables de entorno:
+>
+> ```
+> ADMIN_SEED_EMAIL=admin@barberia.com
+> ADMIN_SEED_PASSWORD=miPasswordSegura123
+> ```
+>
+> Consultá `backend/.env.example` para la lista completa de variables.
+> En Railway (o tu PaaS), configuralas en el panel de Environment Variables.  
 
 ---
 

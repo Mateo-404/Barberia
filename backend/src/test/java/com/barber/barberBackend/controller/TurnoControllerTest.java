@@ -1,5 +1,8 @@
 package com.barber.barberBackend.controller;
 
+import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
+import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.TurnoRequestDTO;
 import com.barber.barberBackend.dto.TurnoResponseDTO;
 import com.barber.barberBackend.exception.ResourceNotFoundException;
@@ -12,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TurnoController.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class TurnoControllerTest {
 
@@ -38,6 +44,9 @@ class TurnoControllerTest {
 
     @MockBean
     private TurnoMapper turnoMapper;
+
+    @MockBean
+    private JwtService jwtService;
 
     private final LocalDateTime futureDate = LocalDateTime.now().plusDays(1).withHour(15).withMinute(0).withSecond(0).withNano(0);
 
@@ -142,5 +151,33 @@ class TurnoControllerTest {
         mockMvc.perform(get("/turnos/findDateTimes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    @WithMockUser
+    void createMultiple_withValidData_returns201() throws Exception {
+        String fechaStr = futureDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        TurnoRequestDTO request = new TurnoRequestDTO(futureDate, 1L, "123456789", "Juan", "Pérez", "juan@email.com");
+        TurnoResponseDTO response = new TurnoResponseDTO(1L, futureDate,
+            "123456789", "Juan", "Pérez", "juan@email.com",
+            1L, "Corte", 500);
+
+        when(turnoMapper.toResponseDTO(any())).thenReturn(response);
+
+        mockMvc.perform(post("/turnos/all")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"fechaHora\":\"" + fechaStr + "\",\"idServicio\":1,\"telefonoCliente\":\"123456789\",\"nombreCliente\":\"Juan\",\"apellidoCliente\":\"Perez\",\"emailCliente\":\"juan@email.com\"}]"))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void createMultiple_withoutAuth_returns401() throws Exception {
+        String fechaStr = futureDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        mockMvc.perform(post("/turnos/all")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"fechaHora\":\"" + fechaStr + "\",\"idServicio\":1,\"telefonoCliente\":\"123456789\",\"nombreCliente\":\"Juan\",\"apellidoCliente\":\"Perez\",\"emailCliente\":\"juan@email.com\"}]"))
+                .andExpect(status().isUnauthorized());
     }
 }
