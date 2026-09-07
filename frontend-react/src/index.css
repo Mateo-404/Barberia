@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Poppins", sans-serif;
+  --font-heading: "Poppins", sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-focus-ring: var(--focus-ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #1c1c1c;
+  --foreground: #ffffff;
+  --card: #2c2c2c;
+  --card-foreground: #ffffff;
+  --popover: #2c2c2c;
+  --popover-foreground: #ffffff;
+  --primary: #ff6600;
+  --primary-foreground: #ffffff;
+  --secondary: #2c2c2c;
+  --secondary-foreground: #ffffff;
+  --muted: #2c2c2c;
+  --muted-foreground: #999999;
+  --accent: rgba(255, 102, 0, 0.1);
+  --accent-foreground: #ffffff;
+  --destructive: #dc3545;
+  --success: #28a745;
+  --warning: #ffc107;
+  --border: rgba(255, 102, 0, 0.2);
+  --input: #2c2c2c;
+  --ring: #ff6600;
+  --focus-ring: rgba(255, 102, 0, 0.4);
+  --radius: 0.75rem;
+  --nav-height: 4.5rem;
+  --chart-1: #ff6600;
+  --chart-2: #28a745;
+  --chart-3: #ffc107;
+  --chart-4: #dc3545;
+  --chart-5: #999999;
+  --sidebar: #2c2c2c;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ff6600;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 102, 0, 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 102, 0, 0.2);
+  --sidebar-ring: #ff6600;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Poppins", sans-serif;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  ::selection {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: white;
+    -webkit-box-shadow: 0 0 0px 1000px var(--background) inset;
+    caret-color: white;
+  }
+}
+
+@layer components {
+  .card-hover {
+    @apply border transition-all duration-300;
+    border-color: var(--border);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 102, 0, 0.3);
+  }
+
+  .page-enter {
+    animation: pageEnter 0.4s ease-out both;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pop {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -2,85 +2,36 @@
 
 ## Architecture
 
-Two-part project: **Spring Boot backend** + **vanilla HTML/CSS/JS frontend** (no framework, no build step, no npm).
+Proyecto en dos partes: **Spring Boot backend** + **frontends**. Hay dos frontends que conviven:
 
 | Directory | Tech | Entrypoint |
 |---|---|---|
 | `backend/` | Spring Boot 3.4, Java 21, Maven, JPA, PostgreSQL | `BarberBackendApplication.java` |
-| `frontend/` | Vanilla HTML/CSS/JS (ES modules), Bootstrap 5 | `index.html` (client), `admin/login.html` (admin) |
+| `frontend-react/` | **React 19 + Vite 8 + TypeScript 6 + Tailwind v4 + TanStack Query + RHF + Zod**. App moderna de reservas + panel admin. | `src/main.tsx` → `src/App.tsx` |
+| root `index.html` | Vanilla HTML/CSS/JS (ES modules), Bootstrap 5 — sitio público legacy | `index.html` (client), `admin/login.html` (admin) |
+
+> El frontend React es la app activa. El estático vanilla del root queda solo como referencia/history.
 
 ## Backend
 
-- **Build & run:** `./mvnw spring-boot:run` (from `backend/`)
-- **Test:** `./mvnw test` (single test class, context-loads only)
-- **Port:** 8080 (default Spring Boot)
-- **DB:** PostgreSQL at `localhost:5432/barber` (user/pass: `postgres`/`postgres`). H2 also on classpath as runtime dep.
-- **JPA:** `ddl-auto=update` — no migration tooling.
-- **CORS:** whitelists `localhost:3000` and `127.0.0.1:3000` only.
-- **API base:** `http://localhost:8080`
-- **Endpoints:** `/turnos`, `/clientes`, `/servicios`, `/administradores`, `/estadisticas`
-- **Custom endpoint:** `GET /turnos/findDateTimes` returns `List<String>` of occupied `LocalDateTime` in ISO format.
-- **Pattern:** Generic REST controller with `GenericController<T, ID, S>` — see `generics/` package. Custom controllers extend it.
-- **Models:** Lombok (`@Getter @Setter @NoArgsConstructor @AllArgsConstructor`). `Turno` has `@ManyToOne` to `Cliente` and `Servicio`.
+- **Build & run:** `./mvnw spring-boot:run` (desde `backend/`)
+- **Test:** `./mvnw test` (64 tests: controller slices + Argon2 integration)
+- **Puerto:** 8080
+- **DB:** PostgreSQL en `localhost:5432/barber` (user/pass `postgres`/`postgres`). H2 en classpath.
+- **JPA:** `ddl-auto=update`
+- **CORS (dos perfiles, bean `barberCorsConfigurationSource` via @Qualifier):**
+  - `@Profile("!prod")` → `allowedOriginPatterns` `localhost:5173/5174` (Vite) con credenciales
+  - `@Profile("prod")` → `allowedOrigin("https://mateo-404.github.io")` sin credenciales
+- **API base (frontend React):** `VITE_API_BASE_URL` (default `http://localhost:8080`)
+- **Endpoints clave:** `/turnos`, `/turnos/findDateTimes` (ocupados), `/servicios`, `/administradores/login` (JWT), `/estadisticas/panel`, `/clientes`.
+- **Auth:** Login devuelve `LoginResponseDTO { id, nombre, apellido, email, token }`. El frontend guarda admin + token en `sessionStorage` y envía `Authorization: Bearer <token>`. Ante `401 /errors/invalid-token` limpia sesión y redirige a `/login`.
+- **Seed:** `AdminSeedRunner` crea admin con `admin.seed.email` / `admin.seed.password` (defaults `admin@admin.com` / `admin1234`).
+- **Seguridad:** `jwt.secret=${JWT_SECRET}` (obligatorio). Contraseñas con Argon2PasswordEncoder (OWASP 2025).
 
-## Frontend
+## Frontend React
 
-- **No build step** — served directly as static files.
-- **JS modules:** use `import`/`export` (ES module syntax in `config.js`).
-- **API config:** `API_BASE_URL` in `frontend/js/config.js` — change here for different backend origin.
-- **CORS note:** when developing, frontend must be served on `localhost:3000` (the CORS-allowed origin). Use e.g. `python3 -m http.server 3000` from `frontend/`.
-- **Admin login:** `admin/login.html` POSTs to `/administradores/login` with `{email, contrasenia}`. Uses temporary `setTimeout(1000)` wrapper around fetch.
-- **Reserva flow:** 3-step wizard (service → date/time → personal data), submits `POST /turnos`.
-
-## Deployment
-
-- **`frontend` branch** → GitHub Pages (serves `frontend/` as root)
-- **`backend` branch** → Railway (or similar PaaS)
-
-## Notable quirks
-
-- `.gitignore` at repo root combines rules for both Java/Maven and IDE artifacts.
-- The `public/` directory at root contains diagrams and screenshots only — not served by any server.
-- No CI, no linter, no formatter config.
-
-## Flujo de ramas
-- main: SOLO recibe código estable, ya probado. NUNCA se commitea
-  directo a main durante desarrollo activo.
-- backend / frontend: ramas de trabajo activo para cada área. Todo
-  desarrollo (fases, fixes, features) va acá primero.
-- Sync a main: solo cuando el trabajo está confirmado como estable,
-  vía comando explícito aprobado por el usuario, sincronizando SOLO
-  la carpeta correspondiente (backend/ o frontend/), nunca un
-  merge completo de rama.
-
-## Convenciones de commit
-- Conventional Commits obligatorio: <type>: <description>
-  Tipos permitidos: feat, fix, ci, refactor, test, docs, chore
-- Mensajes en español, consistente con el resto del proyecto
-
-## Principio de dependencias
-- Preferir librerías estándar y mantenidas activamente sobre código
-  custom, SIEMPRE que resuelvan un problema genérico (seguridad,
-  validación, serialización, mapeo, manejo de errores).
-- Ejemplos ya aplicados: spring-security-crypto (Argon2), Bean
-  Validation (Jakarta), ProblemDetail nativo de Spring (RFC 7807)
-  en vez de formato de error custom.
-- NO aplica a lógica de negocio específica del dominio (reglas de
-  horario de turnos, validaciones de la barbería) — eso siempre
-  queda en código propio.
-- Antes de escribir una utilidad o mapper a mano, evaluar si existe
-  una librería estándar del ecosistema Spring que ya resuelva el
-  problema (ej: MapStruct para mapeo DTO↔Entity en vez de mappers
-  manuales).
-
-## Proceso de trabajo por fases
-- Cada fase se planea antes de implementar, mostrando diseño +
-  archivos afectados + impacto en tests existentes, ANTES de
-  escribir código.
-- Cambios que afecten firmas de métodos existentes requieren
-  verificar tests que dependan de la firma/mensaje actual, con
-  evidencia real (mostrar el archivo, no asumir).
-- Build completo (./mvnw clean package) + resultado de los 33 tests
-  se muestra después de cada fase, no solo al final de una sesión.
-- No se avanza a la siguiente fase sin confirmación explícita del
-  usuario.
+- **Dev server:** `bun i && bun dev` (Vite, puerto 5173).
+- **Build:** `bun run build` → `frontend-react/dist/`.
+- **API config:** `VITE_API_BASE_URL` en `frontend-react/.env` (ver `.env.example`).
+- **Auth:** token Bearer en `sessionStorage`; redirect a `/login` ante 401.
+- **Tipados:** `src/types/api.ts` es GENERADO por `openapi-typescript` desde `backend/openapi-spec.json` — no editarlo a mano; regenerar con `bun run types`.

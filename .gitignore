@@ -50,7 +50,7 @@ build/
 ### VS Code ###
 .vscode/
 
-# Environment files (secrets)
-.env
-.env.local
-.env.production
+### Frontend React ###
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.env
