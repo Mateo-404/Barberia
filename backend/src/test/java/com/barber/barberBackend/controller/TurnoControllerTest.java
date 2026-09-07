@@ -1,6 +1,7 @@
 package com.barber.barberBackend.controller;
 
 import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
 import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.TurnoRequestDTO;
 import com.barber.barberBackend.dto.TurnoResponseDTO;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TurnoController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class TurnoControllerTest {
 

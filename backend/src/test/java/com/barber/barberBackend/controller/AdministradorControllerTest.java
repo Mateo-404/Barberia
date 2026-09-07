@@ -1,6 +1,7 @@
 package com.barber.barberBackend.controller;
 
 import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
 import com.barber.barberBackend.config.SecurityConfig;
 import com.barber.barberBackend.dto.AdministradorRequestDTO;
 import com.barber.barberBackend.dto.AdministradorResponseDTO;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdministradorController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class AdministradorControllerTest {
 

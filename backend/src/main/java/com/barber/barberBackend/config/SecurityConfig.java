@@ -8,13 +8,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.barber.barberBackend.auth.JwtAuthenticationFilter;
 import com.barber.barberBackend.auth.JwtService;
@@ -25,10 +26,13 @@ public class SecurityConfig {
 
     private final JwtService jwtService;
     private final ObjectMapper objectMapper;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(JwtService jwtService, ObjectMapper objectMapper) {
+    public SecurityConfig(JwtService jwtService, ObjectMapper objectMapper,
+            @Qualifier(CorsConfig.CORS_SOURCE_BEAN) CorsConfigurationSource corsConfigurationSource) {
         this.jwtService = jwtService;
         this.objectMapper = objectMapper;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     @Bean
@@ -44,10 +48,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/ping").permitAll()
                 .requestMatchers(HttpMethod.POST, "/turnos").permitAll()
                 .requestMatchers(HttpMethod.GET, "/turnos/findDateTimes").permitAll()

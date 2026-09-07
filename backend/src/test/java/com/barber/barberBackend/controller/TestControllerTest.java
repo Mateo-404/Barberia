@@ -1,6 +1,7 @@
 package com.barber.barberBackend.controller;
 
 import com.barber.barberBackend.auth.JwtService;
+import com.barber.barberBackend.config.CorsConfig;
 import com.barber.barberBackend.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TestController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 @ActiveProfiles("test")
 class TestControllerTest {
 
