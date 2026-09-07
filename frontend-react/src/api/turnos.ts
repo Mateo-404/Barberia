@@ -21,3 +21,32 @@ export function useCrearTurno() {
       }),
   })
 }
+
+export function useTodosTurnos() {
+  return useQuery({
+    queryKey: ["turnos", "todos"],
+    queryFn: () => api<TurnoResponse[]>("/turnos"),
+  })
+}
+
+type TurnoPatch = {
+  fechaHora?: string
+  servicio?: { id: number }
+}
+
+export function useActualizarTurno() {
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: number; patch: TurnoPatch }) =>
+      api<TurnoResponse>(`/turnos/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      }),
+  })
+}
+
+export function useEliminarTurno() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<void>(`/turnos/${id}`, { method: "DELETE" }),
+  })
+}

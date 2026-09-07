@@ -3,6 +3,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Navigate, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
+import { useHotkeys } from "@/hooks/useHotkeys"
+import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 import { loginSchema, type LoginFormData } from "@/lib/schemas/login-schema"
 import { ApiError } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
@@ -17,12 +19,32 @@ export default function Login() {
   const {
     register,
     handleSubmit,
+    getValues,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", contrasenia: "" },
   })
+
+  useHotkeys({
+    Escape: () => {
+      if (errors.root) {
+        setError("root", { message: "" })
+      } else if (getValues().email || getValues().contrasenia) {
+        document.getElementById("email")?.focus()
+      }
+    },
+    "Alt+d": () => setShowPassword((v) => !v),
+    "Alt+Shift+d": () => setShowPassword((v) => !v),
+    "Ctrl+Enter": () => handleSubmit(onSubmit)(),
+  })
+
+  useRegisterShortcuts("admin", [
+    { key: "Esc", description: "Limpiar error" },
+    { key: "Alt+d", description: "Mostrar/ocultar contraseña" },
+    { key: "Ctrl+Enter", description: "Iniciar sesión" },
+  ])
 
   if (isAuthenticated) return <Navigate to="/admin" replace />
 
@@ -60,7 +82,7 @@ export default function Login() {
           </div>
         )}
 
-        <div className="bg-card rounded-2xl p-6">
+        <div className="bg-card rounded-2xl p-6 animate-in fade-in-0 zoom-in-95 duration-200">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
@@ -71,6 +93,7 @@ export default function Login() {
                 autoComplete="email"
                 autoFocus
                 {...register("email")}
+                className="text-base"
               />
               {errors.email && (
                 <p className="text-xs text-destructive">{errors.email.message}</p>
@@ -85,13 +108,13 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Tu contraseña"
                   autoComplete="current-password"
-                  className="pr-12"
+                  className="pr-12 text-base"
                   {...register("contrasenia")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded px-1"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded px-1 transition-colors duration-200"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? "Ocultar" : "Mostrar"}
@@ -112,7 +135,7 @@ export default function Login() {
               </a>
             </div>
 
-            <Button type="submit" disabled={isSubmitting} className="w-full py-6 text-base">
+            <Button type="submit" disabled={isSubmitting} className="w-full py-6 text-base active:scale-[0.98] transition-transform duration-100">
               {isSubmitting ? "Ingresando..." : "Iniciar Sesión"}
             </Button>
           </form>
@@ -120,9 +143,9 @@ export default function Login() {
 
         <div className="text-center space-y-3">
           <div className="flex justify-center gap-6">
-            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded">Términos</a>
-            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded">Privacidad</a>
-            <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded">Inicio</a>
+            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Términos</a>
+            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Privacidad</a>
+            <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Inicio</a>
           </div>
           <p className="text-xs text-muted-foreground">© 2026 TH Barber Club. Todos los derechos reservados.</p>
         </div>

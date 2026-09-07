@@ -1,7 +1,9 @@
-import { memo, useMemo } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { usePanelEstadisticas, useUltimosTurnos } from "@/api/estadisticas"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { formatCurrency, formatFecha, formatHora, isHoy } from "@/lib/format"
+import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
+import { useHotkeys } from "@/hooks/useHotkeys"
 
 const KpiCard = memo(function KpiCard({
   label,
@@ -30,10 +32,29 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function AdminDashboard() {
-  const { data: panel, isLoading: loadingPanel, isError: errorPanel } =
+  const { data: panel, isLoading: loadingPanel, isError: errorPanel, refetch: refetchPanel } =
     usePanelEstadisticas()
-  const { data: turnos, isLoading: loadingTurnos, isError: errorTurnos } =
+  const { data: turnos, isLoading: loadingTurnos, isError: errorTurnos, refetch: refetchTurnos } =
     useUltimosTurnos(10)
+
+  const refetchAll = useCallback(() => {
+    refetchPanel()
+    refetchTurnos()
+  }, [refetchPanel, refetchTurnos])
+
+  const shortcuts = useMemo(
+    () => [
+      { key: "Shift+r", description: "Recargar datos del panel" },
+    ],
+    [],
+  )
+  useRegisterShortcuts("admin", shortcuts)
+
+  useHotkeys(
+    useMemo(() => ({ "Shift+r": refetchAll }), [refetchAll]),
+    true,
+    { ignoreWhenDialogOpen: true },
+  )
 
   const turnosOrdenados = useMemo(() => {
     if (!turnos) return []

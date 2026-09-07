@@ -8,6 +8,8 @@ import { ApiError } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { todayInputValue } from "@/lib/format"
+import { useHotkeys } from "@/hooks/useHotkeys"
+import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 
 const STEPS = ["Servicio", "Fecha y hora", "Tus datos"]
 
@@ -86,7 +88,7 @@ export default function Reserva() {
     [selectedDate, fechasOcupadas],
   )
 
-  async function handleNext() {
+  const handleNext = useCallback(async () => {
     if (step === 0) {
       const valid = await trigger("idServicio")
       if (valid) setStep(1)
@@ -100,19 +102,90 @@ export default function Reserva() {
       const valid = await trigger("fechaHora")
       if (valid) setStep(2)
     }
-  }
+  }, [step, selectedDate, selectedTime, trigger, setValue, setError])
 
-  function handleBack() {
+  const handleBack = useCallback(() => {
     setStep((s) => Math.max(s - 1, 0))
-  }
+  }, [])
 
-  function handleReset() {
+  const handleReset = useCallback(() => {
     setSuccess(false)
     setStep(0)
     setSelectedDate("")
     setSelectedTime("")
     reset()
-  }
+  }, [reset])
+
+  const hotkeyMap = useMemo(() => {
+    const map: Record<string, () => void> = {
+      Escape: () => {
+        if (errors.root) {
+          setError("root", { message: "" })
+        } else if (step > 0) {
+          handleBack()
+        }
+      },
+      ArrowLeft: handleBack,
+      Backspace: handleBack,
+      Enter: handleNext,
+      "Shift+n": handleNext,
+      "Shift+p": handleBack,
+      "Shift+l": handleBack,
+      r: () => {
+        if (success) handleReset()
+      },
+    }
+    for (let i = 1; i <= 6; i++) {
+      map[String(i)] = () => {
+        if (step === 0) {
+          const s = servicios?.[i - 1]
+          if (s) {
+            setValue("idServicio", s.id)
+            setSelectedDate("")
+            setSelectedTime("")
+          }
+        } else if (step === 1) {
+          let slotIdx = 0
+          for (const t of TIME_SLOTS) {
+            if (isSlotOccupied(t)) continue
+            slotIdx++
+            if (slotIdx === i) {
+              if (selectedDate) setSelectedTime(t)
+              break
+            }
+          }
+        }
+      }
+    }
+    return map
+  }, [
+    step,
+    servicios,
+    selectedDate,
+    isSlotOccupied,
+    errors.root,
+    success,
+    handleBack,
+    handleNext,
+    setValue,
+    setError,
+    handleReset,
+  ])
+
+  useHotkeys(hotkeyMap)
+
+  const shortcutDefs = useMemo(
+    () => [
+      { key: "1-6", description: "Seleccionar servicio / horario" },
+      { key: "Enter", description: "Siguiente paso" },
+      { key: "Shift+n", description: "Siguiente paso" },
+      { key: "←", description: "Paso anterior" },
+      { key: "Esc", description: "Limpiar error / volver" },
+      { key: "r", description: "Reservar otro turno (confirmación)" },
+    ],
+    [],
+  )
+  useRegisterShortcuts("cliente", shortcutDefs)
 
   async function onSubmit(data: TurnoFormData) {
     crearTurno.mutate(
@@ -175,7 +248,7 @@ export default function Reserva() {
                 }`}
               >
                 {i < step ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 animate-in zoom-in duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
@@ -258,6 +331,7 @@ export default function Reserva() {
                     setSelectedDate(e.target.value)
                     setSelectedTime("")
                   }}
+                  className="text-base"
                 />
               </div>
               {selectedDate && (
@@ -271,16 +345,16 @@ export default function Reserva() {
                       const selected = selectedTime === time
                       return (
                         <button
-                          key={time}
+                          key={selected ? `sel-${time}` : time}
                           type="button"
                           disabled={occupied}
                           onClick={() => setSelectedTime(time)}
-                          className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-[20px] border-2 text-sm font-medium transition-all duration-200 ${
+                          className={`px-4 sm:px-5 min-h-11 rounded-[20px] border-2 text-sm font-medium transition-all duration-200 ${
                             occupied
                               ? "border-border bg-card text-muted-foreground line-through cursor-not-allowed opacity-50"
                               : selected
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-primary bg-transparent text-foreground hover:bg-accent"
+                                ? "border-primary bg-primary text-primary-foreground animate-in zoom-in duration-150"
+                                : "border-primary bg-transparent text-foreground hover:bg-accent hover:scale-105 active:scale-95"
                           }`}
                         >
                           {time}
@@ -302,14 +376,14 @@ export default function Reserva() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Nombre</label>
-                  <Input {...register("nombreCliente")} placeholder="Juan" />
+                  <Input {...register("nombreCliente")} placeholder="Juan" className="text-base" />
                   {errors.nombreCliente && (
                     <p className="text-xs text-destructive">{errors.nombreCliente.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Apellido</label>
-                  <Input {...register("apellidoCliente")} placeholder="Pérez" />
+                  <Input {...register("apellidoCliente")} placeholder="Pérez" className="text-base" />
                   {errors.apellidoCliente && (
                     <p className="text-xs text-destructive">{errors.apellidoCliente.message}</p>
                   )}
@@ -317,14 +391,14 @@ export default function Reserva() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Teléfono</label>
-                <Input {...register("telefonoCliente")} placeholder="1155551234" type="tel" />
+                <Input {...register("telefonoCliente")} placeholder="1155551234" type="tel" className="text-base" />
                 {errors.telefonoCliente && (
                   <p className="text-xs text-destructive">{errors.telefonoCliente.message}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Email (opcional)</label>
-                <Input {...register("emailCliente")} placeholder="juan@email.com" type="email" />
+                <Input {...register("emailCliente")} placeholder="juan@email.com" type="email" className="text-base" />
                 {errors.emailCliente && (
                   <p className="text-xs text-destructive">{errors.emailCliente.message}</p>
                 )}
