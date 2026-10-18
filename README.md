@@ -1,6 +1,8 @@
 # Sistema de Gestión de Barbería
 
-> **Frontend moderno:** el directorio `frontend-react/` contiene la app activa (React 19 + Vite + TypeScript + Tailwind), con wizard de reservas y panel de administración. El sitio `frontend/` (HTML/CSS/JS vanilla) queda como referencia histórica. Ver `AGENTS.md` para arquitectura y comandos.
+> **Frontend moderno:** el directorio `frontend/` contiene la app activa (React 19 + Vite + TypeScript + Tailwind), con wizard de reservas y panel de administración. El sitio estático de la raíz (HTML/CSS/JS vanilla) queda como referencia histórica.
+>
+> 📚 **Documentación:** [README del frontend](frontend/README.md) · [README del backend](backend/README.md) · [Índice de docs](docs/README.md) · `AGENTS.md` (arquitectura y comandos para agentes).
 
 ---
 
@@ -24,6 +26,7 @@
 10. [Capturas de Pantalla](#capturas-de-pantalla)
 11. [Organización del Proyecto](#organización-del-proyecto)
 12. [Instalación](#instalación)
+13. [Licencia](#licencia)
 
 ---
 
@@ -68,7 +71,7 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 
 ### Requerimientos No Funcionales
 - **Compatibilidad y diseño responsivo**: Uso óptimo en cualquier dispositivo.
-- **Seguridad**: Encriptación de datos para proteger la privacidad del usuario.
+- **Seguridad**: Contraseñas de administrador con hash Argon2 (no se guardan en texto plano), autenticación con JWT (HS256) y CORS restringido a los orígenes autorizados. El tráfico depende del HTTPS del hosting.
 
 ---
 
@@ -91,19 +94,32 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 
 ## Pruebas de Requerimientos del Sistema
 
-### Caso de Prueba 1: Selección de Servicio
+### Suite automatizada (backend)
+
+El backend tiene **64 tests automatizados** (controllers con MockMvc, servicios, repositorios sobre H2 e integración de Argon2):
+
+```bash
+cd backend && ./mvnw test
+```
+
+En cada push/PR que toque `backend/**` corren en CI (`.github/workflows/backend-ci.yml`).
+El frontend React todavía no tiene tests automatizados ni CI propio.
+
+### Casos de validación manual
+
+#### Caso de Prueba 1: Selección de Servicio
 - **ID**: CP-001
 - **Descripción**: Verificar que el usuario pueda seleccionar un tipo de servicio.
 - **Prioridad**: Alta
 - **Resultados Esperados**: El servicio seleccionado se almacena correctamente.
 
-### Caso de Prueba 2: Selección de Fecha y Hora
+#### Caso de Prueba 2: Selección de Fecha y Hora
 - **ID**: CP-002
 - **Descripción**: Validar la selección de fechas y horarios disponibles.
 - **Prioridad**: Media
 - **Resultados Esperados**: Fecha y hora seleccionadas correctamente.
 
-### Caso de Prueba 3: Registro de Datos del Cliente
+#### Caso de Prueba 3: Registro de Datos del Cliente
 - **ID**: CP-003
 - **Descripción**: Comprobar que los datos del cliente se registren con éxito.
 - **Prioridad**: Alta
@@ -120,14 +136,15 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 ---
 
 ## Demo en Línea
-El sistema se encuentra hosteado y disponible de forma pública para pruebas:
+El sitio estático legacy se encuentra hosteado y disponible de forma pública para pruebas:
 
 🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
 🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html)  
 
-👉 Nota: el despliegue se realiza directamente desde las ramas:  
-- `frontend` → para GitHub Pages.  
-- `backend` → para Railway u otro servicio de hosting del API.  
+👉 Estado actual del despliegue:
+- **GitHub Pages** sirve el sitio estático legacy desde la rama `frontend`.
+- La **app React** (`frontend/`) todavía no tiene despliegue automático: se ejecuta en local con `bun dev`.
+- El API se puede hostear en Railway u otro PaaS desde la rama `backend`.
 
 > **🔐 Admin de prueba:** El primer administrador se crea automáticamente al iniciar el backend
 > por primera vez si la base de datos está vacía (`AdminSeedRunner`). Las credenciales se
@@ -169,51 +186,79 @@ El sistema se encuentra hosteado y disponible de forma pública para pruebas:
 
 - **Java 21** (JDK)
 - **Maven Wrapper** (incluido en `backend/mvnw`)
-- **PostgreSQL** 15+ (o usar perfil H2 para desarrollo sin instalar PostgreSQL)
+- **PostgreSQL** 15+ (opcional: con el perfil `h2` corre sobre H2 en memoria)
+- **Bun** (o npm) para el frontend React
 
-### Variables de entorno
+### Backend
 
-El backend lee las siguientes variables para conectar a la base de datos:
+#### Variables de entorno
+
+El backend lee las siguientes variables de entorno:
 
 | Variable | Descripción | Ejemplo |
 |---|---|---|
 | `DB_URL` | URL de conexión JDBC | `jdbc:postgresql://localhost:5432/barber` |
 | `DB_USER` | Usuario de base de datos | `postgres` |
 | `DB_PASSWORD` | Contraseña del usuario | `postgres` |
+| `JWT_SECRET` | **Obligatoria.** Secreto HS256 de al menos 32 bytes. Generar con `openssl rand -base64 32` | `kR9/xZ...` |
+| `ADMIN_SEED_EMAIL` | Email del admin seed (opcional) | `admin@admin.com` |
+| `ADMIN_SEED_PASSWORD` | Contraseña del admin seed (opcional) | `admin1234` |
 
-Copiar `backend/.env.example` a `backend/.env` y completar los valores.
+> ⚠️ Sin `JWT_SECRET` el backend **no arranca** (fail-closed). `ADMIN_SEED_*` tienen defaults.
+> Copiar `backend/.env.example` a `backend/.env` y completar los valores. Ver más detalles en [backend/README.md](backend/README.md).
 
-### Desarrollo sin PostgreSQL (perfil H2)
+#### Desarrollo sin PostgreSQL (perfil `h2`)
 
-Activar el perfil `test` para usar H2 en memoria — ideal para desarrollo rápido sin instalar PostgreSQL:
+Usar H2 en memoria — ideal para desarrollo rápido sin instalar PostgreSQL. El perfil se llama **`h2`**:
 
 ```bash
-SPRING_PROFILES_ACTIVE=test ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=h2 JWT_SECRET=$(openssl rand -base64 32) ./mvnw spring-boot:run
 ```
 
-### Comandos
+#### Comandos (desde `backend/`)
 
 ```bash
 # Ejecutar el servidor (Postgres requerido)
 ./mvnw spring-boot:run
 
 # Ejecutar con perfil H2 (sin Postgres)
-SPRING_PROFILES_ACTIVE=test ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
 
-# Ejecutar tests
+# Ejecutar tests (64 tests)
 ./mvnw test
 
 # Build completo (package)
 ./mvnw clean package
 ```
 
-El servidor arranca en `http://localhost:8080`.  
-Documentación interactiva de la API: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+El servidor arranca en `http://localhost:8080`.
+Documentación interactiva de la API (Swagger UI): [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) — deshabilitada en el perfil `prod`.
+
+### Frontend (app React)
+
+```bash
+cd frontend
+bun i                       # instalar dependencias
+cp .env.example .env        # VITE_API_BASE_URL (default http://localhost:8080)
+bun dev                     # dev server en http://localhost:5173
+```
+
+Build de producción: `bun run build` → `frontend/dist/`.
+Guía completa (estructura, auth, atajos de teclado): [frontend/README.md](frontend/README.md).
+
+> El backend debe estar corriendo (en `:8080`) para que la app funcione.
+> En desarrollo el CORS permite `localhost:5173/5174` (perfil por defecto).
 
 ### Ramas
 
 | Rama | Propósito |
 |---|---|
-| `backend` | Desarrollo activo del backend (Spring Boot, JPA, API REST) |
-| `frontend` | Desarrollo activo del frontend (HTML/CSS/JS, GitHub Pages) |
-| `main` | Snapshot estable — solo recibe código probado vía sync manual |
+| `main` | Desarrollo activo (monorepo: `backend/`, `frontend/`, sitio estático legacy y docs) |
+| `backend` | Histórica — despliegue del API en PaaS (Railway) |
+| `frontend` | Histórica — sitio estático legacy publicado en GitHub Pages |
+
+---
+
+## Licencia
+
+Distribuido bajo [GNU GPL v3](LICENSE).
