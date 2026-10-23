@@ -1,24 +1,20 @@
 import { useState, useMemo, useCallback } from "react"
+import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useServicios } from "@/api/servicios"
 import { useFechasOcupadas, useCrearTurno } from "@/api/turnos"
 import { turnoSchema, type TurnoFormData } from "@/lib/schemas/turno-schema"
 import { ApiError } from "@/lib/api-client"
+import { businessConfig, timeSlots } from "@/lib/business-config"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { todayInBusinessTz } from "@/lib/datetime"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { todayInputValue } from "@/lib/format"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 
 const STEPS = ["Servicio", "Fecha y hora", "Tus datos"]
-
-const TIME_SLOTS = [
-  "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30",
-  "17:00", "17:30", "18:00", "18:30",
-  "19:00", "19:30",
-]
 
 const SuccessView = ({
   onReset,
@@ -47,7 +43,12 @@ export default function Reserva() {
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
 
-  const { data: servicios, isLoading: loadingServicios, isError: errorServicios } = useServicios()
+  const {
+    data: servicios,
+    isLoading: loadingServicios,
+    isError: errorServicios,
+    refetch: refetchServicios,
+  } = useServicios()
   const { data: fechasOcupadas } = useFechasOcupadas()
   const crearTurno = useCrearTurno()
 
@@ -74,6 +75,9 @@ export default function Reserva() {
   })
 
   const selectedServicioId = watch("idServicio")
+
+  // Grilla de horarios desde la configuración del negocio (interina).
+  const slots = useMemo(() => timeSlots(), [])
 
   const selectedServicio = useMemo(() => {
     if (!servicios || !selectedServicioId) return null
@@ -146,7 +150,7 @@ export default function Reserva() {
           }
         } else if (step === 1) {
           let slotIdx = 0
-          for (const t of TIME_SLOTS) {
+          for (const t of slots) {
             if (isSlotOccupied(t)) continue
             slotIdx++
             if (slotIdx === i) {
@@ -161,6 +165,7 @@ export default function Reserva() {
   }, [
     step,
     servicios,
+    slots,
     selectedDate,
     isSlotOccupied,
     errors.root,
@@ -219,10 +224,16 @@ export default function Reserva() {
         ) : (
           <div className="w-8" />
         )}
-        <a href="/" className="inline-flex">
-          <img src="/logo.svg" alt="TH Barber Club" className="h-12" />
-        </a>
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
+        <Link to="/" className="inline-flex" aria-label={businessConfig.branding.nombre}>
+          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.nombre} className="h-16" />
+        </Link>
+        <ThemeToggle />
+        <a
+          href={businessConfig.branding.instagramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex"
+        >
           <img src="/img/icono-instagram.svg" alt="Instagram" className="h-8" />
         </a>
       </nav>
@@ -239,6 +250,7 @@ export default function Reserva() {
           {STEPS.map((label, i) => (
             <div key={label} className="flex items-center gap-1.5 sm:gap-2">
               <div
+                aria-current={i === step ? "step" : undefined}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors shrink-0 ${
                   i === step
                     ? "bg-primary text-primary-foreground"
@@ -268,7 +280,10 @@ export default function Reserva() {
         </div>
 
         {errors.root && (
-          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg text-center mb-4 page-enter">
+          <div
+            role="alert"
+            className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg text-center mb-4 page-enter"
+          >
             {errors.root.message}
           </div>
         )}
@@ -280,8 +295,13 @@ export default function Reserva() {
               {loadingServicios ? (
                 <p className="text-muted-foreground">Cargando servicios...</p>
               ) : errorServicios ? (
-                <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg">
-                  No se pudieron cargar los servicios. Revisá tu conexión e intentá de nuevo.
+                <div className="space-y-3">
+                  <div role="alert" className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg">
+                    No se pudieron cargar los servicios. Revisá tu conexión e intentá de nuevo.
+                  </div>
+                  <Button type="button" variant="secondary" onClick={() => refetchServicios()}>
+                    Reintentar
+                  </Button>
                 </div>
               ) : !servicios?.length ? (
                 <p className="text-muted-foreground">No hay servicios disponibles.</p>
@@ -320,13 +340,14 @@ export default function Reserva() {
             <div className="page-enter space-y-6">
               <h2 className="text-lg font-semibold text-foreground">Elegí fecha y horario</h2>
               <div>
-                <label className="block text-sm font-medium mb-2 text-foreground">
+                <label htmlFor="fecha-reserva" className="block text-sm font-medium mb-2 text-foreground">
                   Seleccionar fecha
                 </label>
                 <Input
+                  id="fecha-reserva"
                   type="date"
                   value={selectedDate}
-                  min={todayInputValue()}
+                  min={todayInBusinessTz()}
                   onChange={(e) => {
                     setSelectedDate(e.target.value)
                     setSelectedTime("")
@@ -340,7 +361,7 @@ export default function Reserva() {
                     Horarios disponibles
                   </label>
                   <div className="flex flex-wrap justify-center gap-2">
-                    {TIME_SLOTS.map((time) => {
+                    {slots.map((time) => {
                       const occupied = isSlotOccupied(time)
                       const selected = selectedTime === time
                       return (
@@ -375,32 +396,62 @@ export default function Reserva() {
               <h2 className="text-lg font-semibold text-foreground">Tus datos</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Nombre</label>
-                  <Input {...register("nombreCliente")} placeholder="Juan" className="text-base" />
+                  <label htmlFor="nombreCliente" className="text-sm font-medium text-foreground">Nombre</label>
+                  <Input
+                    id="nombreCliente"
+                    {...register("nombreCliente")}
+                    placeholder="Juan"
+                    className="text-base"
+                    aria-invalid={errors.nombreCliente ? true : undefined}
+                    aria-describedby={errors.nombreCliente ? "nombreCliente-error" : undefined}
+                  />
                   {errors.nombreCliente && (
-                    <p className="text-xs text-destructive">{errors.nombreCliente.message}</p>
+                    <p id="nombreCliente-error" className="text-xs text-destructive">{errors.nombreCliente.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Apellido</label>
-                  <Input {...register("apellidoCliente")} placeholder="Pérez" className="text-base" />
+                  <label htmlFor="apellidoCliente" className="text-sm font-medium text-foreground">Apellido</label>
+                  <Input
+                    id="apellidoCliente"
+                    {...register("apellidoCliente")}
+                    placeholder="Pérez"
+                    className="text-base"
+                    aria-invalid={errors.apellidoCliente ? true : undefined}
+                    aria-describedby={errors.apellidoCliente ? "apellidoCliente-error" : undefined}
+                  />
                   {errors.apellidoCliente && (
-                    <p className="text-xs text-destructive">{errors.apellidoCliente.message}</p>
+                    <p id="apellidoCliente-error" className="text-xs text-destructive">{errors.apellidoCliente.message}</p>
                   )}
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Teléfono</label>
-                <Input {...register("telefonoCliente")} placeholder="1155551234" type="tel" className="text-base" />
+                <label htmlFor="telefonoCliente" className="text-sm font-medium text-foreground">Teléfono</label>
+                <Input
+                  id="telefonoCliente"
+                  {...register("telefonoCliente")}
+                  placeholder="1155551234"
+                  type="tel"
+                  className="text-base"
+                  aria-invalid={errors.telefonoCliente ? true : undefined}
+                  aria-describedby={errors.telefonoCliente ? "telefonoCliente-error" : undefined}
+                />
                 {errors.telefonoCliente && (
-                  <p className="text-xs text-destructive">{errors.telefonoCliente.message}</p>
+                  <p id="telefonoCliente-error" className="text-xs text-destructive">{errors.telefonoCliente.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Email (opcional)</label>
-                <Input {...register("emailCliente")} placeholder="juan@email.com" type="email" className="text-base" />
+                <label htmlFor="emailCliente" className="text-sm font-medium text-foreground">Email (opcional)</label>
+                <Input
+                  id="emailCliente"
+                  {...register("emailCliente")}
+                  placeholder="juan@email.com"
+                  type="email"
+                  className="text-base"
+                  aria-invalid={errors.emailCliente ? true : undefined}
+                  aria-describedby={errors.emailCliente ? "emailCliente-error" : undefined}
+                />
                 {errors.emailCliente && (
-                  <p className="text-xs text-destructive">{errors.emailCliente.message}</p>
+                  <p id="emailCliente-error" className="text-xs text-destructive">{errors.emailCliente.message}</p>
                 )}
               </div>
 

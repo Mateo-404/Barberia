@@ -1,0 +1,52 @@
+# Stack de desarrollo: PostgreSQL + backend Go.
+#
+# Uso:
+#   JWT_SECRET=$(openssl rand -base64 32) docker compose up --build
+#
+# Los datos viven en un volumen nombrado (barber-pgdata). db/init crea el rol
+# app_user (sin SUPERUSER/BYPASSRLS) para los tests de RLS (`make test-db`).
+# La app de este compose usa el superusuario con APP_ENV=dev; en producción
+# ver docs/DEPLOY_NOTES.md.
+
+name: barber
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: barber
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - barber-pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d barber"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend-go:
+    build: ./backend-go
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: dev
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/barber?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?Genere uno con: openssl rand -base64 32}
+      AUTO_MIGRATE: "true"
+      CORS_ALLOW_ORIGINS: http://localhost:5173,http://localhost:5174
+      DEFAULT_TENANT_SLUG: default
+      ADMIN_SEED: "true"
+      ADMIN_SEED_EMAIL: admin@admin.com
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-admin1234}
+      LOGIN_RATE_LIMIT_PER_MINUTE: "5"
+    ports:
+      - "8080:8080"
+
+volumes:
+  barber-pgdata:

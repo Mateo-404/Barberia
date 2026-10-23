@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Configurá tu barbería</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@400;700&family=Bebas+Neue&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Poppins:wght@400;600&family=DM+Sans:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Raleway:wght@400;700&family=Roboto:wght@400;700&family=Rubik:wght@400;600&family=Barlow+Condensed:wght@400;600&family=Cinzel:wght@400;700&family=Archivo+Black&family=Space+Grotesk:wght@400;700&family=Work+Sans:wght@400;600&family=Nunito:wght@400;700&family=Anton&family=Cormorant+Garamond:wght@400;700&family=Josefin+Sans:wght@400;700&display=swap">
+<style>
+:root{--bg:#f6f5f2;--fg:#1d1d1b;--mut:#6b6a66;--bd:#dcdad4;--card:#fff;--ac:#1d1d1b;--acf:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151514;--fg:#f1efe9;--mut:#a09e97;--bd:#33322f;--card:#1f1f1d;--ac:#f1efe9;--acf:#151514;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151514;--fg:#f1efe9;--mut:#a09e97;--bd:#33322f;--card:#1f1f1d;--ac:#f1efe9;--acf:#151514;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:860px){.wrap{grid-template-columns:420px minmax(0,1fr);align-items:start}.pvbox{position:sticky;top:16px}}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px}
+.steps{display:flex;gap:6px;margin-bottom:16px}.steps i{flex:1;height:4px;border-radius:2px;background:var(--bd)}.steps i.on{background:var(--ac)}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+input[type=text],input[type=number],input[type=time],select{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
+input[type=color]{width:100%;height:38px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);padding:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row3{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.row3 label{font-size:11px;margin-top:0}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pre{border:2px solid var(--bd);border-radius:10px;padding:8px;cursor:pointer;background:var(--bg);color:var(--fg);font:inherit;font-size:12px;text-align:left}
+.pre.sel{border-color:var(--ac)}.sw{display:flex;height:18px;border-radius:5px;overflow:hidden;margin-bottom:5px}.sw b{flex:1}
+.fl{max-height:170px;overflow:auto;border:1px solid var(--bd);border-radius:8px;margin-top:6px}
+.fl button{display:block;width:100%;text-align:left;padding:7px 10px;border:0;border-bottom:1px solid var(--bd);background:transparent;color:var(--fg);font-size:17px;cursor:pointer}
+.fl button.sel{background:var(--ac);color:var(--acf)}
+.btns{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+button.p,button.s{padding:10px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--ac)}
+button.p{background:var(--ac);color:var(--acf)}button.s{background:transparent;color:var(--fg);border-color:var(--bd)}
+.warn{font-size:12px;color:#b3261e;margin-top:6px}.ok{font-size:12px;color:var(--mut);margin-top:6px}
+pre{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;max-height:200px;overflow:auto;font-size:11px}
+.pvbox h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:0 0 8px}
+#pv{border-radius:14px;overflow:hidden;border:1px solid var(--bd);background:var(--bg);color:var(--t);font-family:var(--bf),sans-serif}
+#pv nav{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--s)}
+#pv nav img{height:30px;width:auto;border-radius:4px}#pv .nm{font-family:var(--hf),serif;font-weight:700;font-size:18px}
+#pv .hero{padding:28px 16px}#pv h3{font-family:var(--hf),serif;font-size:30px;line-height:1.1;margin:0 0 6px}
+#pv .tag{opacity:.8;margin:0 0 16px}
+#pv .cta{display:inline-block;padding:10px 18px;font-weight:700;border-radius:var(--r);background:var(--p);color:var(--on);border:2px solid var(--p)}
+#pv .cta.outline{background:transparent;color:var(--p)}
+#pv .sv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px}
+#pv .sv div{background:var(--s);border-radius:var(--r);padding:10px;font-size:13px}#pv .sv b{display:block;font-family:var(--hf),serif;font-size:15px}
+#pv .sv span{color:var(--a);font-weight:700}
+#pv .sl{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 16px}#pv .sl em{font-style:normal;font-size:12px;padding:4px 10px;border:1px solid var(--a);color:var(--a);border-radius:var(--r)}
+#pv footer{padding:12px 16px;background:var(--s);font-size:12px;opacity:.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <main>
+  <h1>Configurá tu barbería</h1>
+  <p class="sub" id="sub"></p>
+  <div class="steps" id="steps"></div>
+  <div class="panel"><div id="body"></div>
+   <div class="btns"><button class="s" id="back">Atrás</button><button class="p" id="next">Siguiente</button></div>
+  </div>
+ </main>
+ <aside class="pvbox"><h2>Vista previa en vivo</h2><div id="pv"></div></aside>
+</div>
+<script>
+var FONTS=["Playfair Display","Bebas Neue","Oswald","Montserrat","Poppins","Inter","DM Sans","Lora","Merriweather","Raleway","Roboto","Rubik","Barlow Condensed","Cinzel","Archivo Black","Space Grotesk","Work Sans","Nunito","Anton","Cormorant Garamond","Josefin Sans"];
+var PRE=[
+{n:"Clásica",c:{primary:"#c9a24b",accent:"#e8d9a8",bg:"#161616",surface:"#222222",text:"#f4f0e8"}},
+{n:"Navy",c:{primary:"#d4a24c",accent:"#9ec1e6",bg:"#0f1e33",surface:"#172b47",text:"#eef3f9"}},
+{n:"Vintage",c:{primary:"#8b2e2e",accent:"#b5651d",bg:"#f4ead8",surface:"#e9dcc2",text:"#2a1d12"}},
+{n:"Moderna",c:{primary:"#111111",accent:"#ff5a36",bg:"#ffffff",surface:"#f2f2f2",text:"#111111"}},
+{n:"Bosque",c:{primary:"#2f7d5b",accent:"#a8d5a2",bg:"#10201a",surface:"#183027",text:"#eaf4ee"}},
+{n:"Neón",c:{primary:"#ff2e88",accent:"#27e1ff",bg:"#0b0b14",surface:"#161628",text:"#f5f5ff"}}];
+var S={name:"Barbería Don Mateo",tagline:"Corte clásico, estilo propio",logo:"",c:Object.assign({},PRE[0].c),hf:"Playfair Display",bf:"Inter",r:8,btn:"solid",
+biz:{whatsapp:"",instagram:"",address:"",currency:"ARS",slot:30,notice:1,open:"09:00",close:"20:00"}};
+var step=0,done=false,$=function(i){return document.getElementById(i)};
+var TITLES=["Marca","Colores","Tipografía","Estilo","Tu negocio","Listo"];
+function lum(h){var v=[1,3,5].map(function(i){var x=parseInt(h.substr(i,2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+function ratio(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fontList(k,q){return FONTS.filter(function(f){return f.toLowerCase().indexOf((q||"").toLowerCase())>-1}).map(function(f){return '<button data-f="'+k+'|'+f+'" class="'+(S[k]===f?"sel":"")+'" style="font-family:\''+f+'\'">'+f+'</button>'}).join("")}
+var VIEWS=[
+function(){return '<label>Nombre de la barbería</label><input type="text" data-k="name" maxlength="60" value="'+esc(S.name)+'"><label>Frase corta</label><input type="text" data-k="tagline" maxlength="120" value="'+esc(S.tagline)+'"><label>Logo (PNG, JPG o WebP, hasta 300 KB)</label><input type="file" id="logo" accept="image/png,image/jpeg,image/webp"><div class="ok" id="logomsg">'+(S.logo?"Logo cargado":"Sin logo: se muestra el nombre.")+'</div>'},
+function(){return '<label>Paletas sugeridas</label><div class="presets">'+PRE.map(function(p,i){return '<button class="pre" data-p="'+i+'"><div class="sw">'+Object.keys(p.c).map(function(k){return '<b style="background:'+p.c[k]+'"></b>'}).join("")+'</div>'+p.n+'</button>'}).join("")+'</div><label>O armá la tuya</label><div class="row3">'+[["primary","Principal"],["accent","Acento"],["bg","Fondo"],["surface","Tarjetas"],["text","Texto"]].map(function(x){return '<div><label>'+x[1]+'</label><input type="color" data-k="c.'+x[0]+'" value="'+S.c[x[0]]+'"></div>'}).join("")+'</div><div id="ct"></div>'},
+function(){return '<label>Títulos</label><input type="text" id="q-hf" placeholder="Buscar tipografía…"><div class="fl" id="fl-hf">'+fontList("hf")+'</div><label>Textos</label><input type="text" id="q-bf" placeholder="Buscar tipografía…"><div class="fl" id="fl-bf">'+fontList("bf")+'</div><div class="ok">Desde el backend podés ofrecer las +1.500 familias con la Google Fonts Developer API.</div>'},
+function(){return '<label>Redondeo de bordes: <span id="rv">'+S.r+'</span> px</label><input type="range" data-k="r" min="0" max="24" value="'+S.r+'" style="width:100%"><label>Estilo de botones</label><select data-k="btn"><option value="solid"'+(S.btn=="solid"?" selected":"")+'>Rellenos</option><option value="outline"'+(S.btn=="outline"?" selected":"")+'>Con borde</option></select>'},
+function(){var b=S.biz;return '<div class="row"><div><label>WhatsApp</label><input type="text" data-k="biz.whatsapp" placeholder="+54 9 3492 …" value="'+esc(b.whatsapp)+'"></div><div><label>Instagram</label><input type="text" data-k="biz.instagram" placeholder="@mibarberia" value="'+esc(b.instagram)+'"></div></div><label>Dirección</label><input type="text" data-k="biz.address" value="'+esc(b.address)+'"><div class="row"><div><label>Apertura</label><input type="time" data-k="biz.open" value="'+b.open+'"></div><div><label>Cierre</label><input type="time" data-k="biz.close" value="'+b.close+'"></div></div><div class="row"><div><label>Minutos por turno</label><input type="number" data-k="biz.slot" min="10" max="240" step="5" value="'+b.slot+'"></div><div><label>Anticipación mínima (hs)</label><input type="number" data-k="biz.notice" min="0" max="168" value="'+b.notice+'"></div></div><label>Moneda</label><select data-k="biz.currency">'+["ARS","USD","EUR","UYU","CLP"].map(function(m){return '<option'+(b.currency==m?" selected":"")+'>'+m+'</option>'}).join("")+'</select>'},
+function(){return '<p><b>Todo listo.</b> Podés cambiar cualquiera de estas opciones más tarde desde Configuración.</p><pre id="js">'+esc(JSON.stringify(S,function(k,v){return k=="logo"&&v?"(imagen)":v},2))+'</pre><div class="ok" id="svmsg">'+(done?"Guardado.":"")+'</div>'}];
+function setPath(p,v){var a=p.split("."),o=S;while(a.length>1)o=o[a.shift()];o[a[0]]=v}
+function loadFonts(){var l=$("gf")||document.createElement("link");l.id="gf";l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family="+[S.hf,S.bf].map(function(f){return f.replace(/ /g,"+")+":wght@400;600;700"}).join("&family=")+"&display=swap";document.head.appendChild(l)}
+function preview(){var c=S.c,p=$("pv"),on=lum(c.primary)>.45?"#111111":"#ffffff";
+p.style.cssText="--p:"+c.primary+";--a:"+c.accent+";--bg:"+c.bg+";--s:"+c.surface+";--t:"+c.text+";--r:"+S.r+"px;--hf:'"+S.hf+"';--bf:'"+S.bf+"';--on:"+on+";background:"+c.bg+";color:"+c.text;
+var b=S.biz,sl=[],m=function(h){return parseInt(h.substr(0,2))*60+parseInt(h.substr(3,2))},t=m(b.open);while(t+b.slot<=m(b.close)&&sl.length<5){sl.push(("0"+Math.floor(t/60)).slice(-2)+":"+("0"+t%60).slice(-2));t+=Math.max(b.slot,10)}
+var money=function(n){return b.currency+" "+n.toLocaleString("es-AR")};
+p.innerHTML='<nav>'+(S.logo?'<img src="'+S.logo+'" alt="">':'')+'<span class="nm">'+esc(S.name)+'</span></nav><div class="hero"><h3>'+esc(S.name)+'</h3><p class="tag">'+esc(S.tagline)+'</p><span class="cta '+(S.btn=="outline"?"outline":"")+'">Reservar turno</span></div><div class="sv"><div><b>Corte</b>'+b.slot+' min<br><span>'+money(8000)+'</span></div><div><b>Barba</b>20 min<br><span>'+money(5000)+'</span></div><div><b>Combo</b>'+(b.slot+20)+' min<br><span>'+money(11000)+'</span></div></div><div class="sl">'+sl.map(function(x){return '<em>'+x+'</em>'}).join("")+'</div><footer>'+[b.address,b.whatsapp&&"WhatsApp "+b.whatsapp,b.instagram].filter(Boolean).map(esc).join(" · ")+'&nbsp;</footer>';
+var ct=$("ct");if(ct){var r1=ratio(c.text,c.bg),r2=ratio(on,c.primary);ct.innerHTML=(r1<4.5?'<div class="warn">Texto sobre fondo: contraste '+r1.toFixed(1)+':1, conviene al menos 4,5:1.</div>':'<div class="ok">Contraste texto/fondo '+r1.toFixed(1)+':1, correcto.</div>')+(r2<3?'<div class="warn">El botón principal tiene poco contraste.</div>':'')}
+loadFonts()}
+function render(){$("sub").textContent="Paso "+(step+1)+" de "+TITLES.length+": "+TITLES[step];$("steps").innerHTML=TITLES.map(function(_,i){return '<i class="'+(i<=step?"on":"")+'"></i>'}).join("");$("body").innerHTML=VIEWS[step]();$("back").style.visibility=step?"visible":"hidden";$("next").textContent=step==5?"Guardar y entrar al panel":"Siguiente";preview();
+var lg=$("logo");if(lg)lg.onchange=function(){var f=lg.files[0];if(!f)return;if(f.size>300000){$("logomsg").textContent="Pesa más de 300 KB.";return}var r=new FileReader();r.onload=function(){S.logo=r.result;$("logomsg").textContent="Logo cargado";preview()};r.readAsDataURL(f)}}
+document.addEventListener("input",function(e){var t=e.target,k=t.dataset.k;if(k){setPath(k,t.type=="number"||t.type=="range"?Number(t.value):t.value);if(k=="r")$("rv").textContent=t.value;preview()}
+if(t.id&&t.id.indexOf("q-")==0){var w=t.id.slice(2);$("fl-"+w).innerHTML=fontList(w,t.value)}});
+document.addEventListener("change",function(e){if(e.target.dataset.k&&e.target.tagName=="SELECT"){setPath(e.target.dataset.k,e.target.value);preview()}});
+document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+if(b.dataset.p){S.c=Object.assign({},PRE[b.dataset.p].c);render()}
+if(b.dataset.f){var a=b.dataset.f.split("|");S[a[0]]=a[1];b.parentNode.innerHTML=fontList(a[0],$("q-"+a[0]).value);preview()}});
+$("back").onclick=function(){if(step>0){step--;render()}};
+$("next").onclick=function(){if(step<5){step++;render();return}
+var payload=JSON.stringify(S);fetch("/api/admin/settings",{method:"PUT",headers:{"Content-Type":"application/json"},credentials:"include",body:payload})
+.then(function(r){if(!r.ok)throw 0;done=true;$("svmsg").textContent="Guardado. Redirigiendo al panel…"})
+.catch(function(){$("svmsg").textContent="Modo demo: no hay backend conectado. Este JSON es lo que recibiría PUT /api/admin/settings."})};
+render();
+</script>
+</body>
+</html>

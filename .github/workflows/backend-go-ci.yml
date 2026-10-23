@@ -1,0 +1,78 @@
+name: Backend Go CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['backend-go/**', 'db/**', '.github/workflows/backend-go-ci.yml']
+  pull_request:
+    branches: [main]
+    paths: ['backend-go/**', 'db/**', '.github/workflows/backend-go-ci.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-go
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: barber_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d barber_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      TEST_DATABASE_URL_BASE: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go (versión fijada en go.mod)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend-go/go.mod
+          cache-dependency-path: backend-go/go.sum
+
+      - name: Verificar go.mod/go.sum
+        run: go mod verify
+
+      - name: Formato (gofmt)
+        run: test -z "$(gofmt -l $(find . -name '*.go' -not -path './internal/platform/database/sqlc/*'))"
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Tests unitarios
+        run: go test -race ./...
+
+      - name: Tests de integración (PostgreSQL)
+        run: go test -race -tags integration ./internal/integration/ -v
+
+      - name: Tests SQL de RLS y reservas (db/tests)
+        env:
+          DB: postgres://postgres:postgres@localhost:5432/barber_test?sslmode=disable
+        run: |
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f ../db/init/00_roles.sql
+          MIGRATE_DATABASE_URL="$DB" go run ./cmd/migrate
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f ../db/tests/rls_isolation.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f ../db/tests/booking_exclusion.sql
+
+      # Compilados con el toolchain de go.mod (los binarios precompilados de
+      # golangci-lint usan un Go menor y rechazan módulos go 1.27).
+      - name: golangci-lint (versión fijada)
+        run: make lint
+
+      - name: govulncheck
+        run: make vuln
+
+      - name: Imagen Docker
+        run: docker build -t barber-backend-go:ci .

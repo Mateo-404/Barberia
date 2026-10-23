@@ -1,56 +1,24 @@
-# Contenido combinado de ambos .gitignore
+# Secrets locales
+.env
+.env.*
+!.env.example
 
-# Reglas del primer archivo
-*.class
-*.log
-*.ctxt
-.mtj.tmp/
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-hs_err_pid*
-replay_pid*
+# Backend Go
+backend-go/bin/
+*.test
+*.out
 
-# Reglas del segundo archivo
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# Frontend React
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+frontend/*.tsbuildinfo
+frontend/node_modules/.tmp/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# Editores / SO
+.idea/
 .vscode/
-
-### Frontend React ###
-frontend-react/node_modules/
-frontend-react/dist/
-frontend-react/.env
+*.iml
+.DS_Store
+*.log

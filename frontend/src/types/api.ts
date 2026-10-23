@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/turnos": {
+    "/administradores": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,17 +12,17 @@ export interface paths {
             cookie?: never;
         };
         /** Obtener todos los registros */
-        get: operations["getAll"];
+        get: operations["getAll_3"];
         put?: never;
-        /** Crear un nuevo turno */
-        post: operations["create"];
+        /** Crear un nuevo administrador */
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/turnos/all": {
+    "/administradores/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,33 +31,32 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Crear múltiples turnos */
-        post: operations["createMultiple"];
+        /** Crear múltiples administradores */
+        post: operations["createMultiple_3"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/servicios": {
+    "/administradores/exists/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener todos los registros */
-        get: operations["getAll_1"];
+        /** Verificar si un registro existe por ID */
+        get: operations["existsById_3"];
         put?: never;
-        /** Crear un nuevo servicio */
-        post: operations["create_1"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/servicios/all": {
+    "/administradores/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -66,8 +65,47 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Crear múltiples servicios */
-        post: operations["createMultiple_1"];
+        /**
+         * Iniciar sesión
+         * @description Autentica un administrador por email y contraseña, devuelve JWT
+         */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/administradores/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener un registro por ID */
+        get: operations["getById_3"];
+        put?: never;
+        post?: never;
+        /** Eliminar un registro por ID */
+        delete: operations["delete_3"];
+        options?: never;
+        head?: never;
+        /** Actualizar parcialmente un registro por ID */
+        patch: operations["update_3"];
+        trace?: never;
+    };
+    "/administradores/{page}/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener registros paginados */
+        get: operations["getPage_3"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -109,97 +147,21 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/administradores": {
+    "/clientes/exists/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener todos los registros */
-        get: operations["getAll_3"];
-        put?: never;
-        /** Crear un nuevo administrador */
-        post: operations["create_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/administradores/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Iniciar sesión
-         * @description Autentica un administrador por email y contraseña, devuelve JWT
-         */
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/administradores/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Crear múltiples administradores */
-        post: operations["createMultiple_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/turnos/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener un registro por ID */
-        get: operations["getById"];
+        /** Verificar si un registro existe por ID */
+        get: operations["existsById_2"];
         put?: never;
         post?: never;
-        /** Eliminar un registro por ID */
-        delete: operations["delete"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** Actualizar parcialmente un registro por ID */
-        patch: operations["update"];
-        trace?: never;
-    };
-    "/servicios/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener un registro por ID */
-        get: operations["getById_1"];
-        put?: never;
-        post?: never;
-        /** Eliminar un registro por ID */
-        delete: operations["delete_1"];
-        options?: never;
-        head?: never;
-        /** Actualizar parcialmente un registro por ID */
-        patch: operations["update_1"];
+        patch?: never;
         trace?: never;
     };
     "/clientes/{id}": {
@@ -221,26 +183,7 @@ export interface paths {
         patch: operations["update_2"];
         trace?: never;
     };
-    "/administradores/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener un registro por ID */
-        get: operations["getById_3"];
-        put?: never;
-        post?: never;
-        /** Eliminar un registro por ID */
-        delete: operations["delete_3"];
-        options?: never;
-        head?: never;
-        /** Actualizar parcialmente un registro por ID */
-        patch: operations["update_3"];
-        trace?: never;
-    };
-    "/turnos/{page}/{size}": {
+    "/clientes/{page}/{size}": {
         parameters: {
             query?: never;
             header?: never;
@@ -248,98 +191,7 @@ export interface paths {
             cookie?: never;
         };
         /** Obtener registros paginados */
-        get: operations["getPage"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/turnos/findDateTimes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Obtener fechas y horas ocupadas
-         * @description Devuelve una lista con las fechas y horas que ya tienen turno asignado
-         */
-        get: operations["getFechasOcupadas"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/turnos/exists/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verificar si un registro existe por ID */
-        get: operations["existsById"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/servicios/{page}/{size}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener registros paginados */
-        get: operations["getPage_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/servicios/exists/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verificar si un registro existe por ID */
-        get: operations["existsById_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Verificar estado del backend
-         * @description Devuelve un mensaje de confirmación si el servidor está funcionando
-         */
-        get: operations["ping"];
+        get: operations["getPage_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -368,15 +220,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clientes/{page}/{size}": {
+    "/healthz": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener registros paginados */
-        get: operations["getPage_2"];
+        /** Health check básico */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Servidor vivo */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         put?: never;
         post?: never;
         delete?: never;
@@ -385,7 +254,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clientes/exists/{id}": {
+    "/ping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verificar estado del backend
+         * @description Devuelve un mensaje de confirmación si el servidor está funcionando
+         */
+        get: operations["ping"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/readyz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health check de dependencias (PostgreSQL) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Base de datos accesible */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Base de datos no disponible */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servicios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener todos los registros */
+        get: operations["getAll_1"];
+        put?: never;
+        /** Crear un nuevo servicio */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servicios/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Crear múltiples servicios */
+        post: operations["createMultiple_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/servicios/exists/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -393,7 +358,7 @@ export interface paths {
             cookie?: never;
         };
         /** Verificar si un registro existe por ID */
-        get: operations["existsById_2"];
+        get: operations["existsById_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -402,7 +367,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/administradores/{page}/{size}": {
+    "/servicios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener un registro por ID */
+        get: operations["getById_1"];
+        put?: never;
+        post?: never;
+        /** Eliminar un registro por ID */
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        /** Actualizar parcialmente un registro por ID */
+        patch: operations["update_1"];
+        trace?: never;
+    };
+    "/servicios/{page}/{size}": {
         parameters: {
             query?: never;
             header?: never;
@@ -410,7 +394,7 @@ export interface paths {
             cookie?: never;
         };
         /** Obtener registros paginados */
-        get: operations["getPage_3"];
+        get: operations["getPage_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -419,7 +403,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/administradores/exists/{id}": {
+    "/turnos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener todos los registros */
+        get: operations["getAll"];
+        put?: never;
+        /** Crear un nuevo turno */
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/turnos/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Crear múltiples turnos */
+        post: operations["createMultiple"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/turnos/exists/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -427,7 +446,63 @@ export interface paths {
             cookie?: never;
         };
         /** Verificar si un registro existe por ID */
-        get: operations["existsById_3"];
+        get: operations["existsById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/turnos/findDateTimes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Obtener fechas y horas ocupadas
+         * @description Devuelve una lista con las fechas y horas que ya tienen turno asignado
+         */
+        get: operations["getFechasOcupadas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/turnos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener un registro por ID */
+        get: operations["getById"];
+        put?: never;
+        post?: never;
+        /** Eliminar un registro por ID */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        /** Actualizar parcialmente un registro por ID */
+        patch: operations["update"];
+        trace?: never;
+    };
+    "/turnos/{page}/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener registros paginados */
+        get: operations["getPage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -909,7 +984,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getAll: {
+    getAll_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -924,12 +999,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponseDTO"][];
+                    "*/*": components["schemas"]["AdministradorResponseDTO"][];
                 };
             };
         };
     };
-    create: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -938,17 +1013,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TurnoRequestDTO"];
+                "application/json": components["schemas"]["AdministradorRequestDTO"];
             };
         };
         responses: {
-            /** @description Turno creado */
+            /** @description Administrador creado */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponseDTO"];
+                    "*/*": components["schemas"]["AdministradorResponseDTO"];
                 };
             };
             /** @description Datos inválidos */
@@ -960,8 +1035,8 @@ export interface operations {
                     "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description Servicio no encontrado */
-            404: {
+            /** @description Ya existe un administrador con ese email */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -971,7 +1046,7 @@ export interface operations {
             };
         };
     };
-    createMultiple: {
+    createMultiple_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -980,17 +1055,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TurnoRequestDTO"][];
+                "application/json": components["schemas"]["AdministradorRequestDTO"][];
             };
         };
         responses: {
-            /** @description Turnos creados */
+            /** @description Administradores creados */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponseDTO"][];
+                    "*/*": components["schemas"]["AdministradorResponseDTO"][];
                 };
             };
             /** @description Datos inválidos */
@@ -1002,8 +1077,8 @@ export interface operations {
                     "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description Servicio no encontrado */
-            404: {
+            /** @description Ya existe un administrador con ese email */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1013,27 +1088,29 @@ export interface operations {
             };
         };
     };
-    getAll_1: {
+    existsById_3: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Lista de registros */
+            /** @description true si existe, false si no */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ServicioResponseDTO"][];
+                    "*/*": boolean;
                 };
             };
         };
     };
-    create_1: {
+    login: {
         parameters: {
             query?: never;
             header?: never;
@@ -1042,21 +1119,61 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ServicioRequestDTO"];
+                "application/json": components["schemas"]["LoginRequestDTO"];
             };
         };
         responses: {
-            /** @description Servicio creado */
-            201: {
+            /** @description Inicio de sesión exitoso */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ServicioResponseDTO"];
+                    "*/*": components["schemas"]["LoginResponseDTO"];
                 };
             };
-            /** @description Datos inválidos */
-            400: {
+            /** @description Credenciales inválidas */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Demasiados intentos de inicio de sesión desde esta IP */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getById_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro encontrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdministradorResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1066,35 +1183,89 @@ export interface operations {
             };
         };
     };
-    createMultiple_1: {
+    delete_3: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: number;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ServicioRequestDTO"][];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Servicios creados */
-            201: {
+            /** @description Registro eliminado */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["ServicioResponseDTO"][];
-                };
+                content?: never;
             };
-            /** @description Datos inválidos */
-            400: {
+            /** @description Registro no encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Administrador"];
+            };
+        };
+        responses: {
+            /** @description Registro actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdministradorResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPage_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page: number;
+                size: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de registros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageAdministrador"];
                 };
             };
         };
@@ -1203,329 +1374,24 @@ export interface operations {
             };
         };
     };
-    getAll_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista de registros */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"][];
-                };
-            };
-        };
-    };
-    create_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdministradorRequestDTO"];
-            };
-        };
-        responses: {
-            /** @description Administrador creado */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"];
-                };
-            };
-            /** @description Datos inválidos */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Ya existe un administrador con ese email */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequestDTO"];
-            };
-        };
-        responses: {
-            /** @description Inicio de sesión exitoso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponseDTO"];
-                };
-            };
-            /** @description Credenciales inválidas */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    createMultiple_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdministradorRequestDTO"][];
-            };
-        };
-        responses: {
-            /** @description Administradores creados */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"][];
-                };
-            };
-            /** @description Datos inválidos */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-            /** @description Ya existe un administrador con ese email */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getById: {
+    existsById_2: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Registro encontrado */
+            /** @description true si existe, false si no */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registro eliminado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Turno"];
-            };
-        };
-        responses: {
-            /** @description Registro actualizado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TurnoResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getById_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registro encontrado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ServicioResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    delete_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registro eliminado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    update_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Servicio"];
-            };
-        };
-        responses: {
-            /** @description Registro actualizado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ServicioResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
+                    "*/*": boolean;
                 };
             };
         };
@@ -1625,102 +1491,7 @@ export interface operations {
             };
         };
     };
-    getById_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registro encontrado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    delete_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registro eliminado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    update_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Administrador"];
-            };
-        };
-        responses: {
-            /** @description Registro actualizado */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AdministradorResponseDTO"];
-                };
-            };
-            /** @description Registro no encontrado */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
-                };
-            };
-        };
-    };
-    getPage: {
+    getPage_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1738,114 +1509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageTurno"];
-                };
-            };
-        };
-    };
-    getFechasOcupadas: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista de fechas y horas ocupadas en formato ISO */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-        };
-    };
-    existsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description true si existe, false si no */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": boolean;
-                };
-            };
-        };
-    };
-    getPage_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                page: number;
-                size: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Página de registros */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageServicio"];
-                };
-            };
-        };
-    };
-    existsById_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description true si existe, false si no */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": boolean;
-                };
-            };
-        };
-    };
-    ping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Mensaje de confirmación del servidor */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
+                    "*/*": components["schemas"]["PageCliente"];
                 };
             };
         };
@@ -1879,75 +1543,113 @@ export interface operations {
             };
         };
     };
-    getPage_2: {
+    ping: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                page: number;
-                size: number;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Página de registros */
+            /** @description Mensaje de confirmación del servidor */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageCliente"];
+                    "*/*": string;
                 };
             };
         };
     };
-    existsById_2: {
+    getAll_1: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description true si existe, false si no */
+            /** @description Lista de registros */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": boolean;
+                    "*/*": components["schemas"]["ServicioResponseDTO"][];
                 };
             };
         };
     };
-    getPage_3: {
+    create_1: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                page: number;
-                size: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicioRequestDTO"];
+            };
+        };
         responses: {
-            /** @description Página de registros */
-            200: {
+            /** @description Servicio creado */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageAdministrador"];
+                    "*/*": components["schemas"]["ServicioResponseDTO"];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
     };
-    existsById_3: {
+    createMultiple_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServicioRequestDTO"][];
+            };
+        };
+        responses: {
+            /** @description Servicios creados */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServicioResponseDTO"][];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    existsById_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1965,6 +1667,388 @@ export interface operations {
                 };
                 content: {
                     "*/*": boolean;
+                };
+            };
+        };
+    };
+    getById_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro encontrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServicioResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    delete_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Servicio"];
+            };
+        };
+        responses: {
+            /** @description Registro actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServicioResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPage_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page: number;
+                size: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de registros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageServicio"];
+                };
+            };
+        };
+    };
+    getAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de registros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TurnoResponseDTO"][];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TurnoRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description Turno creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TurnoResponseDTO"];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Servicio no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    createMultiple: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TurnoRequestDTO"][];
+            };
+        };
+        responses: {
+            /** @description Turnos creados */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TurnoResponseDTO"][];
+                };
+            };
+            /** @description Datos inválidos */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Servicio no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    existsById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description true si existe, false si no */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": boolean;
+                };
+            };
+        };
+    };
+    getFechasOcupadas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de fechas y horas ocupadas en formato ISO */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
+    getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro encontrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TurnoResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registro eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Turno"];
+            };
+        };
+        responses: {
+            /** @description Registro actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TurnoResponseDTO"];
+                };
+            };
+            /** @description Registro no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                page: number;
+                size: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de registros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageTurno"];
                 };
             };
         };

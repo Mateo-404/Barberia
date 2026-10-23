@@ -1,0 +1,17 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema:
+      - "db/migrations/000001_baseline.up.sql"
+      - "db/migrations/000002_tenancy.up.sql"
+      - "db/migrations/000003_tenancy_rls.up.sql"
+      - "db/migrations/000004_settings_versions.up.sql"
+      - "db/migrations/000005_admin_roles.up.sql"
+      - "db/migrations/000006_composite_fks.up.sql"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/platform/database/sqlc"
+        sql_package: "pgx/v5"
+        emit_pointers_for_null_types: true

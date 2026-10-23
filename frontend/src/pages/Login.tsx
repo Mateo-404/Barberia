@@ -1,20 +1,35 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Navigate, useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
+import { safeInternalPath } from "@/lib/paths"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 import { loginSchema, type LoginFormData } from "@/lib/schemas/login-schema"
+import { businessConfig } from "@/lib/business-config"
 import { ApiError } from "@/lib/api-client"
+import { useAdminSettings } from "@/api/settings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth()
+  // Estado de la marca: sólo se consulta con sesión iniciada.
+  const settingsQuery = useAdminSettings({ enabled: isAuthenticated })
   const navigate = useNavigate()
+
+  const location = useLocation()
+  const from = safeInternalPath((location.state as { from?: unknown } | null)?.from) ?? "/admin"
   const [showPassword, setShowPassword] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (settingsQuery.isLoading) return
+    const target = settingsQuery.data?.onboarded === false ? "/onboarding" : from
+    navigate(target, { replace: true })
+  }, [isAuthenticated, settingsQuery.isLoading, settingsQuery.data, from, navigate])
 
   const {
     register,
@@ -46,12 +61,12 @@ export default function Login() {
     { key: "Ctrl+Enter", description: "Iniciar sesión" },
   ])
 
-  if (isAuthenticated) return <Navigate to="/admin" replace />
+  // Destino seguro tras login: la ruta protegida original o el panel.
 
   async function onSubmit(data: LoginFormData) {
     try {
       await login(data.email, data.contrasenia)
-      navigate("/admin", { replace: true })
+      // La redirección la gestiona el useEffect según `onboarded`.
     } catch (err) {
       let message = "Error de conexión. Intentá de nuevo."
       if (err instanceof ApiError) {
@@ -67,17 +82,24 @@ export default function Login() {
     }
   }
 
+  /**
+   * F-01: si el negocio todavía no está configurado, el admin va al wizard
+   * de primer login. Si ya está, va a la ruta protegida de origen.
+   *
+   * Se espera el dato con `refetch()` porque al terminar el login el valor
+   * cacheado todavía no existe (la query se habilita con la sesión).
+   */
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-sm space-y-6 page-enter">
         <div className="text-center space-y-2">
-          <img src="/logo.svg" alt="TH Barber Club" className="mx-auto h-16 sm:h-20 mb-4" />
+          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.nombre} className="mx-auto h-16 sm:h-20 mb-4" />
           <h1 className="text-xl font-bold text-foreground">¡Bienvenido de vuelta!</h1>
           <p className="text-sm text-muted-foreground">Inicia sesión para acceder a tu cuenta</p>
         </div>
 
         {errors.root && (
-          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg text-center">
+          <div role="alert" className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg text-center">
             {errors.root.message}
           </div>
         )}
@@ -147,7 +169,7 @@ export default function Login() {
             <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Privacidad</a>
             <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Inicio</a>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 TH Barber Club. Todos los derechos reservados.</p>
+          <p className="text-xs text-muted-foreground">© 2026 {businessConfig.branding.nombre}. Todos los derechos reservados.</p>
         </div>
       </div>
     </main>

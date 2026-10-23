@@ -1,33 +1,34 @@
 import { z } from "zod"
+import { isFutureFechaHora } from "@/lib/datetime"
 
+/**
+ * Validación de FORMA y datos del cliente. Las reglas comerciales (horarios de
+ * atención, intervalos) ya no viven en el cliente: la grilla sale de
+ * `lib/business-config.ts` y la autoridad final es el backend
+ * (ver docs/frontend/04-contrato-configuracion-negocio.md).
+ */
 export const turnoSchema = z.object({
   idServicio: z.number({ message: "Seleccioná un servicio" }),
   fechaHora: z
     .string()
     .min(1, "Seleccioná fecha y horario")
-    .refine(
-      (val) => {
-        const [datePart, timePart] = val.split("T")
-        if (!datePart || !timePart) return false
-        const [y, m, d] = datePart.split("-").map(Number)
-        const [h, min] = timePart.split(":").map(Number)
-        return new Date(y, m - 1, d, h, min) > new Date()
-      },
-      { message: "La fecha debe ser futura" },
-    )
-    .refine(
-      (val) => {
-        const [, timePart] = val.split("T")
-        if (!timePart) return false
-        const [h, m] = timePart.split(":").map(Number)
-        return h >= 13 && h < 20 && (m === 0 || m === 30)
-      },
-      { message: "El horario debe ser entre 13:00 y 20:00, en intervalos de 30 minutos" },
-    ),
-  nombreCliente: z.string().min(1, "El nombre es obligatorio"),
-  apellidoCliente: z.string().min(1, "El apellido es obligatorio"),
-  telefonoCliente: z.string().min(1, "El teléfono es obligatorio"),
-  emailCliente: z.string().email("Email inválido").optional().or(z.literal("")),
+    .refine((val) => isFutureFechaHora(val), {
+      message: "La fecha debe ser futura",
+    }),
+  nombreCliente: z.string().trim().min(1, "El nombre es obligatorio").max(120, "Máximo 120 caracteres"),
+  apellidoCliente: z.string().trim().min(1, "El apellido es obligatorio").max(120, "Máximo 120 caracteres"),
+  telefonoCliente: z
+    .string()
+    .trim()
+    .min(1, "El teléfono es obligatorio")
+    .max(32, "Teléfono demasiado largo")
+    .regex(/^[+\d][\d\s()-]{5,19}$/, "Ingresá un teléfono válido (sólo números, espacios o +)"),
+  emailCliente: z
+    .string()
+    .email("Email inválido")
+    .max(254, "Email demasiado largo")
+    .optional()
+    .or(z.literal("")),
 })
 
 export type TurnoFormData = z.infer<typeof turnoSchema>

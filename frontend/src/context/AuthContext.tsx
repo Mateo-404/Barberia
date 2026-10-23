@@ -1,11 +1,13 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import {
+  createContext, useContext, useState, useCallback, useEffect, type ReactNode,
+} from "react"
+import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useLogin, type LoginResponse } from "@/api/auth"
-import type { components } from "@/types/api"
-
-type Admin = components["schemas"]["AdministradorResponseDTO"]
-
-const TOKEN_KEY = "auth_token"
-const ADMIN_KEY = "admin"
+import { AUTH_EXPIRED_EVENT } from "@/lib/api-client"
+import {
+  clearSession, readAdmin, readToken, writeSession, type Admin,
+} from "@/lib/auth-storage"
 
 interface AuthContextType {
   admin: Admin | null
@@ -18,19 +20,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function isTokenExpired(token: string): boolean {
+/** Exportado para poder testear la política de expiración del token. */
+export function isTokenExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]))
-    if (typeof payload.exp !== "number") return false
+    // Un token sin `exp` no puede considerarse válido: el backend exige
+    // expiración (WithExpirationRequired), así que aceptarlo sería un bypass.
+    if (typeof payload.exp !== "number") return true
     return Date.now() >= payload.exp * 1000
   } catch {
     return true
   }
 }
 
-/** Devuelve el token si es válido; si expiró o no existe, limpia la sesión y devuelve null. */
+/** Devuelve el token si existe y no expiró; si no, limpia la sesión. */
 function loadValidToken(): string | null {
-  const token = sessionStorage.getItem(TOKEN_KEY)
+  const token = readToken()
   if (!token || isTokenExpired(token)) {
     clearSession()
     return null
@@ -38,62 +43,58 @@ function loadValidToken(): string | null {
   return token
 }
 
-function loadAdmin(): Admin | null {
-  if (!loadValidToken()) return null
-  const stored = sessionStorage.getItem(ADMIN_KEY)
-  if (!stored) return null
-  try {
-    return JSON.parse(stored) as Admin
-  } catch {
-    sessionStorage.removeItem(ADMIN_KEY)
-    return null
-  }
-}
-
-function loadToken(): string | null {
-  return loadValidToken()
-}
-
-function saveSession(admin: Admin, token: string) {
-  sessionStorage.setItem(ADMIN_KEY, JSON.stringify(admin))
-  sessionStorage.setItem(TOKEN_KEY, token)
-}
-
-function clearSession() {
-  sessionStorage.removeItem(ADMIN_KEY)
-  sessionStorage.removeItem(TOKEN_KEY)
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [admin, setAdmin] = useState<Admin | null>(loadAdmin)
-  const [token, setToken] = useState<string | null>(loadToken)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const [token, setToken] = useState<string | null>(loadValidToken)
+  const [admin, setAdmin] = useState<Admin | null>(() => (readToken() ? readAdmin() : null))
 
   const { mutateAsync, isPending } = useLogin()
+
+  /** Cierra sesión y descarta TODO el estado remoto: la siguiente sesión no
+   * puede ver datos de la anterior (turnos, clientes, estadísticas). */
+  const terminateSession = useCallback(() => {
+    setAdmin(null)
+    setToken(null)
+    clearSession()
+    queryClient.clear()
+  }, [queryClient])
+
+  // El cliente HTTP avisa de un 401 (token inválido/expirado en cualquier request).
+  useEffect(() => {
+    const onExpired = () => {
+      terminateSession()
+      navigate("/login", { replace: true })
+    }
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired)
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired)
+  }, [terminateSession, navigate])
 
   const login = useCallback(
     async (email: string, contrasenia: string) => {
       const data: LoginResponse = await mutateAsync({ email, contrasenia })
       const { id, nombre, apellido, email: adminEmail, token: jwt } = data
       const adminData: Admin = { id, nombre, apellido, email: adminEmail }
+      // Una sesión nueva arranca sin restos de la anterior.
+      queryClient.clear()
       setAdmin(adminData)
       setToken(jwt)
-      saveSession(adminData, jwt)
+      writeSession(adminData, jwt)
     },
-    [mutateAsync],
+    [mutateAsync, queryClient],
   )
 
   const logout = useCallback(() => {
-    setAdmin(null)
-    setToken(null)
-    clearSession()
-  }, [])
+    terminateSession()
+  }, [terminateSession])
 
   return (
     <AuthContext.Provider
       value={{
         admin,
         token,
-        isAuthenticated: admin !== null,
+        isAuthenticated: admin !== null && token !== null,
         isLoading: isPending,
         login,
         logout,
