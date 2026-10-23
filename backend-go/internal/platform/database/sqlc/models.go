@@ -9,13 +9,18 @@ import (
 )
 
 type Admin struct {
-	ID           int64
-	FirstName    *string
-	LastName     *string
-	Email        *string
-	PasswordHash *string
-	TenantID     int64
-	Role         string
+	ID             int64
+	FirstName      *string
+	LastName       *string
+	Email          *string
+	PasswordHash   *string
+	TenantID       int64
+	Role           string
+	GoogleSub      *string
+	AuthProvider   string
+	TotpSecret     *string
+	TotpEnabled    bool
+	TotpVerifiedAt pgtype.Timestamptz
 }
 
 type Appointment struct {
@@ -32,6 +37,8 @@ type Customer struct {
 	LastName  *string
 	Email     *string
 	TenantID  int64
+	GoogleSub *string
+	AvatarUrl *string
 }
 
 type Service struct {

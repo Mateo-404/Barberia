@@ -27,7 +27,7 @@ export function useShortcutsRegistry(): Entry[] {
   return entries
 }
 
-// Registra atajos vigentes mientras el componente está montado.
+// Registers the shortcuts in force while the component is mounted.
 export function useRegisterShortcuts(scope: string, defs: ShortcutDef[]) {
   useEffect(() => {
     const uid = ++uidSeq

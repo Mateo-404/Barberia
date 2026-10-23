@@ -1,40 +1,40 @@
--- Test de aislamiento multi-tenant (RLS). Ejecutar como superusuario contra una DB migrada:
+-- Multi-tenant isolation test (RLS). Run as a superuser against a migrated database:
 --   psql "$DB_SUPER_URL" -v ON_ERROR_STOP=1 -q -f db/tests/rls_isolation.sql
--- Cualquier fallo lanza una excepción => psql sale con código != 0.
+-- Any failure raises an exception => psql exits with a non-zero code.
 \set ON_ERROR_STOP on
 \echo '== rls_isolation =='
 
--- Limpieza previa y fixtures (superusuario: ignora RLS)
-DELETE FROM administradores WHERE tenant_id IN (99001,99002);
-DELETE FROM servicios WHERE tenant_id IN (99001,99002);
-DELETE FROM clientes WHERE tenant_id IN (99001,99002);
-DELETE FROM turnos WHERE tenant_id IN (99001,99002);
+-- Cleanup and fixtures (superuser: ignores RLS)
+DELETE FROM admins WHERE tenant_id IN (99001,99002);
+DELETE FROM services WHERE tenant_id IN (99001,99002);
+DELETE FROM customers WHERE tenant_id IN (99001,99002);
+DELETE FROM appointments WHERE tenant_id IN (99001,99002);
 DELETE FROM tenant_settings WHERE tenant_id IN (99001,99002);
 DELETE FROM tenants WHERE id IN (99001,99002);
 INSERT INTO tenants (id, slug, name) VALUES
   (99001,'tenant-a','Tenant A'),
   (99002,'tenant-b','Tenant B');
-INSERT INTO servicios (tenant_id, tipo, precio) VALUES
-  (99001,'Corte A', 8000),
-  (99001,'Barba A',  5000),
-  (99002,'Corte B',  9000);
+INSERT INTO services (tenant_id, name, price) VALUES
+  (99001,'Cut A', 8000),
+  (99001,'Beard A', 5000),
+  (99002,'Cut B', 9000);
 INSERT INTO tenant_settings (tenant_id, draft) VALUES
   (99001,'{"name":"A"}'),
   (99002,'{"name":"B"}');
--- El mismo email puede existir en tenants distintos (unicidad por tenant).
-INSERT INTO administradores (tenant_id, nombre, apellido, email, contrasenia) VALUES
-  (99001,'Dueno','A','dueno@mail.com','x'),
-  (99002,'Dueno','B','dueno@mail.com','x');
+-- The same email may exist in different tenants (uniqueness is per tenant).
+INSERT INTO admins (tenant_id, first_name, last_name, email, password_hash) VALUES
+  (99001,'Owner','A','owner@mail.com','x'),
+  (99002,'Owner','B','owner@mail.com','x');
 
--- T-04: el rol de la app no puede saltarse RLS
+-- T-04: the app role cannot bypass RLS
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user' AND (rolsuper OR rolbypassrls)) THEN
-    RAISE EXCEPTION 'T-04 FAIL: app_user es superusuario o tiene BYPASSRLS';
+    RAISE EXCEPTION 'T-04 FAIL: app_user is a superuser or has BYPASSRLS';
   END IF;
 END $$;
 
--- T-07: toda tabla con tenant_id (salvo tenant_domains) debe tener RLS habilitada Y forzada
+-- T-07: every table with tenant_id (except tenant_domains) must have RLS enabled AND forced
 DO $$
 DECLARE t text;
 BEGIN
@@ -47,27 +47,27 @@ BEGIN
       AND c.relname <> 'tenant_domains'
       AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
   LOOP
-    RAISE EXCEPTION 'T-07 FAIL: la tabla % tiene tenant_id pero no RLS forzada', t;
+    RAISE EXCEPTION 'T-07 FAIL: table % has tenant_id but no forced RLS', t;
   END LOOP;
 END $$;
 
--- ===== Tx 1: sin tenant => falla cerrado =====
+-- ===== Tx 1: no tenant => fails closed =====
 BEGIN;
 SET LOCAL ROLE app_user;
 
 DO $$
 DECLARE n int;
 BEGIN
-  SELECT count(*) INTO n FROM servicios;         IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: sin tenant se vieron % servicios', n; END IF;
-  SELECT count(*) INTO n FROM tenant_settings;  IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: sin tenant se vieron % settings', n; END IF;
-  SELECT count(*) INTO n FROM administradores;  IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: sin tenant se vieron % administradores', n; END IF;
+  SELECT count(*) INTO n FROM services;         IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: without a tenant % services were visible', n; END IF;
+  SELECT count(*) INTO n FROM tenant_settings;  IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: without a tenant % settings were visible', n; END IF;
+  SELECT count(*) INTO n FROM admins;           IF n <> 0 THEN RAISE EXCEPTION 'T-01 FAIL: without a tenant % admins were visible', n; END IF;
 END $$;
 
 DO $$
 BEGIN
-  INSERT INTO servicios (tenant_id, tipo, precio)
+  INSERT INTO services (tenant_id, name, price)
   VALUES (99001,'x',1);
-  RAISE EXCEPTION 'T-01b FAIL: se pudo insertar sin tenant seteado';
+  RAISE EXCEPTION 'T-01b FAIL: an insert succeeded without a tenant set';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 COMMIT;
@@ -80,90 +80,90 @@ SELECT set_config('app.tenant_id', '99001', true);
 DO $$
 DECLARE n int;
 BEGIN
-  SELECT count(*) INTO n FROM servicios;
-  IF n <> 2 THEN RAISE EXCEPTION 'T-02 FAIL: A debería ver 2 servicios y vio %', n; END IF;
-  SELECT count(*) INTO n FROM servicios WHERE tenant_id <> 99001;
-  IF n <> 0 THEN RAISE EXCEPTION 'T-02 FAIL: A vio filas de otro tenant'; END IF;
+  SELECT count(*) INTO n FROM services;
+  IF n <> 2 THEN RAISE EXCEPTION 'T-02 FAIL: A should see 2 services and saw %', n; END IF;
+  SELECT count(*) INTO n FROM services WHERE tenant_id <> 99001;
+  IF n <> 0 THEN RAISE EXCEPTION 'T-02 FAIL: A saw rows of another tenant'; END IF;
   SELECT count(*) INTO n FROM tenant_settings;
-  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: A debería ver 1 settings y vio %', n; END IF;
-  SELECT count(*) INTO n FROM administradores;
-  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: A debería ver 1 administrador y vio %', n; END IF;
+  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: A should see 1 settings row and saw %', n; END IF;
+  SELECT count(*) INTO n FROM admins;
+  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: A should see 1 admin and saw %', n; END IF;
 END $$;
 
--- T-02b: UPDATE/DELETE sobre filas de B afectan 0 filas
+-- T-02b: UPDATE/DELETE over B's rows affect 0 rows
 DO $$
 DECLARE n int;
 BEGIN
-  UPDATE servicios SET tipo = 'hack' WHERE tenant_id = 99002;
+  UPDATE services SET name = 'hack' WHERE tenant_id = 99002;
   GET DIAGNOSTICS n = ROW_COUNT;
-  IF n <> 0 THEN RAISE EXCEPTION 'T-02b FAIL: A modificó % filas de B', n; END IF;
-  DELETE FROM servicios WHERE tenant_id = 99002;
+  IF n <> 0 THEN RAISE EXCEPTION 'T-02b FAIL: A modified % rows of B', n; END IF;
+  DELETE FROM services WHERE tenant_id = 99002;
   GET DIAGNOSTICS n = ROW_COUNT;
-  IF n <> 0 THEN RAISE EXCEPTION 'T-02b FAIL: A borró % filas de B', n; END IF;
+  IF n <> 0 THEN RAISE EXCEPTION 'T-02b FAIL: A deleted % rows of B', n; END IF;
 END $$;
 
--- T-03: WITH CHECK impide insertar con tenant_id ajeno
+-- T-03: WITH CHECK prevents inserting with another tenant's id
 DO $$
 BEGIN
-  INSERT INTO servicios (tenant_id, tipo, precio)
+  INSERT INTO services (tenant_id, name, price)
   VALUES (99002,'x',1);
-  RAISE EXCEPTION 'T-03 FAIL: A insertó una fila en B';
+  RAISE EXCEPTION 'T-03 FAIL: A inserted a row into B';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 
--- T-03b: WITH CHECK impide "mover" una fila propia a otro tenant
+-- T-03b: WITH CHECK prevents "moving" an own row to another tenant
 DO $$
 BEGIN
-  UPDATE servicios SET tenant_id = 99002
+  UPDATE services SET tenant_id = 99002
   WHERE tenant_id = 99001;
-  RAISE EXCEPTION 'T-03b FAIL: A movió filas hacia B';
+  RAISE EXCEPTION 'T-03b FAIL: A moved rows into B';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 COMMIT;
 
--- ===== Tx 3: tenant B ve solo lo suyo =====
+-- ===== Tx 3: tenant B only sees its own =====
 BEGIN;
 SET LOCAL ROLE app_user;
 SELECT set_config('app.tenant_id', '99002', true);
 DO $$
 DECLARE n int;
 BEGIN
-  SELECT count(*) INTO n FROM servicios;
-  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: B debería ver 1 servicio y vio %', n; END IF;
+  SELECT count(*) INTO n FROM services;
+  IF n <> 1 THEN RAISE EXCEPTION 'T-02 FAIL: B should see 1 service and saw %', n; END IF;
 END $$;
 COMMIT;
 
--- ===== T-05: el tenant NO se filtra a la siguiente transacción de la misma conexión (pool) =====
+-- ===== T-05: the tenant does NOT leak to the next transaction of the same connection (pool) =====
 BEGIN;
 SET LOCAL ROLE app_user;
 DO $$
 DECLARE n int;
 BEGIN
-  SELECT count(*) INTO n FROM servicios;
-  IF n <> 0 THEN RAISE EXCEPTION 'T-05 FAIL: el tenant se filtró a la transacción siguiente (% filas)', n; END IF;
+  SELECT count(*) INTO n FROM services;
+  IF n <> 0 THEN RAISE EXCEPTION 'T-05 FAIL: the tenant leaked into the next transaction (% rows)', n; END IF;
 END $$;
 COMMIT;
 
--- ===== T-06a: tenant vacío => 0 filas, sin error =====
+-- ===== T-06a: empty tenant => 0 rows, no error =====
 BEGIN;
 SET LOCAL ROLE app_user;
 SELECT set_config('app.tenant_id', '', true);
 DO $$
 DECLARE n int;
 BEGIN
-  SELECT count(*) INTO n FROM servicios;
-  IF n <> 0 THEN RAISE EXCEPTION 'T-06a FAIL: tenant vacío vio % filas', n; END IF;
+  SELECT count(*) INTO n FROM services;
+  IF n <> 0 THEN RAISE EXCEPTION 'T-06a FAIL: an empty tenant saw % rows', n; END IF;
 END $$;
 COMMIT;
 
--- ===== T-06b: tenant inválido => error (falla cerrado, nunca "sin filtro") =====
+-- ===== T-06b: invalid tenant => error (fails closed, never "no filter") =====
 BEGIN;
 SET LOCAL ROLE app_user;
-SELECT set_config('app.tenant_id', 'no-es-un-numero', true);
+SELECT set_config('app.tenant_id', 'not-a-number', true);
 DO $$
 BEGIN
-  PERFORM count(*) FROM servicios;
-  RAISE EXCEPTION 'T-06b FAIL: tenant inválido no lanzó error';
+  PERFORM count(*) FROM services;
+  RAISE EXCEPTION 'T-06b FAIL: an invalid tenant did not raise';
 EXCEPTION
   WHEN invalid_text_representation OR others THEN NULL;
 END $$;

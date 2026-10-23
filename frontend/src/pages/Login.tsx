@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
+import { useAuthProviders, useGoogleStart } from "@/api/auth"
 import { safeInternalPath } from "@/lib/paths"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
@@ -21,7 +22,9 @@ export default function Login() {
   const { t: tc } = useTranslation()
   const { t: ts } = useTranslation("shortcuts")
   const site = useSiteIdentity()
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, pending2FA, verify2FA, cancel2FA, isLoading } = useAuth()
+  const providers = useAuthProviders()
+  const googleStart = useGoogleStart()
   // Brand state: only queried once signed in.
   const settingsQuery = useAdminSettings({ enabled: isAuthenticated })
   const navigate = useNavigate()
@@ -29,6 +32,7 @@ export default function Login() {
   const location = useLocation()
   const from = safeInternalPath((location.state as { from?: unknown } | null)?.from) ?? "/admin"
   const [showPassword, setShowPassword] = useState(false)
+  const [totpCode, setTotpCode] = useState("")
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -93,6 +97,40 @@ export default function Login() {
         )}
 
         <div className="bg-card rounded-2xl p-6 animate-in fade-in-0 zoom-in-95 duration-200">
+          {pending2FA ? (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="totp">Código de verificación</Label>
+                <Input
+                  id="totp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  className="text-base text-center tracking-widest"
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                className="w-full py-6 text-base"
+                disabled={isLoading || !totpCode}
+                onClick={async () => {
+                  try {
+                    await verify2FA(totpCode)
+                  } catch (err: any) {
+                    setError("root", { message: errorMessage(tc, err) })
+                  }
+                }}
+              >
+                {isLoading ? t("login.submitting") : "Verificar"}
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => { cancel2FA(); setTotpCode("") }}>
+                Cancelar
+              </Button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">{t("login.email")}</Label>
@@ -138,7 +176,37 @@ export default function Login() {
             <Button type="submit" disabled={isSubmitting} className="w-full py-6 text-base active:scale-[0.98] transition-transform duration-100">
               {isSubmitting ? t("login.submitting") : t("login.submitLabel")}
             </Button>
+
+            {providers.data?.google && (
+              <>
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-2 text-muted-foreground">o</span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full py-6 text-base"
+                  disabled={googleStart.isPending}
+                  onClick={async () => {
+                    try {
+                      const { url } = await googleStart.mutateAsync("/admin")
+                      window.location.href = url
+                    } catch (err: any) {
+                      setError("root", { message: errorMessage(tc, err) })
+                    }
+                  }}
+                >
+                  {googleStart.isPending ? "Redirigiendo…" : "Continuar con Google"}
+                </Button>
+              </>
+            )}
           </form>
+          )}
         </div>
 
         <div className="text-center space-y-3">

@@ -46,6 +46,14 @@ func isPublic(r *http.Request) bool {
 		return true
 	case r.Method == http.MethodPost && p == loginPath:
 		return true
+	case r.Method == http.MethodGet && p == "/api/auth/providers":
+		return true
+	case r.Method == http.MethodPost && p == "/api/auth/google/start":
+		return true
+	case r.Method == http.MethodPost && p == "/api/auth/google/callback":
+		return true
+	case r.Method == http.MethodPost && p == "/api/auth/totp/challenge":
+		return true
 	case strings.HasPrefix(p, "/api/public/"):
 		return true
 	}
@@ -62,6 +70,10 @@ func (s *Server) middlewareAuth(next http.Handler) http.Handler {
 		if authz := r.Header.Get("Authorization"); strings.HasPrefix(authz, "Bearer ") {
 			c, err := s.jwt.Parse(strings.TrimPrefix(authz, "Bearer "))
 			if err != nil || c.TenantID == 0 {
+				invalidToken(w, r)
+				return
+			}
+			if c.Scope != "" && c.Scope != "access" {
 				invalidToken(w, r)
 				return
 			}

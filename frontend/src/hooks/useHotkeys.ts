@@ -24,8 +24,8 @@ function keyMatches(key: string, e: KeyboardEvent): boolean {
     : e.key === key
 }
 
-// Combo explícito ("Ctrl+k") => matcher estricto sobre modificadores;
-// tecla simple => matcher clásico (sin ctrl/alt/meta). "?" relaja Shift.
+// Explicit combo ("Ctrl+k") => strict modifier matching; plain key => classic
+// matching (no ctrl/alt/meta). "?" relaxes Shift.
 function makeMatcher(spec: string) {
   const { key, mods } = parseSpec(spec)
   const hasMods =
@@ -52,7 +52,7 @@ function isInteractionTarget(el: EventTarget | null): boolean {
   return false
 }
 
-function dialogAbierto(): boolean {
+function isDialogOpen(): boolean {
   return document.querySelector("[role='dialog'],[aria-modal='true']") !== null
 }
 
@@ -64,7 +64,7 @@ export function useHotkeys(
   const handler = useCallback(
     (e: KeyboardEvent) => {
       if (!enabled) return
-      if (options.ignoreWhenDialogOpen && dialogAbierto()) return
+      if (options.ignoreWhenDialogOpen && isDialogOpen()) return
 
       for (const spec of Object.keys(map)) {
         const { hit, modded } = makeMatcher(spec)(e)

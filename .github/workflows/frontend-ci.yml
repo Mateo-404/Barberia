@@ -26,7 +26,7 @@ jobs:
       - run: bun run build
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
-      # Informativo: `braces@3.0.3` no tiene parche upstream y solo llega por la
-      # CLI de desarrollo `shadcn` (fuera del bundle). Ver
-      # docs/migracion-go/04-auditoria-seguridad.md. No bloquea el CI.
+      # Informational: `braces@3.0.3` has no upstream patch and only arrives
+      # through the `shadcn` dev CLI (outside the bundle). See
+      # docs/migracion-go/04-auditoria-seguridad.md. Does not block CI.
       - run: bun audit || true

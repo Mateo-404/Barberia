@@ -33,16 +33,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go (versión fijada en go.mod)
+      - name: Set up Go (version pinned in go.mod)
         uses: actions/setup-go@v5
         with:
           go-version-file: backend-go/go.mod
           cache-dependency-path: backend-go/go.sum
 
-      - name: Verificar go.mod/go.sum
+      - name: Verify go.mod/go.sum
         run: go mod verify
 
-      - name: Formato (gofmt)
+      - name: Format (gofmt)
         run: test -z "$(gofmt -l $(find . -name '*.go' -not -path './internal/platform/database/sqlc/*'))"
 
       - name: Build
@@ -51,13 +51,13 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Tests unitarios
+      - name: Unit tests
         run: go test -race ./...
 
-      - name: Tests de integración (PostgreSQL)
+      - name: Integration tests (PostgreSQL)
         run: go test -race -tags integration ./internal/integration/ -v
 
-      - name: Tests SQL de RLS y reservas (db/tests)
+      - name: SQL tests: RLS and bookings (db/tests)
         env:
           DB: postgres://postgres:postgres@localhost:5432/barber_test?sslmode=disable
         run: |
@@ -66,13 +66,13 @@ jobs:
           psql "$DB" -v ON_ERROR_STOP=1 -q -f ../db/tests/rls_isolation.sql
           psql "$DB" -v ON_ERROR_STOP=1 -q -f ../db/tests/booking_exclusion.sql
 
-      # Compilados con el toolchain de go.mod (los binarios precompilados de
-      # golangci-lint usan un Go menor y rechazan módulos go 1.27).
-      - name: golangci-lint (versión fijada)
+      # Built with the toolchain from go.mod (prebuilt golangci-lint binaries
+      # use an older Go and reject go 1.27 modules).
+      - name: golangci-lint (pinned version)
         run: make lint
 
       - name: govulncheck
         run: make vuln
 
-      - name: Imagen Docker
+      - name: Docker image
         run: docker build -t barber-backend-go:ci .

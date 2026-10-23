@@ -21,6 +21,11 @@ type Config struct {
 	JWTSecret string
 	// JWTExpiry is the lifetime of issued tokens (default 24h).
 	JWTExpiry time.Duration
+	// GoogleClientID / Secret / RedirectURL enable "Sign in with Google".
+	// When ClientID is empty, Google login is disabled.
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
 	// CORSAllowOrigins lists the allowed origins (empty = no CORS).
 	CORSAllowOrigins []string
 	// DefaultTenantSlug is the tenant for unknown or local Hosts.
@@ -78,6 +83,12 @@ func Load() (*Config, error) {
 		errs = append(errs, fmt.Sprintf("invalid %s: %q%s", key, value, hint))
 	}
 
+	cfg.GoogleClientID = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID"))
+	cfg.GoogleClientSecret = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_SECRET"))
+	cfg.GoogleRedirectURL = strings.TrimSpace(os.Getenv("GOOGLE_REDIRECT_URL"))
+	if cfg.GoogleRedirectURL == "" {
+		cfg.GoogleRedirectURL = "http://localhost:5173/auth/google/callback"
+	}
 	if cfg.DatabaseURL == "" {
 		errs = append(errs, "DATABASE_URL is required (e.g. postgres://user:pass@localhost:5432/barber?sslmode=disable)")
 	}

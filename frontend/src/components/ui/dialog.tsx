@@ -7,25 +7,25 @@ const FOCUSABLE =
 interface DialogProps {
   open: boolean
   onClose: () => void
-  /** Título visible y nombre accesible del diálogo (aria-labelledby). */
+  /** Visible title and accessible name of the dialog (aria-labelledby). */
   title: string
   children: ReactNode
   footer?: ReactNode
-  /** Label del botón de cierre (default "Cerrar"). */
+  /** Label of the close button (default "Close"). */
   closeLabel?: string
 }
 
 /**
- * Diálogo accesible: `role="dialog"` + `aria-modal` + `aria-labelledby`,
- * foco inicial dentro del diálogo, Tab atrapado, Escape cierra y el foco
- * vuelve al elemento que lo abrió. Sin dependencias nuevas.
+ * Accessible dialog: `role="dialog"` + `aria-modal` + `aria-labelledby`,
+ * initial focus inside, Tab trapped, Escape closes and focus returns to the
+ * element that opened it. No extra dependencies.
  */
-export function Dialog({ open, onClose, title, children, footer, closeLabel = "Cerrar" }: DialogProps) {
+export function Dialog({ open, onClose, title, children, footer, closeLabel = "Close" }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const restoreRef = useRef<HTMLElement | null>(null)
   const titleId = useId()
-  // Estabiliza el handler: el efecto no debe re-ejecutarse (ni robar el foco)
-  // cuando el padre re-renderiza.
+  // Keeps the handler stable: the effect must not re-run (or steal focus)
+  // when the parent re-renders.
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose

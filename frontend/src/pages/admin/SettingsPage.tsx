@@ -63,7 +63,7 @@ export default function SettingsPage() {
   const sections: Section[] = [
     ...(canConfigure ? configurable : []),
     { key: "account", icon: User, soon: true },
-    { key: "security", icon: Shield, soon: true },
+    { key: "security", icon: Shield, onClick: () => navigate("/admin/security") },
   ]
 
   const setPreference = (patch: Partial<Preferences>) => update.mutate(patch)

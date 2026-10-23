@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countAdmins = `-- name: CountAdmins :one
@@ -67,6 +69,66 @@ func (q *Queries) CreateAdmin(ctx context.Context, arg CreateAdminParams) (Creat
 	return i, err
 }
 
+const createAdminGoogle = `-- name: CreateAdminGoogle :one
+INSERT INTO admins (first_name, last_name, email, password_hash, tenant_id, role, google_sub, auth_provider)
+VALUES ($1, $2, $3, $4,
+        $5, $6, $7, $8)
+RETURNING id, first_name, last_name, email, password_hash, role, google_sub, auth_provider, totp_secret, totp_enabled, totp_verified_at
+`
+
+type CreateAdminGoogleParams struct {
+	FirstName    *string
+	LastName     *string
+	Email        *string
+	PasswordHash *string
+	TenantID     int64
+	Role         string
+	GoogleSub    *string
+	AuthProvider string
+}
+
+type CreateAdminGoogleRow struct {
+	ID             int64
+	FirstName      *string
+	LastName       *string
+	Email          *string
+	PasswordHash   *string
+	Role           string
+	GoogleSub      *string
+	AuthProvider   string
+	TotpSecret     *string
+	TotpEnabled    bool
+	TotpVerifiedAt pgtype.Timestamptz
+}
+
+func (q *Queries) CreateAdminGoogle(ctx context.Context, arg CreateAdminGoogleParams) (CreateAdminGoogleRow, error) {
+	row := q.db.QueryRow(ctx, createAdminGoogle,
+		arg.FirstName,
+		arg.LastName,
+		arg.Email,
+		arg.PasswordHash,
+		arg.TenantID,
+		arg.Role,
+		arg.GoogleSub,
+		arg.AuthProvider,
+	)
+	var i CreateAdminGoogleRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.GoogleSub,
+		&i.AuthProvider,
+		&i.TotpSecret,
+		&i.TotpEnabled,
+		&i.TotpVerifiedAt,
+	)
+	return i, err
+}
+
 const deleteAdmin = `-- name: DeleteAdmin :execrows
 DELETE FROM admins
 WHERE tenant_id = $1 AND id = $2
@@ -83,6 +145,42 @@ func (q *Queries) DeleteAdmin(ctx context.Context, arg DeleteAdminParams) (int64
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const disableAdminTOTP = `-- name: DisableAdminTOTP :exec
+UPDATE admins
+SET totp_secret = NULL,
+    totp_enabled = FALSE,
+    totp_verified_at = NULL,
+    auth_provider = CASE WHEN google_sub IS NOT NULL THEN 'google' ELSE 'password' END
+WHERE tenant_id = $1 AND id = $2
+`
+
+type DisableAdminTOTPParams struct {
+	TenantID int64
+	ID       int64
+}
+
+func (q *Queries) DisableAdminTOTP(ctx context.Context, arg DisableAdminTOTPParams) error {
+	_, err := q.db.Exec(ctx, disableAdminTOTP, arg.TenantID, arg.ID)
+	return err
+}
+
+const enableAdminTOTP = `-- name: EnableAdminTOTP :exec
+UPDATE admins
+SET totp_enabled = TRUE,
+    totp_verified_at = now()
+WHERE tenant_id = $1 AND id = $2
+`
+
+type EnableAdminTOTPParams struct {
+	TenantID int64
+	ID       int64
+}
+
+func (q *Queries) EnableAdminTOTP(ctx context.Context, arg EnableAdminTOTPParams) error {
+	_, err := q.db.Exec(ctx, enableAdminTOTP, arg.TenantID, arg.ID)
+	return err
 }
 
 const getAdmin = `-- name: GetAdmin :one
@@ -150,6 +248,122 @@ func (q *Queries) GetAdminByEmail(ctx context.Context, arg GetAdminByEmailParams
 		&i.Email,
 		&i.PasswordHash,
 		&i.Role,
+	)
+	return i, err
+}
+
+const getAdminByGoogleSub = `-- name: GetAdminByGoogleSub :one
+SELECT id, first_name, last_name, email, password_hash, role,
+       google_sub, auth_provider, totp_secret, totp_enabled, totp_verified_at
+FROM admins
+WHERE tenant_id = $1 AND google_sub = $2
+`
+
+type GetAdminByGoogleSubParams struct {
+	TenantID  int64
+	GoogleSub *string
+}
+
+type GetAdminByGoogleSubRow struct {
+	ID             int64
+	FirstName      *string
+	LastName       *string
+	Email          *string
+	PasswordHash   *string
+	Role           string
+	GoogleSub      *string
+	AuthProvider   string
+	TotpSecret     *string
+	TotpEnabled    bool
+	TotpVerifiedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetAdminByGoogleSub(ctx context.Context, arg GetAdminByGoogleSubParams) (GetAdminByGoogleSubRow, error) {
+	row := q.db.QueryRow(ctx, getAdminByGoogleSub, arg.TenantID, arg.GoogleSub)
+	var i GetAdminByGoogleSubRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.GoogleSub,
+		&i.AuthProvider,
+		&i.TotpSecret,
+		&i.TotpEnabled,
+		&i.TotpVerifiedAt,
+	)
+	return i, err
+}
+
+const getAdminTOTP = `-- name: GetAdminTOTP :one
+SELECT totp_secret, totp_enabled, totp_verified_at
+FROM admins
+WHERE tenant_id = $1 AND id = $2
+`
+
+type GetAdminTOTPParams struct {
+	TenantID int64
+	ID       int64
+}
+
+type GetAdminTOTPRow struct {
+	TotpSecret     *string
+	TotpEnabled    bool
+	TotpVerifiedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetAdminTOTP(ctx context.Context, arg GetAdminTOTPParams) (GetAdminTOTPRow, error) {
+	row := q.db.QueryRow(ctx, getAdminTOTP, arg.TenantID, arg.ID)
+	var i GetAdminTOTPRow
+	err := row.Scan(&i.TotpSecret, &i.TotpEnabled, &i.TotpVerifiedAt)
+	return i, err
+}
+
+const linkAdminGoogle = `-- name: LinkAdminGoogle :one
+UPDATE admins
+SET google_sub = $1,
+    auth_provider = CASE WHEN auth_provider = 'password' THEN 'both' ELSE auth_provider END
+WHERE tenant_id = $2 AND id = $3
+RETURNING id, first_name, last_name, email, password_hash, role, google_sub, auth_provider, totp_secret, totp_enabled, totp_verified_at
+`
+
+type LinkAdminGoogleParams struct {
+	GoogleSub *string
+	TenantID  int64
+	ID        int64
+}
+
+type LinkAdminGoogleRow struct {
+	ID             int64
+	FirstName      *string
+	LastName       *string
+	Email          *string
+	PasswordHash   *string
+	Role           string
+	GoogleSub      *string
+	AuthProvider   string
+	TotpSecret     *string
+	TotpEnabled    bool
+	TotpVerifiedAt pgtype.Timestamptz
+}
+
+func (q *Queries) LinkAdminGoogle(ctx context.Context, arg LinkAdminGoogleParams) (LinkAdminGoogleRow, error) {
+	row := q.db.QueryRow(ctx, linkAdminGoogle, arg.GoogleSub, arg.TenantID, arg.ID)
+	var i LinkAdminGoogleRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.GoogleSub,
+		&i.AuthProvider,
+		&i.TotpSecret,
+		&i.TotpEnabled,
+		&i.TotpVerifiedAt,
 	)
 	return i, err
 }
@@ -245,6 +459,25 @@ func (q *Queries) PageAdmins(ctx context.Context, arg PageAdminsParams) ([]PageA
 		return nil, err
 	}
 	return items, nil
+}
+
+const setAdminTOTPSecret = `-- name: SetAdminTOTPSecret :exec
+UPDATE admins
+SET totp_secret = $1,
+    totp_enabled = FALSE,
+    totp_verified_at = NULL
+WHERE tenant_id = $2 AND id = $3
+`
+
+type SetAdminTOTPSecretParams struct {
+	TotpSecret *string
+	TenantID   int64
+	ID         int64
+}
+
+func (q *Queries) SetAdminTOTPSecret(ctx context.Context, arg SetAdminTOTPSecretParams) error {
+	_, err := q.db.Exec(ctx, setAdminTOTPSecret, arg.TotpSecret, arg.TenantID, arg.ID)
+	return err
 }
 
 const updateAdmin = `-- name: UpdateAdmin :one

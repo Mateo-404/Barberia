@@ -399,7 +399,7 @@ func TestSeedIsIdempotent(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 	m, _ := auth.NewJWTManager(jwtSecret, time.Hour)
-	seeder := admins.New(e.pool, e.q, m, quietLogger())
+	seeder := admins.New(e.pool, e.q, m, quietLogger(), jwtSecret)
 	if err := seeder.Seed(ctx, e.tenantID, seedEmail, seedPassword, "Admin", "Default"); err != nil {
 		t.Fatal(err)
 	}

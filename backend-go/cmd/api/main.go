@@ -74,7 +74,7 @@ func run() error {
 
 	// Initial admin seed.
 	if cfg.AdminSeed {
-		seedAdmins := admins.New(pool, q, jwtManager, logger)
+		seedAdmins := admins.New(pool, q, jwtManager, logger, cfg.JWTSecret)
 		t, err := resolver.Resolve(ctx, "")
 		if err != nil && !errors.Is(err, tenant.ErrDefaultTenantMissing) {
 			return err

@@ -6,8 +6,8 @@ import viteCompression from 'vite-plugin-compression'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, '')
-  // connect-src sale del mismo VITE_API_BASE_URL que usa api-client.ts, así la CSP
-  // nunca bloquea al backend configurado. En dev se suma el websocket de HMR.
+  // connect-src comes from the same VITE_API_BASE_URL api-client.ts uses, so the
+  // CSP never blocks the configured backend. Dev adds the HMR websocket.
   const apiOrigin = new URL(env.VITE_API_BASE_URL || 'http://localhost:8080').origin
   const connectSrc = [
     apiOrigin,
@@ -21,12 +21,12 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       (viteCompression as any)({ algorithm: 'brotliCompress', ext: '.br', deleteOriginFile: false }),
       (viteCompression as any)({ algorithm: 'gzip', ext: '.gz', deleteOriginFile: false }),
-      // Reemplaza el placeholder de index.html con los orígenes de connect-src configurados.
+      // Replaces the index.html placeholder with the configured connect-src origins.
       {
         name: 'csp-connect-src',
         transformIndexHtml(html: string) {
           const out = html.replace('__CSP_CONNECT_SRC__', connectSrc)
-          // Solo dev: el preámbulo de React Refresh es un <script> inline.
+          // Dev only: the React Refresh preamble is an inline <script>.
           return mode === 'development'
             ? out.replace("default-src 'self';", "default-src 'self'; script-src 'self' 'unsafe-inline';")
             : out

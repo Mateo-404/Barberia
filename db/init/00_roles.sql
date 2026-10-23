@@ -1,12 +1,12 @@
--- SOLO DESARROLLO/TEST (docker-entrypoint-initdb.d).
--- En producción: creá el rol con contraseña gestionada por secretos, sin SUPERUSER ni BYPASSRLS.
+-- DEVELOPMENT/TEST ONLY (docker-entrypoint-initdb.d).
+-- In production: create the role with a secret-managed password, without SUPERUSER or BYPASSRLS.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user') THEN
     CREATE ROLE app_user LOGIN PASSWORD 'app_user_dev'
       NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
   ELSE
-    -- La migración 000003 crea app_user sin LOGIN si aún no existía.
+    -- Migration 000003 creates app_user without LOGIN when it did not exist.
     ALTER ROLE app_user LOGIN PASSWORD 'app_user_dev';
   END IF;
 END $$;

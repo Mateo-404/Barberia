@@ -4,7 +4,11 @@ package admins
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/Mateo-404/Barberia/backend-go/internal/apperr"
 	"github.com/Mateo-404/Barberia/backend-go/internal/auth"
@@ -47,15 +51,16 @@ type Patch struct {
 
 // Service groups admin operations.
 type Service struct {
-	pool   *pgxpool.Pool
-	q      *sqlc.Queries
-	jwt    *auth.JWTManager
-	logger *slog.Logger
+	pool    *pgxpool.Pool
+	q       *sqlc.Queries
+	jwt     *auth.JWTManager
+	logger  *slog.Logger
+	totpKey string
 }
 
 // New builds the service.
-func New(pool *pgxpool.Pool, q *sqlc.Queries, jwt *auth.JWTManager, logger *slog.Logger) *Service {
-	return &Service{pool: pool, q: q, jwt: jwt, logger: logger}
+func New(pool *pgxpool.Pool, q *sqlc.Queries, jwt *auth.JWTManager, logger *slog.Logger, totpKey string) *Service {
+	return &Service{pool: pool, q: q, jwt: jwt, logger: logger, totpKey: totpKey}
 }
 
 func toDomain(id int64, firstName, lastName, email *string, role string) Admin {
@@ -260,10 +265,12 @@ func (s *Service) Page(ctx context.Context, tenantID int64, page, size int) ([]A
 	return out, total, err
 }
 
-// Login checks the credentials and issues a JWT.
-func (s *Service) Login(ctx context.Context, tenantID int64, email, password string) (Admin, string, error) {
+// Login checks the credentials and issues a JWT. When the admin has TOTP
+// enabled, it returns a short-lived pending token and requires2FA=true.
+func (s *Service) Login(ctx context.Context, tenantID int64, email, password string) (Admin, string, bool, error) {
 	var admin Admin
 	var token string
+	var requires2FA bool
 	err := database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
 		r, err := q.GetAdminByEmail(ctx, sqlc.GetAdminByEmailParams{TenantID: tenantID, Email: &email})
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -277,6 +284,17 @@ func (s *Service) Login(ctx context.Context, tenantID int64, email, password str
 			return invalidCredentials()
 		}
 		admin = toDomain(r.ID, r.FirstName, r.LastName, r.Email, r.Role)
+		// TOTP check
+		totpRow, err := q.GetAdminTOTP(ctx, sqlc.GetAdminTOTPParams{TenantID: tenantID, ID: r.ID})
+		if err == nil && totpRow.TotpEnabled {
+			tok, err := s.jwt.IssuePending2FA(admin.ID, admin.Email, tenantID, admin.Role)
+			if err != nil {
+				return err
+			}
+			token = tok
+			requires2FA = true
+			return nil
+		}
 		t, err := s.jwt.Issue(admin.ID, admin.Email, tenantID, admin.Role)
 		if err != nil {
 			return err
@@ -284,7 +302,7 @@ func (s *Service) Login(ctx context.Context, tenantID int64, email, password str
 		token = t
 		return nil
 	})
-	return admin, token, err
+	return admin, token, requires2FA, err
 }
 
 // Seed creates the initial admin when the tenant has none.
@@ -333,3 +351,231 @@ func alreadyExists(email string) error {
 func invalidCredentials() error {
 	return apperr.New(apperr.KindInvalidCredentials, "auth.invalid_credentials", nil, "invalid credentials")
 }
+
+// LoginWithGoogle finds or creates an admin from a verified Google identity.
+// Returns requires2FA=true with a pending token when TOTP is enabled.
+func (s *Service) LoginWithGoogle(ctx context.Context, tenantID int64, gu auth.GoogleUser) (Admin, string, bool, error) {
+	var admin Admin
+	var token string
+	var requires2FA bool
+	var adminID int64
+	var adminEmail, adminRole string
+	var firstName, lastName *string
+	err := database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		// 1. Find by google_sub.
+		r, err := q.GetAdminByGoogleSub(ctx, sqlc.GetAdminByGoogleSubParams{TenantID: tenantID, GoogleSub: &gu.Sub})
+		if errors.Is(err, pgx.ErrNoRows) {
+			// 2. Link by email if an admin with that email exists.
+			r2, err2 := q.GetAdminByEmail(ctx, sqlc.GetAdminByEmailParams{TenantID: tenantID, Email: &gu.Email})
+			if err2 == nil {
+				linked, err := q.LinkAdminGoogle(ctx, sqlc.LinkAdminGoogleParams{TenantID: tenantID, ID: r2.ID, GoogleSub: &gu.Sub})
+				if err != nil {
+					return err
+				}
+				adminID = linked.ID
+				firstName, lastName = linked.FirstName, linked.LastName
+				adminEmail = deref(linked.Email)
+				adminRole = linked.Role
+			} else if errors.Is(err2, pgx.ErrNoRows) {
+				// 3. Create a new staff admin.
+				created, err := q.CreateAdminGoogle(ctx, sqlc.CreateAdminGoogleParams{
+					FirstName:    strPtr(firstNameFrom(gu.Name)),
+					LastName:     strPtr(""),
+					Email:        &gu.Email,
+					PasswordHash: nil,
+					TenantID:     tenantID,
+					Role:         auth.RoleStaff,
+					GoogleSub:    &gu.Sub,
+					AuthProvider: "google",
+				})
+				if err != nil {
+					return err
+				}
+				adminID = created.ID
+				firstName, lastName = created.FirstName, created.LastName
+				adminEmail = deref(created.Email)
+				adminRole = created.Role
+			} else {
+				return err2
+			}
+		} else if err != nil {
+			return err
+		} else {
+			adminID = r.ID
+			firstName, lastName = r.FirstName, r.LastName
+			adminEmail = deref(r.Email)
+			adminRole = r.Role
+		}
+		admin = Admin{ID: adminID, FirstName: deref(firstName), LastName: deref(lastName), Email: adminEmail, Role: adminRole}
+		if admin.Role == "" {
+			admin.Role = auth.RoleOwner
+		}
+
+		totpRow, err := q.GetAdminTOTP(ctx, sqlc.GetAdminTOTPParams{TenantID: tenantID, ID: adminID})
+		if err == nil && totpRow.TotpEnabled {
+			tok, err := s.jwt.IssuePending2FA(admin.ID, admin.Email, tenantID, admin.Role)
+			if err != nil {
+				return err
+			}
+			token = tok
+			requires2FA = true
+			return nil
+		}
+		t, err := s.jwt.Issue(admin.ID, admin.Email, tenantID, admin.Role)
+		if err != nil {
+			return err
+		}
+		token = t
+		return nil
+	})
+	return admin, token, requires2FA, err
+}
+
+func firstNameFrom(full string) string {
+	full = strings.TrimSpace(full)
+	if i := strings.IndexByte(full, ' '); i > 0 {
+		return full[:i]
+	}
+	if full == "" {
+		return "User"
+	}
+	return full
+}
+
+func strPtr(s string) *string { return &s }
+
+// SetupTOTP generates a new secret, stores it (not yet enabled) and returns
+// the provisioning URI.
+func (s *Service) SetupTOTP(ctx context.Context, tenantID, adminID int64) (string, string, error) {
+	secret, err := auth.GenerateTOTPSecret()
+	if err != nil {
+		return "", "", err
+	}
+	enc, err := auth.EncryptTOTP(s.totpKey, secret)
+	if err != nil {
+		return "", "", err
+	}
+	err = database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		return q.SetAdminTOTPSecret(ctx, sqlc.SetAdminTOTPSecretParams{TenantID: tenantID, ID: adminID, TotpSecret: &enc})
+	})
+	if err != nil {
+		return "", "", err
+	}
+	admin, _ := s.GetByID(ctx, tenantID, adminID)
+	account := admin.Email
+	if account == "" {
+		account = fmt.Sprintf("admin-%d", adminID)
+	}
+	uri := auth.TOTPProvisioningURI("Barberia", account, secret)
+	return secret, uri, nil
+}
+
+// GetByID returns a single admin.
+func (s *Service) GetByID(ctx context.Context, tenantID, adminID int64) (Admin, error) {
+	var admin Admin
+	err := database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		r, err := q.GetAdmin(ctx, sqlc.GetAdminParams{TenantID: tenantID, ID: adminID})
+		if err != nil {
+			return err
+		}
+		admin = toDomain(r.ID, r.FirstName, r.LastName, r.Email, r.Role)
+		return nil
+	})
+	return admin, err
+}
+
+// VerifyTOTP enables TOTP when the code is valid.
+func (s *Service) VerifyTOTP(ctx context.Context, tenantID, adminID int64, code string) error {
+	var enc *string
+	err := database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		row, err := q.GetAdminTOTP(ctx, sqlc.GetAdminTOTPParams{TenantID: tenantID, ID: adminID})
+		if err != nil {
+			return err
+		}
+		enc = row.TotpSecret
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if enc == nil || *enc == "" {
+		return errors.New("totp not set up")
+	}
+	secret, err := auth.DecryptTOTP(s.totpKey, *enc)
+	if err != nil {
+		return err
+	}
+	if !auth.VerifyTOTP(secret, code, timeNow()) {
+		return invalidCredentials()
+	}
+	return database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		return q.EnableAdminTOTP(ctx, sqlc.EnableAdminTOTPParams{TenantID: tenantID, ID: adminID})
+	})
+}
+
+// DisableTOTP clears the secret after verifying a code.
+func (s *Service) DisableTOTP(ctx context.Context, tenantID, adminID int64, code string) error {
+	var enc *string
+	err := database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		row, err := q.GetAdminTOTP(ctx, sqlc.GetAdminTOTPParams{TenantID: tenantID, ID: adminID})
+		if err != nil {
+			return err
+		}
+		enc = row.TotpSecret
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if enc == nil || *enc == "" {
+		return nil
+	}
+	secret, err := auth.DecryptTOTP(s.totpKey, *enc)
+	if err != nil {
+		return err
+	}
+	if !auth.VerifyTOTP(secret, code, timeNow()) {
+		return invalidCredentials()
+	}
+	return database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		return q.DisableAdminTOTP(ctx, sqlc.DisableAdminTOTPParams{TenantID: tenantID, ID: adminID})
+	})
+}
+
+// ChallengeTOTP verifies a pending 2FA token + code and issues a full token.
+func (s *Service) ChallengeTOTP(ctx context.Context, pendingClaims *auth.Claims, code string) (Admin, string, error) {
+	var admin Admin
+	var token string
+	tenantID := pendingClaims.TenantID
+	adminID, err := strconv.ParseInt(pendingClaims.Subject, 10, 64)
+	if err != nil {
+		return admin, "", auth.ErrInvalidToken
+	}
+	err = database.WithTenantTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		r, err := q.GetAdmin(ctx, sqlc.GetAdminParams{TenantID: tenantID, ID: adminID})
+		if err != nil {
+			return invalidCredentials()
+		}
+		admin = toDomain(r.ID, r.FirstName, r.LastName, r.Email, r.Role)
+		row, err := q.GetAdminTOTP(ctx, sqlc.GetAdminTOTPParams{TenantID: tenantID, ID: adminID})
+		if err != nil || row.TotpSecret == nil || *row.TotpSecret == "" {
+			return invalidCredentials()
+		}
+		secret, err := auth.DecryptTOTP(s.totpKey, *row.TotpSecret)
+		if err != nil {
+			return err
+		}
+		if !auth.VerifyTOTP(secret, code, timeNow()) {
+			return invalidCredentials()
+		}
+		t, err := s.jwt.Issue(admin.ID, admin.Email, tenantID, admin.Role)
+		if err != nil {
+			return err
+		}
+		token = t
+		return nil
+	})
+	return admin, token, err
+}
+
+var timeNow = func() time.Time { return time.Now() }

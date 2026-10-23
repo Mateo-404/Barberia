@@ -122,7 +122,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := admins.New(pool, q, jwtManager, quietLogger()).Seed(ctx, def.ID, seedEmail, seedPassword, "Admin", "Default"); err != nil {
+	if err := admins.New(pool, q, jwtManager, quietLogger(), jwtSecret).Seed(ctx, def.ID, seedEmail, seedPassword, "Admin", "Default"); err != nil {
 		t.Fatal(err)
 	}
 	srv := httpapi.NewServer(httpapi.Deps{Cfg: cfg, Logger: quietLogger(), Pool: pool, JWT: jwtManager, Resolver: resolver})

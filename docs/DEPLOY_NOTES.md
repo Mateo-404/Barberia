@@ -35,3 +35,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENC
 
 ## Tokens legados
 Tokens sin claim `tenant` (claim nombre `tenant`, valor BIGINT) —p. ej. emitidos por el backend Java— son rechazados con 401 → el frontend limpia la sesión y pide re-login. No hay fallback.
+
+## Google OAuth + TOTP 2FA (opcionales)
+- Variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL`.
+- Si `GOOGLE_CLIENT_ID` queda vacío, el login con Google se deshabilita (el botón no se muestra).
+- Crear credenciales OAuth 2.0 (Web) en Google Cloud Console con el redirect
+  `https://<frontend>/auth/google/callback` (y el de dev para pruebas locales).
+- TOTP cifra los secretos con AES-256-GCM usando una clave derivada de `JWT_SECRET`.
+  Rotar `JWT_SECRET` invalida los secretos TOTP existentes (re-enrolment).
+- Migración `000009_auth_google_totp` añade `google_sub`, `auth_provider`,
+  `totp_secret`, `totp_enabled`, `totp_verified_at` a `admins` y `google_sub`/
+  `avatar_url` a `customers`. Requiere `MIGRATE_DATABASE_URL` (dueño).

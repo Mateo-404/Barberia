@@ -1,12 +1,12 @@
-# Stack de desarrollo: PostgreSQL + backend Go.
+# Development stack: PostgreSQL + Go backend.
 #
-# Uso:
+# Usage:
 #   JWT_SECRET=$(openssl rand -base64 32) docker compose up --build
 #
-# Los datos viven en un volumen nombrado (barber-pgdata). db/init crea el rol
-# app_user (sin SUPERUSER/BYPASSRLS) para los tests de RLS (`make test-db`).
-# La app de este compose usa el superusuario con APP_ENV=dev; en producción
-# ver docs/DEPLOY_NOTES.md.
+# Data lives in a named volume (barber-pgdata). db/init creates the app_user
+# role (no SUPERUSER/BYPASSRLS) used by the RLS tests (`make test-db`).
+# The app in this compose connects as the superuser with APP_ENV=dev; for
+# production see docs/DEPLOY_NOTES.md.
 
 name: barber
 
@@ -37,7 +37,7 @@ services:
       APP_ENV: dev
       HTTP_ADDR: ":8080"
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/barber?sslmode=disable
-      JWT_SECRET: ${JWT_SECRET:?Genere uno con: openssl rand -base64 32}
+      JWT_SECRET: ${JWT_SECRET:?Generate one with: openssl rand -base64 32}
       AUTO_MIGRATE: "true"
       CORS_ALLOW_ORIGINS: http://localhost:5173,http://localhost:5174
       DEFAULT_TENANT_SLUG: default

@@ -1,1 +1,18 @@
 # path-glob:regex — intentional Spanish data allowed by scripts/check_english.py
+# Copy of the UI under test (the interface is Spanish, the code is English).
+frontend/e2e/*:.
+frontend/src/*__tests__/*:.
+# Default business name and title, shown to users until they set their own.
+backend-go/internal/settings/presets.go:Barbería
+frontend/index.html:<title>
+# The legacy Hibernate schema is Spanish by definition; the test recreates it.
+backend-go/internal/integration/schema_test.go:(CREATE|INSERT|SELECT)
+# Migrations already applied in production are frozen: their SQL (including
+# the Spanish names the schema had before 000007) must never be edited.
+backend-go/db/migrations/00000[1-6]_*:.
+backend-go/db/migrations/000007_*:.
+
+# Spanish UI copy in the new auth screens.
+frontend/src/pages/Login.tsx:Código de verificación
+frontend/src/pages/Login.tsx:Continuar con Google
+frontend/src/pages/Login.tsx:Redirigiendo

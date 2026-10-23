@@ -20,5 +20,5 @@ export function usePublicSettings() {
 export function useSiteIdentity(): SiteIdentity {
   const preview = usePreviewIdentity()
   const { data } = usePublicSettings()
-  return preview ?? { name: data?.theme.name ?? "", tagline: data?.theme.tagline ?? "", logo: data?.theme.logo ?? "" }
+  return preview ?? { name: data?.theme?.name ?? "", tagline: data?.theme?.tagline ?? "", logo: data?.theme?.logo ?? "" }
 }

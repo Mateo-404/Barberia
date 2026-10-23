@@ -3,7 +3,7 @@ import {
 } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
-import { useLogin, type LoginResponse } from "@/api/auth"
+import { useLogin, useTOTPChallenge } from "@/api/auth"
 import { AUTH_EXPIRED_EVENT } from "@/lib/api-client"
 import {
   clearSession, readAdmin, readToken, writeSession, type Admin,
@@ -14,7 +14,10 @@ interface AuthContextType {
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  pending2FA: string | null
   login: (email: string, password: string) => Promise<void>
+  verify2FA: (code: string) => Promise<void>
+  cancel2FA: () => void
   logout: () => void
 }
 
@@ -48,14 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [token, setToken] = useState<string | null>(loadValidToken)
   const [admin, setAdmin] = useState<Admin | null>(() => (readToken() ? readAdmin() : null))
+  const [pending2FA, setPending2FA] = useState<string | null>(null)
 
   const { mutateAsync, isPending } = useLogin()
+  const { mutateAsync: challengeAsync, isPending: isChallengePending } = useTOTPChallenge()
 
   /** Ends the session and drops ALL remote state, so the next session cannot
    * see the previous one's data. */
   const terminateSession = useCallback(() => {
     setAdmin(null)
     setToken(null)
+    setPending2FA(null)
     clearSession()
     queryClient.clear()
   }, [queryClient])
@@ -72,9 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const data: LoginResponse = await mutateAsync({ email, password })
-      const { token: jwt, ...adminData } = data satisfies Admin & { token: string }
-      // A new session starts clean.
+      const data: any = await mutateAsync({ email, password })
+      if (data.requires2fa && data.tempToken) {
+        setPending2FA(data.tempToken)
+        return
+      }
+      const { token: jwt, ...adminData } = data
       queryClient.clear()
       setAdmin(adminData)
       setToken(jwt)
@@ -82,6 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [mutateAsync, queryClient],
   )
+
+  const verify2FA = useCallback(
+    async (code: string) => {
+      if (!pending2FA) throw new Error("no pending 2fa")
+      const data: any = await challengeAsync({ tempToken: pending2FA, code })
+      const { token: jwt, ...adminData } = data
+      setPending2FA(null)
+      queryClient.clear()
+      setAdmin(adminData)
+      setToken(jwt)
+      writeSession(adminData, jwt)
+    },
+    [pending2FA, challengeAsync, queryClient],
+  )
+
+  const cancel2FA = useCallback(() => setPending2FA(null), [])
 
   const logout = useCallback(() => {
     terminateSession()
@@ -93,8 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         admin,
         token,
         isAuthenticated: admin !== null && token !== null,
-        isLoading: isPending,
+        isLoading: isPending || isChallengePending,
+        pending2FA,
         login,
+        verify2FA,
+        cancel2FA,
         logout,
       }}
     >

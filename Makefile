@@ -7,7 +7,7 @@ SHELL := /bin/bash
 DB_SUPER_URL ?= postgres://postgres:postgres@localhost:5432/barber?sslmode=disable
 MIGRATE_DATABASE_URL ?= $(DB_SUPER_URL)
 
-.PHONY: up down reset migrate test test-db test-frontend lint-sql fmt vet verify
+.PHONY: english up down reset migrate test test-db test-frontend lint-sql fmt vet verify
 
 up:
 > docker compose up -d --wait
@@ -40,5 +40,8 @@ fmt:
 vet:
 > cd backend-go && go vet ./...
 
-verify: fmt vet lint-sql migrate test test-db test-frontend
+english:
+> python3 scripts/check_english.py
+
+verify: english fmt vet lint-sql migrate test test-db test-frontend
 > @echo "verify: OK"

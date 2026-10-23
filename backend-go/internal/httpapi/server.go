@@ -66,7 +66,7 @@ func NewServer(d Deps) *Server {
 		resolver:          d.Resolver,
 		customers:         customers.New(d.Pool, q),
 		services:          services.New(d.Pool, q),
-		admins:            admins.New(d.Pool, q, d.JWT, d.Logger),
+		admins:            admins.New(d.Pool, q, d.JWT, d.Logger, d.Cfg.JWTSecret),
 		appointments:      appointments.New(d.Pool, q),
 		stats:             stats.New(d.Pool, q),
 		settings:          settingsmod.New(d.Pool, q),
@@ -93,6 +93,16 @@ func (s *Server) Handler() http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/auth/login", s.handleLogin)
+		r.Get("/auth/providers", s.handleAuthProviders)
+		r.Post("/auth/google/start", s.handleGoogleStart)
+		r.Post("/auth/google/callback", s.handleGoogleCallback)
+		r.Post("/auth/totp/challenge", s.handleTOTPChallenge)
+		r.Route("/auth/totp", func(r chi.Router) {
+			r.Use(requireRole(auth.RoleOwner, auth.RoleAdmin, auth.RoleStaff))
+			r.Post("/setup", s.handleTOTPSetup)
+			r.Post("/verify", s.handleTOTPVerify)
+			r.Post("/disable", s.handleTOTPDisable)
+		})
 
 		r.Route("/appointments", func(r chi.Router) {
 			r.Get("/", s.handleAppointmentList)

@@ -8,6 +8,7 @@ import { TenantProvider } from "@/context/TenantContext"
 import { ApiError } from "@/lib/api-client"
 import Booking from "@/pages/Booking"
 import Login from "@/pages/Login"
+import AuthCallback from "@/pages/AuthCallback"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { ShortcutsHelp } from "@/components/ShortcutsHelp"
@@ -20,13 +21,14 @@ const Welcome = lazy(() => import("@/pages/theme/Welcome"))
 const ThemeEditorPage = lazy(() => import("@/pages/theme/ThemeEditorPage"))
 const BusinessPage = lazy(() => import("@/pages/admin/BusinessPage"))
 const SettingsPage = lazy(() => import("@/pages/admin/SettingsPage"))
+const SecurityPage = lazy(() => import("@/pages/admin/SecurityPage"))
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60_000,
-      // Reintentar sólo lo transitorio (red, timeout, 5xx). Un 4xx no se
-      // recupera solo y reintentarlo enmascara errores reales.
+      // Retry only transient failures (network, timeout, 5xx). A 4xx does not
+      // fix itself, and retrying it would hide real errors.
       retry: (failureCount, error) => {
         if (failureCount >= 2) return false
         if (error instanceof ApiError) return error.isRetriable
@@ -61,9 +63,11 @@ function App() {
             <Routes>
               <Route path="/" element={<Booking />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/auth/google/callback" element={<AuthCallback />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/welcome" element={<Lazy><Welcome /></Lazy>} />
                 <Route path="/admin/theme" element={<Lazy><ThemeEditorPage /></Lazy>} />
+                <Route path="/admin/security" element={<Lazy><SecurityPage /></Lazy>} />
                 <Route element={<AdminLayout />}>
                   <Route path="/admin" element={<Lazy><Dashboard /></Lazy>} />
                   <Route path="/admin/appointments" element={<Lazy><Appointments /></Lazy>} />

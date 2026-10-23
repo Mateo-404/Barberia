@@ -44,12 +44,12 @@ backend-go/
 ├── cmd/migrate/main.go         # aplica migraciones con MIGRATE_DATABASE_URL (rol dueño)
 ├── testdata/                   # fixtures de settings y vectores de contraste
 ├── db/
-│   ├── migrations/             # 000001 baseline … 000006 (tenancy, RLS, settings, roles, FKs)
+│   ├── migrations/             # 000001 baseline … 000009 (tenancy, RLS, settings, roles, FKs, inglés, theme v2, auth Google/TOTP)
 │   ├── queries/                # queries sqlc (todas tenant-scoped)
 │   └── embed.go
 └── internal/
     ├── apperr/                 # errores de dominio → ProblemDetail
-    ├── auth/                   # Argon2id (compatible Spring), JWT HS256, rate limit
+    ├── auth/                   # Argon2id (compatible Spring), JWT HS256 (con scope 2FA), rate limit, TOTP, Google OAuth
     ├── config/                 # env con validación fail-closed
     ├── httpapi/                # router, middleware, handlers, shapes de error
     ├── modules/                # turnos, clientes, servicios, administradores, estadisticas
@@ -131,3 +131,15 @@ $PG/pg_ctl -D $D/data -o "-p 55432 -k '' -c listen_addresses=127.0.0.1" -w start
 
 `Dockerfile` multi-stage (build con `golang:1.27.3-bookworm`, runtime
 distroless nonroot, sin CGO). El CI construye la imagen en cada cambio.
+
+## Autenticación
+
+- `POST /api/auth/login` — email + password. Devuelve `{ token, ...admin }` o
+  `{ requires2fa: true, tempToken }` si el admin tiene TOTP activo.
+- `GET /api/auth/providers` — capacidades disponibles (`{ google: bool }`).
+- `POST /api/auth/google/start` / `POST /api/auth/google/callback` — login con Google.
+- `POST /api/auth/totp/challenge` — completa el desafío 2FA con `tempToken` + código.
+- `POST /api/auth/totp/setup|verify|disable` — gestión del segundo factor (autenticado).
+
+Roles: `owner`, `admin`, `staff`. Los tokens incluyen el claim `tenant` (BIGINT)
+y `rol`. Los tokens sin `tenant` se rechazan con 401.

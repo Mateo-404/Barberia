@@ -10,6 +10,7 @@ sql:
       - "db/migrations/000006_composite_fks.up.sql"
       - "db/migrations/000007_english_schema.up.sql"
       - "db/migrations/000008_theme_v2.up.sql"
+      - "db/migrations/000009_auth_google_totp.up.sql"
     queries: "db/queries"
     gen:
       go:
