@@ -1,0 +1,42 @@
+{
+  "title": "¡Reservá tu turno!",
+  "subtitle": "Completá los pasos para agendar tu cita",
+  "steps": { "service": "Servicio", "dateTime": "Fecha y hora", "details": "Tus datos" },
+  "service": {
+    "title": "Elegí un servicio",
+    "loading": "Cargando servicios…",
+    "loadError": "No pudimos cargar los servicios. Revisá tu conexión e intentá de nuevo.",
+    "empty": "Todavía no hay servicios disponibles."
+  },
+  "dateTime": {
+    "title": "Elegí fecha y horario",
+    "pickDate": "Fecha",
+    "availableTimes": "Horarios disponibles"
+  },
+  "details": {
+    "title": "Tus datos",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "phone": "Teléfono",
+    "email": "Email (opcional)",
+    "firstNamePlaceholder": "Juan",
+    "lastNamePlaceholder": "Pérez",
+    "phonePlaceholder": "1155551234",
+    "emailPlaceholder": "juan@email.com"
+  },
+  "summary": {
+    "service": "Servicio:",
+    "appointment": "Turno:",
+    "when": "{{date}} a las {{time}}"
+  },
+  "actions": {
+    "next": "Siguiente",
+    "submit": "Reservar turno",
+    "submitting": "Reservando…"
+  },
+  "success": {
+    "title": "Turno reservado",
+    "message": "Te esperamos en la barbería.",
+    "again": "Reservar otro turno"
+  }
+}

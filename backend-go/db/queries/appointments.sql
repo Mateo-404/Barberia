@@ -12,6 +12,7 @@ WHERE a.tenant_id = sqlc.arg('tenant_id')
 ORDER BY a.id;
 
 -- name: PageAppointments :many
+-- Most recent first (highest id), so page 0 is "the latest appointments".
 SELECT a.id, a.starts_at,
        c.phone, c.first_name, c.last_name, c.email,
        s.id AS service_id, s.name AS service_name, s.price AS service_price
@@ -19,7 +20,7 @@ FROM appointments a
 LEFT JOIN customers c ON a.customer_phone = c.phone AND c.tenant_id = a.tenant_id
 LEFT JOIN services s ON a.service_id = s.id AND s.tenant_id = a.tenant_id
 WHERE a.tenant_id = sqlc.arg('tenant_id')
-ORDER BY a.id
+ORDER BY a.id DESC
 LIMIT sqlc.arg('row_limit') OFFSET sqlc.arg('row_offset');
 
 -- name: CountAppointments :one

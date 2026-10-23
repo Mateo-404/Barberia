@@ -1,21 +1,22 @@
 import { lazy, Suspense } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { AuthProvider } from "@/context/AuthContext"
 import { TenantProvider } from "@/context/TenantContext"
 import { ApiError } from "@/lib/api-client"
-import Reserva from "@/pages/Reserva"
+import Booking from "@/pages/Booking"
 import Login from "@/pages/Login"
 import Onboarding from "@/pages/Onboarding"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { ShortcutsHelp } from "@/components/ShortcutsHelp"
 
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"))
-const TurnosAdmin = lazy(() => import("@/pages/admin/TurnosAdmin"))
-const EstadisticasAdmin = lazy(() => import("@/pages/admin/EstadisticasAdmin"))
+const Dashboard = lazy(() => import("@/pages/admin/Dashboard"))
+const Appointments = lazy(() => import("@/pages/admin/Appointments"))
+const Stats = lazy(() => import("@/pages/admin/Stats"))
 const MarcaAdmin = lazy(() => import("@/pages/admin/MarcaAdmin"))
-const AjustesAdmin = lazy(() => import("@/pages/admin/AjustesAdmin"))
+const SettingsPage = lazy(() => import("@/pages/admin/SettingsPage"))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,11 +33,17 @@ const queryClient = new QueryClient({
   },
 })
 
+/** Suspense boundary for lazily loaded admin pages. */
+function Lazy({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation()
+  return <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">{t("loading")}</div>}>{children}</Suspense>
+}
+
 function Shell() {
   const { pathname } = useLocation()
-  const scope: "cliente" | "admin" = pathname.startsWith("/admin")
+  const scope: "customer" | "admin" = pathname.startsWith("/admin")
     ? "admin"
-    : "cliente"
+    : "customer"
 
   return <ShortcutsHelp scope={scope} />
 }
@@ -48,87 +55,18 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<Reserva />} />
+              <Route path="/" element={<Booking />} />
               <Route path="/login" element={<Login />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route element={<AdminLayout />}>
-                  <Route
-                    path="/admin"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando panel…
-                          </div>
-                        }
-                      >
-                        <AdminDashboard />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/turnos"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando turnos…
-                          </div>
-                        }
-                      >
-                        <TurnosAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/marca"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando marca…
-                          </div>
-                        }
-                      >
-                        <MarcaAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/ajustes"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando ajustes…
-                          </div>
-                        }
-                      >
-                        <AjustesAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/estadisticas"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando estadísticas…
-                          </div>
-                        }
-                      >
-                        <EstadisticasAdmin />
-                      </Suspense>
-                    }
-                  />
+                  <Route path="/admin" element={<Lazy><Dashboard /></Lazy>} />
+                  <Route path="/admin/appointments" element={<Lazy><Appointments /></Lazy>} />
+                  <Route path="/admin/theme" element={<Lazy><MarcaAdmin /></Lazy>} />
+                  <Route path="/admin/settings" element={<Lazy><SettingsPage /></Lazy>} />
+                  <Route path="/admin/stats" element={<Lazy><Stats /></Lazy>} />
                 </Route>
               </Route>
-              <Route
-                path="/estadisticas/panel"
-                element={<Navigate to="/admin/estadisticas" replace />}
-              />
             </Routes>
             <Shell />
           </AuthProvider>

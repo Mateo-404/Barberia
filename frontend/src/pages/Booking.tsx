@@ -2,10 +2,12 @@ import { useState, useMemo, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useServicios } from "@/api/servicios"
-import { useFechasOcupadas, useCrearTurno } from "@/api/turnos"
-import { turnoSchema, type TurnoFormData } from "@/lib/schemas/turno-schema"
-import { ApiError } from "@/lib/api-client"
+import { useTranslation } from "react-i18next"
+import { useServices } from "@/api/services"
+import { useBookedSlots, useCreateAppointment } from "@/api/appointments"
+import { appointmentSchema, type AppointmentFormData } from "@/lib/schemas/appointment-schema"
+import { errorMessage, fieldErrorMessage } from "@/lib/error-message"
+import { formatCurrency, formatDate } from "@/lib/format"
 import { businessConfig, timeSlots } from "@/lib/business-config"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { todayInBusinessTz } from "@/lib/datetime"
@@ -14,13 +16,11 @@ import { Input } from "@/components/ui/input"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 
-const STEPS = ["Servicio", "Fecha y hora", "Tus datos"]
+const STEPS = ["service", "dateTime", "details"] as const
 
-const SuccessView = ({
-  onReset,
-}: {
-  onReset: () => void
-}) => (
+function SuccessView({ onReset }: { onReset: () => void }) {
+  const { t } = useTranslation("booking")
+  return (
   <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
     <div className="w-full max-w-md text-center space-y-6 page-enter">
       <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mx-auto" style={{ animation: "pop 0.7s ease-out" }}>
@@ -28,29 +28,32 @@ const SuccessView = ({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-foreground">Turno reservado</h1>
-      <p className="text-muted-foreground">Te esperamos en la barbería.</p>
+      <h1 className="text-2xl font-bold text-foreground">{t("success.title")}</h1>
+      <p className="text-muted-foreground">{t("success.message")}</p>
       <Button variant="secondary" onClick={onReset}>
-        Reservar otro turno
+        {t("success.again")}
       </Button>
     </div>
   </main>
-)
+  )
+}
 
-export default function Reserva() {
+export default function Booking() {
+  const { t } = useTranslation("booking")
+  const { t: tc } = useTranslation()
   const [step, setStep] = useState(0)
   const [success, setSuccess] = useState(false)
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
 
   const {
-    data: servicios,
-    isLoading: loadingServicios,
-    isError: errorServicios,
-    refetch: refetchServicios,
-  } = useServicios()
-  const { data: fechasOcupadas } = useFechasOcupadas()
-  const crearTurno = useCrearTurno()
+    data: services,
+    isLoading: loadingServices,
+    isError: servicesFailed,
+    refetch: refetchServices,
+  } = useServices()
+  const { data: bookedSlots } = useBookedSlots()
+  const createAppointment = useCreateAppointment()
 
   const {
     register,
@@ -61,49 +64,49 @@ export default function Reserva() {
     setError,
     watch,
     reset,
-  } = useForm<TurnoFormData>({
-    resolver: zodResolver(turnoSchema),
+  } = useForm<AppointmentFormData>({
+    resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      idServicio: undefined as unknown as number,
-      fechaHora: "",
-      nombreCliente: "",
-      apellidoCliente: "",
-      telefonoCliente: "",
-      emailCliente: "",
+      serviceId: undefined as unknown as number,
+      startsAt: "",
+      customerFirstName: "",
+      customerLastName: "",
+      customerPhone: "",
+      customerEmail: "",
     },
     mode: "onChange",
   })
 
-  const selectedServicioId = watch("idServicio")
+  const selectedServiceId = watch("serviceId")
 
-  // Grilla de horarios desde la configuración del negocio (interina).
+  // Slot grid from the (interim) business configuration.
   const slots = useMemo(() => timeSlots(), [])
 
-  const selectedServicio = useMemo(() => {
-    if (!servicios || !selectedServicioId) return null
-    return servicios.find((s) => s.id === selectedServicioId) ?? null
-  }, [servicios, selectedServicioId])
+  const selectedService = useMemo(() => {
+    if (!services || !selectedServiceId) return null
+    return services.find((s) => s.id === selectedServiceId) ?? null
+  }, [services, selectedServiceId])
 
   const isSlotOccupied = useCallback(
     (time: string) => {
-      if (!selectedDate || !fechasOcupadas) return false
-      return fechasOcupadas.includes(`${selectedDate}T${time}`)
+      if (!selectedDate || !bookedSlots) return false
+      return bookedSlots.includes(`${selectedDate}T${time}`)
     },
-    [selectedDate, fechasOcupadas],
+    [selectedDate, bookedSlots],
   )
 
   const handleNext = useCallback(async () => {
     if (step === 0) {
-      const valid = await trigger("idServicio")
+      const valid = await trigger("serviceId")
       if (valid) setStep(1)
     } else if (step === 1) {
       if (!selectedDate || !selectedTime) {
-        setError("fechaHora", { message: "Seleccioná fecha y horario" })
+        setError("startsAt", { message: "required" })
         return
       }
       const isoStr = `${selectedDate}T${selectedTime}:00`
-      setValue("fechaHora", isoStr, { shouldValidate: true })
-      const valid = await trigger("fechaHora")
+      setValue("startsAt", isoStr, { shouldValidate: true })
+      const valid = await trigger("startsAt")
       if (valid) setStep(2)
     }
   }, [step, selectedDate, selectedTime, trigger, setValue, setError])
@@ -142,9 +145,9 @@ export default function Reserva() {
     for (let i = 1; i <= 6; i++) {
       map[String(i)] = () => {
         if (step === 0) {
-          const s = servicios?.[i - 1]
+          const s = services?.[i - 1]
           if (s) {
-            setValue("idServicio", s.id)
+            setValue("serviceId", s.id)
             setSelectedDate("")
             setSelectedTime("")
           }
@@ -164,7 +167,7 @@ export default function Reserva() {
     return map
   }, [
     step,
-    servicios,
+    services,
     slots,
     selectedDate,
     isSlotOccupied,
@@ -179,38 +182,31 @@ export default function Reserva() {
 
   useHotkeys(hotkeyMap)
 
+  const { t: ts } = useTranslation("shortcuts")
   const shortcutDefs = useMemo(
     () => [
-      { key: "1-6", description: "Seleccionar servicio / horario" },
-      { key: "Enter", description: "Siguiente paso" },
-      { key: "Shift+n", description: "Siguiente paso" },
-      { key: "←", description: "Paso anterior" },
-      { key: "Esc", description: "Limpiar error / volver" },
-      { key: "r", description: "Reservar otro turno (confirmación)" },
+      { key: "1-6", description: ts("booking.pick") },
+      { key: "Enter", description: ts("booking.next") },
+      { key: "Shift+n", description: ts("booking.next") },
+      { key: "←", description: ts("booking.previous") },
+      { key: "Esc", description: ts("booking.escape") },
+      { key: "r", description: ts("booking.again") },
     ],
-    [],
+    [ts],
   )
-  useRegisterShortcuts("cliente", shortcutDefs)
+  useRegisterShortcuts("customer", shortcutDefs)
 
-  async function onSubmit(data: TurnoFormData) {
-    crearTurno.mutate(
-      {
-        fechaHora: data.fechaHora,
-        idServicio: data.idServicio,
-        telefonoCliente: data.telefonoCliente,
-        nombreCliente: data.nombreCliente,
-        apellidoCliente: data.apellidoCliente,
-        emailCliente: data.emailCliente || undefined,
-      },
+  function onSubmit(data: AppointmentFormData) {
+    createAppointment.mutate(
+      { ...data, customerEmail: data.customerEmail || undefined },
       {
         onSuccess: () => setSuccess(true),
-        onError: (err: Error) => {
-          const detail = err instanceof ApiError ? err.detail : err.message
-          setError("root", { message: detail })
-        },
+        onError: (err) => setError("root", { message: errorMessage(tc, err) }),
       },
     )
   }
+
+  const fieldMessage = (message?: string) => (message ? fieldErrorMessage(tc, message) : undefined)
 
   if (success) return <SuccessView onReset={handleReset} />
 
@@ -219,13 +215,13 @@ export default function Reserva() {
       <nav className="flex items-center justify-between px-4" style={{ height: "var(--nav-height)" }}>
         {step > 0 ? (
           <button onClick={handleBack} className="bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-            <img src="/img/flecha.svg" alt="Volver" className="h-8" />
+            <img src="/img/flecha.svg" alt={tc("back")} className="h-8" />
           </button>
         ) : (
           <div className="w-8" />
         )}
-        <Link to="/" className="inline-flex" aria-label={businessConfig.branding.nombre}>
-          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.nombre} className="h-16" />
+        <Link to="/" className="inline-flex" aria-label={businessConfig.branding.name}>
+          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.name} className="h-16" />
         </Link>
         <ThemeToggle />
         <a
@@ -240,15 +236,13 @@ export default function Reserva() {
 
       <main className="flex-1 px-4 pb-8 max-w-lg mx-auto w-full">
         <div className="text-center mb-6 page-enter">
-          <h1 className="text-xl font-bold text-foreground">¡Reservá tu turno!</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Completá los pasos para agendar tu cita
-          </p>
+          <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-8">
-          {STEPS.map((label, i) => (
-            <div key={label} className="flex items-center gap-1.5 sm:gap-2">
+          {STEPS.map((step_, i) => (
+            <div key={step_} className="flex items-center gap-1.5 sm:gap-2">
               <div
                 aria-current={i === step ? "step" : undefined}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors shrink-0 ${
@@ -270,7 +264,7 @@ export default function Reserva() {
               <span
                 className={`text-xs sm:text-sm hidden sm:inline ${i === step ? "text-foreground font-medium" : "text-muted-foreground"}`}
               >
-                {label}
+                {t(`steps.${step_}`)}
               </span>
               {i < STEPS.length - 1 && (
                 <div className={`w-6 sm:w-8 h-px ${i < step ? "bg-primary" : "bg-border"}`} />
@@ -291,60 +285,60 @@ export default function Reserva() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {step === 0 && (
             <div className="page-enter space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Elegí un servicio</h2>
-              {loadingServicios ? (
-                <p className="text-muted-foreground">Cargando servicios...</p>
-              ) : errorServicios ? (
+              <h2 className="text-lg font-semibold text-foreground">{t("service.title")}</h2>
+              {loadingServices ? (
+                <p className="text-muted-foreground">{t("service.loading")}</p>
+              ) : servicesFailed ? (
                 <div className="space-y-3">
                   <div role="alert" className="bg-destructive/10 text-destructive text-sm p-4 rounded-lg">
-                    No se pudieron cargar los servicios. Revisá tu conexión e intentá de nuevo.
+                    {t("service.loadError")}
                   </div>
-                  <Button type="button" variant="secondary" onClick={() => refetchServicios()}>
-                    Reintentar
+                  <Button type="button" variant="secondary" onClick={() => refetchServices()}>
+                    {tc("retry")}
                   </Button>
                 </div>
-              ) : !servicios?.length ? (
-                <p className="text-muted-foreground">No hay servicios disponibles.</p>
+              ) : !services?.length ? (
+                <p className="text-muted-foreground">{t("service.empty")}</p>
               ) : (
                 <div className="grid gap-3">
-                  {servicios.map((s) => (
+                  {services.map((s) => (
                     <button
                       key={s.id}
                       type="button"
                       onClick={() => {
-                        setValue("idServicio", s.id)
+                        setValue("serviceId", s.id)
                         setSelectedDate("")
                         setSelectedTime("")
                       }}
                       className={`text-left p-4 rounded-2xl border-2 transition-all duration-200 card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
-                        selectedServicioId === s.id
+                        selectedServiceId === s.id
                           ? "border-primary bg-accent"
                           : "border-border bg-card hover:border-primary/30"
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-foreground">{s.tipo}</span>
-                        <span className="text-primary font-bold">${s.precio}</span>
+                        <span className="font-medium text-foreground">{s.name}</span>
+                        <span className="text-primary font-bold">{formatCurrency(s.price)}</span>
                       </div>
                     </button>
                   ))}
                 </div>
               )}
-              {errors.idServicio && (
-                <p className="text-sm text-destructive">{errors.idServicio.message}</p>
+              {errors.serviceId && (
+                <p className="text-sm text-destructive">{fieldMessage(errors.serviceId.message)}</p>
               )}
             </div>
           )}
 
           {step === 1 && (
             <div className="page-enter space-y-6">
-              <h2 className="text-lg font-semibold text-foreground">Elegí fecha y horario</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t("dateTime.title")}</h2>
               <div>
-                <label htmlFor="fecha-reserva" className="block text-sm font-medium mb-2 text-foreground">
-                  Seleccionar fecha
+                <label htmlFor="booking-date" className="block text-sm font-medium mb-2 text-foreground">
+                  {t("dateTime.pickDate")}
                 </label>
                 <Input
-                  id="fecha-reserva"
+                  id="booking-date"
                   type="date"
                   value={selectedDate}
                   min={todayInBusinessTz()}
@@ -358,7 +352,7 @@ export default function Reserva() {
               {selectedDate && (
                 <div>
                   <label className="block text-sm font-medium mb-3 text-foreground">
-                    Horarios disponibles
+                    {t("dateTime.availableTimes")}
                   </label>
                   <div className="flex flex-wrap justify-center gap-2">
                     {slots.map((time) => {
@@ -385,86 +379,86 @@ export default function Reserva() {
                   </div>
                 </div>
               )}
-              {errors.fechaHora && (
-                <p className="text-sm text-destructive">{errors.fechaHora.message}</p>
+              {errors.startsAt && (
+                <p className="text-sm text-destructive">{fieldMessage(errors.startsAt.message)}</p>
               )}
             </div>
           )}
 
           {step === 2 && (
             <div className="page-enter space-y-5">
-              <h2 className="text-lg font-semibold text-foreground">Tus datos</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t("details.title")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="nombreCliente" className="text-sm font-medium text-foreground">Nombre</label>
+                  <label htmlFor="customerFirstName" className="text-sm font-medium text-foreground">{t("details.firstName")}</label>
                   <Input
-                    id="nombreCliente"
-                    {...register("nombreCliente")}
-                    placeholder="Juan"
+                    id="customerFirstName"
+                    {...register("customerFirstName")}
+                    placeholder={t("details.firstNamePlaceholder")}
                     className="text-base"
-                    aria-invalid={errors.nombreCliente ? true : undefined}
-                    aria-describedby={errors.nombreCliente ? "nombreCliente-error" : undefined}
+                    aria-invalid={errors.customerFirstName ? true : undefined}
+                    aria-describedby={errors.customerFirstName ? "customerFirstName-error" : undefined}
                   />
-                  {errors.nombreCliente && (
-                    <p id="nombreCliente-error" className="text-xs text-destructive">{errors.nombreCliente.message}</p>
+                  {errors.customerFirstName && (
+                    <p id="customerFirstName-error" className="text-xs text-destructive">{fieldMessage(errors.customerFirstName.message)}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="apellidoCliente" className="text-sm font-medium text-foreground">Apellido</label>
+                  <label htmlFor="customerLastName" className="text-sm font-medium text-foreground">{t("details.lastName")}</label>
                   <Input
-                    id="apellidoCliente"
-                    {...register("apellidoCliente")}
-                    placeholder="Pérez"
+                    id="customerLastName"
+                    {...register("customerLastName")}
+                    placeholder={t("details.lastNamePlaceholder")}
                     className="text-base"
-                    aria-invalid={errors.apellidoCliente ? true : undefined}
-                    aria-describedby={errors.apellidoCliente ? "apellidoCliente-error" : undefined}
+                    aria-invalid={errors.customerLastName ? true : undefined}
+                    aria-describedby={errors.customerLastName ? "customerLastName-error" : undefined}
                   />
-                  {errors.apellidoCliente && (
-                    <p id="apellidoCliente-error" className="text-xs text-destructive">{errors.apellidoCliente.message}</p>
+                  {errors.customerLastName && (
+                    <p id="customerLastName-error" className="text-xs text-destructive">{fieldMessage(errors.customerLastName.message)}</p>
                   )}
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="telefonoCliente" className="text-sm font-medium text-foreground">Teléfono</label>
+                <label htmlFor="customerPhone" className="text-sm font-medium text-foreground">{t("details.phone")}</label>
                 <Input
-                  id="telefonoCliente"
-                  {...register("telefonoCliente")}
-                  placeholder="1155551234"
+                  id="customerPhone"
+                  {...register("customerPhone")}
+                  placeholder={t("details.phonePlaceholder")}
                   type="tel"
                   className="text-base"
-                  aria-invalid={errors.telefonoCliente ? true : undefined}
-                  aria-describedby={errors.telefonoCliente ? "telefonoCliente-error" : undefined}
+                  aria-invalid={errors.customerPhone ? true : undefined}
+                  aria-describedby={errors.customerPhone ? "customerPhone-error" : undefined}
                 />
-                {errors.telefonoCliente && (
-                  <p id="telefonoCliente-error" className="text-xs text-destructive">{errors.telefonoCliente.message}</p>
+                {errors.customerPhone && (
+                  <p id="customerPhone-error" className="text-xs text-destructive">{fieldMessage(errors.customerPhone.message)}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <label htmlFor="emailCliente" className="text-sm font-medium text-foreground">Email (opcional)</label>
+                <label htmlFor="customerEmail" className="text-sm font-medium text-foreground">{t("details.email")}</label>
                 <Input
-                  id="emailCliente"
-                  {...register("emailCliente")}
-                  placeholder="juan@email.com"
+                  id="customerEmail"
+                  {...register("customerEmail")}
+                  placeholder={t("details.emailPlaceholder")}
                   type="email"
                   className="text-base"
-                  aria-invalid={errors.emailCliente ? true : undefined}
-                  aria-describedby={errors.emailCliente ? "emailCliente-error" : undefined}
+                  aria-invalid={errors.customerEmail ? true : undefined}
+                  aria-describedby={errors.customerEmail ? "customerEmail-error" : undefined}
                 />
-                {errors.emailCliente && (
-                  <p id="emailCliente-error" className="text-xs text-destructive">{errors.emailCliente.message}</p>
+                {errors.customerEmail && (
+                  <p id="customerEmail-error" className="text-xs text-destructive">{fieldMessage(errors.customerEmail.message)}</p>
                 )}
               </div>
 
-              {selectedServicio && (
+              {selectedService && (
                 <div className="bg-card p-4 rounded-2xl space-y-1 text-sm border border-border">
                   <p className="text-foreground">
-                    <span className="font-semibold text-primary">Servicio:</span>{" "}
-                    {selectedServicio.tipo} — ${selectedServicio.precio}
+                    <span className="font-semibold text-primary">{t("summary.service")}</span>{" "}
+                    {selectedService.name} — {formatCurrency(selectedService.price)}
                   </p>
                   {selectedDate && selectedTime && (
                     <p className="text-foreground">
-                      <span className="font-semibold text-primary">Turno:</span>{" "}
-                      {selectedDate} a las {selectedTime}
+                      <span className="font-semibold text-primary">{t("summary.appointment")}</span>{" "}
+                      {t("summary.when", { date: formatDate(`${selectedDate}T00:00`), time: selectedTime })}
                     </p>
                   )}
                 </div>
@@ -475,21 +469,21 @@ export default function Reserva() {
           <div className="flex gap-3 pt-2">
             {step > 0 && step < 2 && (
               <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
-                Atrás
+                {tc("back")}
               </Button>
             )}
             {step < 2 ? (
               <Button type="button" variant="default" onClick={handleNext} className="flex-1">
-                Siguiente
+                {t("actions.next")}
               </Button>
             ) : (
               <Button
                 type="submit"
                 variant="default"
-                disabled={crearTurno.isPending}
+                disabled={createAppointment.isPending}
                 className="flex-1"
               >
-                {crearTurno.isPending ? "Reservando..." : "Reservar turno"}
+                {createAppointment.isPending ? t("actions.submitting") : t("actions.submit")}
               </Button>
             )}
           </div>

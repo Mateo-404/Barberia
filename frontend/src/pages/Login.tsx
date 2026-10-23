@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -8,15 +9,18 @@ import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 import { loginSchema, type LoginFormData } from "@/lib/schemas/login-schema"
 import { businessConfig } from "@/lib/business-config"
-import { ApiError } from "@/lib/api-client"
+import { errorMessage, fieldErrorMessage } from "@/lib/error-message"
 import { useAdminSettings } from "@/api/settings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function Login() {
+  const { t } = useTranslation("admin")
+  const { t: tc } = useTranslation()
+  const { t: ts } = useTranslation("shortcuts")
   const { login, isAuthenticated } = useAuth()
-  // Estado de la marca: sólo se consulta con sesión iniciada.
+  // Brand state: only queried once signed in.
   const settingsQuery = useAdminSettings({ enabled: isAuthenticated })
   const navigate = useNavigate()
 
@@ -39,14 +43,14 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", contrasenia: "" },
+    defaultValues: { email: "", password: "" },
   })
 
   useHotkeys({
     Escape: () => {
       if (errors.root) {
         setError("root", { message: "" })
-      } else if (getValues().email || getValues().contrasenia) {
+      } else if (getValues().email || getValues().password) {
         document.getElementById("email")?.focus()
       }
     },
@@ -56,46 +60,27 @@ export default function Login() {
   })
 
   useRegisterShortcuts("admin", [
-    { key: "Esc", description: "Limpiar error" },
-    { key: "Alt+d", description: "Mostrar/ocultar contraseña" },
-    { key: "Ctrl+Enter", description: "Iniciar sesión" },
+    { key: "Esc", description: ts("login.escape") },
+    { key: "Alt+d", description: ts("login.togglePassword") },
+    { key: "Ctrl+Enter", description: ts("login.submit") },
   ])
-
-  // Destino seguro tras login: la ruta protegida original o el panel.
 
   async function onSubmit(data: LoginFormData) {
     try {
-      await login(data.email, data.contrasenia)
-      // La redirección la gestiona el useEffect según `onboarded`.
+      await login(data.email, data.password)
+      // The redirect is handled by the effect above, depending on `onboarded`.
     } catch (err) {
-      let message = "Error de conexión. Intentá de nuevo."
-      if (err instanceof ApiError) {
-        if (err.status === 401) {
-          message = "Email o contraseña incorrectos."
-        } else if (err.status === 0) {
-          message = err.detail
-        } else {
-          message = err.detail
-        }
-      }
-      setError("root", { message })
+      setError("root", { message: errorMessage(tc, err) })
     }
   }
 
-  /**
-   * F-01: si el negocio todavía no está configurado, el admin va al wizard
-   * de primer login. Si ya está, va a la ruta protegida de origen.
-   *
-   * Se espera el dato con `refetch()` porque al terminar el login el valor
-   * cacheado todavía no existe (la query se habilita con la sesión).
-   */
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-sm space-y-6 page-enter">
         <div className="text-center space-y-2">
-          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.nombre} className="mx-auto h-16 sm:h-20 mb-4" />
-          <h1 className="text-xl font-bold text-foreground">¡Bienvenido de vuelta!</h1>
-          <p className="text-sm text-muted-foreground">Inicia sesión para acceder a tu cuenta</p>
+          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.name} className="mx-auto h-16 sm:h-20 mb-4" />
+          <h1 className="text-xl font-bold text-foreground">{t("login.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
         </div>
 
         {errors.root && (
@@ -107,69 +92,57 @@ export default function Login() {
         <div className="bg-card rounded-2xl p-6 animate-in fade-in-0 zoom-in-95 duration-200">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email">{t("login.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@barberia.com"
+                placeholder={t("login.emailPlaceholder")}
                 autoComplete="email"
                 autoFocus
                 {...register("email")}
                 className="text-base"
               />
               {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
+                <p className="text-xs text-destructive">{fieldErrorMessage(tc, errors.email.message ?? "")}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contrasenia">Contraseña</Label>
+              <Label htmlFor="password">{t("login.password")}</Label>
               <div className="relative">
                 <Input
-                  id="contrasenia"
+                  id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Tu contraseña"
+                  placeholder={t("login.passwordPlaceholder")}
                   autoComplete="current-password"
                   className="pr-12 text-base"
-                  {...register("contrasenia")}
+                  {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded px-1 transition-colors duration-200"
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                 >
-                  {showPassword ? "Ocultar" : "Mostrar"}
+                  {showPassword ? t("login.hide") : t("login.show")}
                 </button>
               </div>
-              {errors.contrasenia && (
-                <p className="text-xs text-destructive">{errors.contrasenia.message}</p>
+              {errors.password && (
+                <p className="text-xs text-destructive">{fieldErrorMessage(tc, errors.password.message ?? "")}</p>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                <input type="checkbox" className="accent-primary rounded" />
-                Recordarme
-              </label>
-              <a href="#" className="text-sm text-primary no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-
             <Button type="submit" disabled={isSubmitting} className="w-full py-6 text-base active:scale-[0.98] transition-transform duration-100">
-              {isSubmitting ? "Ingresando..." : "Iniciar Sesión"}
+              {isSubmitting ? t("login.submitting") : t("login.submitLabel")}
             </Button>
           </form>
         </div>
 
         <div className="text-center space-y-3">
-          <div className="flex justify-center gap-6">
-            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Términos</a>
-            <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Privacidad</a>
-            <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Inicio</a>
-          </div>
-          <p className="text-xs text-muted-foreground">© 2026 {businessConfig.branding.nombre}. Todos los derechos reservados.</p>
+          <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">
+            {t("login.home")}
+          </a>
+          <p className="text-xs text-muted-foreground">{t("login.rights", { year: new Date().getFullYear(), name: businessConfig.branding.name })}</p>
         </div>
       </div>
     </main>

@@ -1,487 +1,113 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.0.3",
   "info": {
-    "title": "Barbería API (Go)",
-    "description": "API del backend Go (reemplazo de backend/ Java, misma compatibilidad de contrato).\n\nCambios aditivos respecto del spec Java:\n* `GET /healthz` y `GET /readyz` (nuevos).\n* `POST /administradores/login` puede responder `429` por rate limit por IP.\n* El JWT emitido incluye un claim adicional `tenant` (ignorado por clientes antiguos).\n\nDesviaciones deliberadas (ver docs/migracion-go/02-matriz-compatibilidad.md):\n* `GET /administradores/{page}/{size}` omite `content[].contrasenia` (el Java exponía el hash Argon2).\n* `PATCH /administradores/{id}` con `contrasenia` la persiste hasheada (Argon2id), nunca en texto plano.\n* `GET /estadisticas/panel` ante error interno responde `500` (el Java respondía `200` con cuerpo `null`).\n* `POST /turnos/all` aplica las mismas reglas que `POST /turnos` en una transacción (el Java fallaba con `500` si el cliente era nuevo).\n* `POST /turnos` es atómico ante doble reserva (índice único), responde `400` de regla de negocio en lugar de permitir la carrera.",
-    "contact": {
-      "name": "Desarrollador",
-      "email": "dev@barberia.com"
-    },
-    "license": {
-      "name": "MIT"
-    },
-    "version": "2.0.0"
+    "title": "Barber API",
+    "version": "2.0.0",
+    "description": "Multi-tenant barbershop booking API. Errors are RFC 7807 problem details with a stable `code` that clients translate."
   },
   "servers": [
     {
-      "url": "http://localhost:8080",
-      "description": "Entorno de desarrollo local"
-    }
-  ],
-  "tags": [
-    {
-      "name": "Clientes",
-      "description": "Gestión de clientes"
-    },
-    {
-      "name": "Servicios",
-      "description": "Gestión de servicios ofrecidos"
-    },
-    {
-      "name": "Health Check",
-      "description": "Endpoint de verificación del servicio"
-    },
-    {
-      "name": "Estadísticas",
-      "description": "Panel de estadísticas del negocio"
-    },
-    {
-      "name": "Turnos",
-      "description": "Gestión de turnos"
-    },
-    {
-      "name": "Administradores",
-      "description": "Gestión de administradores"
+      "url": "http://localhost:8080"
     }
   ],
   "paths": {
-    "/administradores": {
-      "get": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Obtener todos los registros",
-        "operationId": "getAll_3",
-        "responses": {
-          "200": {
-            "description": "Lista de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AdministradorResponseDTO"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
+    "/api/auth/login": {
       "post": {
         "tags": [
-          "Administradores"
+          "Auth"
         ],
-        "summary": "Crear un nuevo administrador",
-        "operationId": "create_3",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdministradorRequestDTO"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Administrador creado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdministradorResponseDTO"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Ya existe un administrador con ese email",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/administradores/all": {
-      "post": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Crear múltiples administradores",
-        "operationId": "createMultiple_3",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/AdministradorRequestDTO"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "409": {
-            "description": "Ya existe un administrador con ese email",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Administradores creados",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AdministradorResponseDTO"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/administradores/exists/{id}": {
-      "get": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Verificar si un registro existe por ID",
-        "operationId": "existsById_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "summary": "Log in",
         "responses": {
           "200": {
-            "description": "true si existe, false si no",
+            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/administradores/login": {
-      "post": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Iniciar sesión",
-        "description": "Autentica un administrador por email y contraseña, devuelve JWT",
-        "operationId": "login",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequestDTO"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Inicio de sesión exitoso",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponseDTO"
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
           },
           "401": {
-            "description": "Credenciales inválidas",
+            "description": "Problem detail",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
           },
           "429": {
-            "description": "Demasiados intentos de inicio de sesión desde esta IP",
+            "description": "Problem detail",
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
+                  "$ref": "#/components/schemas/Problem"
                 }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
               }
             }
           }
         }
       }
     },
-    "/administradores/{id}": {
+    "/api/appointments": {
       "get": {
         "tags": [
-          "Administradores"
+          "appointments"
         ],
-        "summary": "Obtener un registro por ID",
-        "operationId": "getById_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "summary": "List appointments",
         "responses": {
           "200": {
-            "description": "Registro encontrado",
+            "description": "OK",
             "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdministradorResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Eliminar un registro por ID",
-        "operationId": "delete_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Registro eliminado"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "patch": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Actualizar parcialmente un registro por ID",
-        "operationId": "update_3",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Administrador"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Registro actualizado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdministradorResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/administradores/{page}/{size}": {
-      "get": {
-        "tags": [
-          "Administradores"
-        ],
-        "summary": "Obtener registros paginados",
-        "operationId": "getPage_3",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "size",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Página de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageAdministrador"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/clientes": {
-      "get": {
-        "tags": [
-          "Clientes"
-        ],
-        "summary": "Obtener todos los registros",
-        "operationId": "getAll_2",
-        "responses": {
-          "200": {
-            "description": "Lista de registros",
-            "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ClienteResponseDTO"
+                    "$ref": "#/components/schemas/Appointment"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -495,191 +121,117 @@
       },
       "post": {
         "tags": [
-          "Clientes"
+          "appointments"
         ],
-        "summary": "Crear un nuevo cliente",
-        "operationId": "create_2",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClienteRequestDTO"
-              }
-            }
-          },
-          "required": true
-        },
+        "summary": "Book an appointment (public)",
         "responses": {
           "201": {
-            "description": "Cliente creado",
+            "description": "Created",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClienteResponseDTO"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Ya existe un cliente con ese teléfono",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/clientes/all": {
-      "post": {
-        "tags": [
-          "Clientes"
-        ],
-        "summary": "Crear múltiples clientes",
-        "operationId": "createMultiple_2",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ClienteRequestDTO"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Clientes creados",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClienteResponseDTO"
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Ya existe un cliente con ese teléfono",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/clientes/exists/{id}": {
-      "get": {
-        "tags": [
-          "Clientes"
-        ],
-        "summary": "Verificar si un registro existe por ID",
-        "operationId": "existsById_2",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "true si existe, false si no",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/clientes/{id}": {
-      "get": {
-        "tags": [
-          "Clientes"
-        ],
-        "summary": "Obtener un registro por ID",
-        "operationId": "getById_2",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Registro encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClienteResponseDTO"
+                  "$ref": "#/components/schemas/Appointment"
                 }
               }
             }
           },
           "404": {
-            "description": "Registro no encontrado",
+            "description": "Problem detail",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/appointments/paged": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Page of appointments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -689,88 +241,327 @@
           {
             "bearerAuth": []
           }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Clientes"
         ],
-        "summary": "Eliminar un registro por ID",
-        "operationId": "delete_2",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/appointments/{id}": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Get appointments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
-          }
-        ],
-        "responses": {
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Registro eliminado"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
           }
         ]
       },
       "patch": {
         "tags": [
-          "Clientes"
+          "appointments"
         ],
-        "summary": "Actualizar parcialmente un registro por ID",
-        "operationId": "update_2",
+        "summary": "Update appointments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentPatch"
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "appointments"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Cliente"
+        "summary": "Delete appointments",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
               }
             }
           },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Registro actualizado",
+          "403": {
+            "description": "Problem detail",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClienteResponseDTO"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
           },
           "404": {
-            "description": "Registro no encontrado",
+            "description": "Problem detail",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/appointments/booked-slots": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Booked start times from now on",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "List customers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -781,42 +572,833 @@
             "bearerAuth": []
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Create customers",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerCreate"
+              }
+            }
+          }
+        }
       }
     },
-    "/clientes/{page}/{size}": {
+    "/api/customers/paged": {
       "get": {
         "tags": [
-          "Clientes"
+          "customers"
         ],
-        "summary": "Obtener registros paginados",
-        "operationId": "getPage_2",
+        "summary": "Page of customers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
-              "format": "int32"
+              "minimum": 0,
+              "default": 0
             }
           },
           {
             "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/customers/{phone}": {
+      "get": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Get customers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Update customers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerPatch"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Delete customers",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List services",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Service"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      },
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Create services",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/services/paged": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Page of services",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/services/{id}": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get services",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "format": "int32"
+              "format": "int64"
             }
           }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "services"
         ],
+        "summary": "Update services",
         "responses": {
           "200": {
-            "description": "Página de registros",
+            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageCliente"
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicePatch"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Delete services",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admins": {
+      "get": {
+        "tags": [
+          "admins"
+        ],
+        "summary": "List admins",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Admin"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -827,33 +1409,417 @@
             "bearerAuth": []
           }
         ]
-      }
-    },
-    "/estadisticas/panel": {
-      "get": {
+      },
+      "post": {
         "tags": [
-          "Estadísticas"
+          "admins"
         ],
-        "summary": "Obtener panel de estadísticas",
-        "description": "Devuelve turnos hoy, ayer, ingresos del mes, servicios más pedidos y horarios con más actividad",
-        "operationId": "estadisticas",
+        "summary": "Create admins",
         "responses": {
-          "500": {
-            "description": "Error interno al generar estadísticas",
+          "201": {
+            "description": "Created",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
+                  "$ref": "#/components/schemas/Admin"
                 }
               }
             }
           },
-          "200": {
-            "description": "Panel de estadísticas",
+          "401": {
+            "description": "Problem detail",
             "content": {
-              "*/*": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PanelEstadisticaDTO"
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admins/paged": {
+      "get": {
+        "tags": [
+          "admins"
+        ],
+        "summary": "Page of admins",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/admins/{id}": {
+      "get": {
+        "tags": [
+          "admins"
+        ],
+        "summary": "Get admins",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Admin"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "admins"
+        ],
+        "summary": "Update admins",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Admin"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPatch"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "admins"
+        ],
+        "summary": "Delete admins",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ]
+      }
+    },
+    "/api/stats/dashboard": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Dashboard figures",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -869,31 +1835,22 @@
     "/healthz": {
       "get": {
         "tags": [
-          "Salud"
+          "health"
         ],
-        "summary": "Health check básico",
+        "summary": "Liveness",
+        "security": [],
         "responses": {
           "200": {
-            "description": "Servidor vivo"
-          }
-        }
-      }
-    },
-    "/ping": {
-      "get": {
-        "tags": [
-          "Health Check"
-        ],
-        "summary": "Verificar estado del backend",
-        "description": "Devuelve un mensaje de confirmación si el servidor está funcionando",
-        "operationId": "ping",
-        "responses": {
-          "200": {
-            "description": "Mensaje de confirmación del servidor",
+            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
@@ -904,1515 +1861,688 @@
     "/readyz": {
       "get": {
         "tags": [
-          "Salud"
+          "health"
         ],
-        "summary": "Health check de dependencias (PostgreSQL)",
+        "summary": "Readiness",
+        "security": [],
         "responses": {
           "200": {
-            "description": "Base de datos accesible"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           },
           "503": {
-            "description": "Base de datos no disponible"
+            "description": "Database unavailable"
           }
         }
-      }
-    },
-    "/servicios": {
-      "get": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Obtener todos los registros",
-        "operationId": "getAll_1",
-        "responses": {
-          "200": {
-            "description": "Lista de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ServicioResponseDTO"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Crear un nuevo servicio",
-        "operationId": "create_1",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ServicioRequestDTO"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Servicio creado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicioResponseDTO"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/servicios/all": {
-      "post": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Crear múltiples servicios",
-        "operationId": "createMultiple_1",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ServicioRequestDTO"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Servicios creados",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ServicioResponseDTO"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/servicios/exists/{id}": {
-      "get": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Verificar si un registro existe por ID",
-        "operationId": "existsById_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "true si existe, false si no",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/servicios/{id}": {
-      "get": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Obtener un registro por ID",
-        "operationId": "getById_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Registro encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicioResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Eliminar un registro por ID",
-        "operationId": "delete_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Registro eliminado"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "patch": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Actualizar parcialmente un registro por ID",
-        "operationId": "update_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Servicio"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Registro actualizado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicioResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/servicios/{page}/{size}": {
-      "get": {
-        "tags": [
-          "Servicios"
-        ],
-        "summary": "Obtener registros paginados",
-        "operationId": "getPage_1",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "size",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Página de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageServicio"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/turnos": {
-      "get": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Obtener todos los registros",
-        "operationId": "getAll",
-        "responses": {
-          "200": {
-            "description": "Lista de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TurnoResponseDTO"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Crear un nuevo turno",
-        "operationId": "create",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TurnoRequestDTO"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "404": {
-            "description": "Servicio no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Turno creado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/TurnoResponseDTO"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/turnos/all": {
-      "post": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Crear múltiples turnos",
-        "operationId": "createMultiple",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TurnoRequestDTO"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "404": {
-            "description": "Servicio no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Turnos creados",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TurnoResponseDTO"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Datos inválidos",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/turnos/exists/{id}": {
-      "get": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Verificar si un registro existe por ID",
-        "operationId": "existsById",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "true si existe, false si no",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/turnos/findDateTimes": {
-      "get": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Obtener fechas y horas ocupadas",
-        "description": "Devuelve una lista con las fechas y horas que ya tienen turno asignado",
-        "operationId": "getFechasOcupadas",
-        "responses": {
-          "200": {
-            "description": "Lista de fechas y horas ocupadas en formato ISO",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/turnos/{id}": {
-      "get": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Obtener un registro por ID",
-        "operationId": "getById",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Registro encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/TurnoResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Eliminar un registro por ID",
-        "operationId": "delete",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Registro eliminado"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "patch": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Actualizar parcialmente un registro por ID",
-        "operationId": "update",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Turno"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Registro actualizado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/TurnoResponseDTO"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Registro no encontrado",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/turnos/{page}/{size}": {
-      "get": {
-        "tags": [
-          "Turnos"
-        ],
-        "summary": "Obtener registros paginados",
-        "operationId": "getPage",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "size",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Página de registros",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageTurno"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
-      "TurnoRequestDTO": {
-        "required": [
-          "apellidoCliente",
-          "fechaHora",
-          "idServicio",
-          "nombreCliente",
-          "telefonoCliente"
-        ],
+      "FieldProblem": {
         "type": "object",
         "properties": {
-          "fechaHora": {
-            "type": "string",
-            "description": "Fecha y hora del turno",
-            "format": "date-time"
+          "field": {
+            "type": "string"
           },
-          "idServicio": {
-            "type": "integer",
-            "description": "ID del servicio solicitado",
-            "format": "int64",
-            "example": 1
-          },
-          "telefonoCliente": {
-            "type": "string",
-            "description": "Teléfono del cliente (si no existe, se crea)",
-            "example": "1155551234"
-          },
-          "nombreCliente": {
-            "type": "string",
-            "description": "Nombre del cliente",
-            "example": "Juan"
-          },
-          "apellidoCliente": {
-            "type": "string",
-            "description": "Apellido del cliente",
-            "example": "Pérez"
-          },
-          "emailCliente": {
-            "type": "string",
-            "description": "Email del cliente (opcional)",
-            "example": "juan.perez@email.com"
+          "code": {
+            "type": "string"
           }
         },
-        "description": "Datos para crear un nuevo turno (incluye datos del cliente)"
+        "required": [
+          "field",
+          "code"
+        ]
       },
-      "ProblemDetail": {
+      "Problem": {
         "type": "object",
         "properties": {
           "type": {
-            "type": "string",
-            "format": "uri"
+            "type": "string"
           },
           "title": {
             "type": "string"
           },
           "status": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
           },
           "detail": {
             "type": "string"
           },
           "instance": {
-            "type": "string",
-            "format": "uri"
+            "type": "string"
           },
-          "properties": {
+          "code": {
+            "type": "string"
+          },
+          "params": {
             "type": "object",
-            "additionalProperties": {
-              "type": "object"
+            "additionalProperties": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldProblem"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ]
+      },
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "customerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerFirstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerLastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "servicePrice": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "startsAt",
+          "servicePrice"
+        ]
+      },
+      "AppointmentCreate": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "description": "Local date-time, e.g. 2026-10-22T15:00:00"
+          },
+          "serviceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerFirstName": {
+            "type": "string"
+          },
+          "customerLastName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startsAt",
+          "serviceId",
+          "customerPhone",
+          "customerFirstName",
+          "customerLastName"
+        ]
+      },
+      "AppointmentPatch": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "phone": {
+                "type": "string"
+              },
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          },
+          "service": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              }
             }
           }
         }
       },
-      "TurnoResponseDTO": {
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
         "required": [
-          "apellidoCliente",
-          "fechaHora",
-          "id",
-          "idServicio",
-          "nombreCliente",
-          "precioServicio",
-          "telefonoCliente",
-          "tipoServicio"
-        ],
+          "phone",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "CustomerCreate": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "CustomerPatch": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "Service": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID único del turno",
-            "format": "int64",
-            "example": 1
+            "format": "int64"
           },
-          "fechaHora": {
-            "type": "string",
-            "description": "Fecha y hora del turno",
-            "format": "date-time"
+          "name": {
+            "type": "string"
           },
-          "telefonoCliente": {
-            "type": "string",
-            "description": "Teléfono del cliente",
-            "example": "1155551234"
-          },
-          "nombreCliente": {
-            "type": "string",
-            "description": "Nombre del cliente",
-            "example": "Juan"
-          },
-          "apellidoCliente": {
-            "type": "string",
-            "description": "Apellido del cliente",
-            "example": "Pérez"
-          },
-          "emailCliente": {
-            "type": "string",
-            "description": "Email del cliente",
-            "example": "juan.perez@email.com"
-          },
-          "idServicio": {
-            "type": "integer",
-            "description": "ID del servicio reservado",
-            "format": "int64",
-            "example": 1
-          },
-          "tipoServicio": {
-            "type": "string",
-            "description": "Nombre del servicio",
-            "example": "Corte de pelo"
-          },
-          "precioServicio": {
-            "type": "number",
-            "description": "Precio del servicio",
-            "format": "float",
-            "example": 1500.0
+          "price": {
+            "type": "number"
           }
         },
-        "description": "Turno registrado con datos del cliente y servicio"
-      },
-      "ServicioRequestDTO": {
-        "required": [
-          "tipo"
-        ],
-        "type": "object",
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "description": "Nombre o tipo de servicio ofrecido",
-            "example": "Corte de pelo"
-          },
-          "precio": {
-            "type": "number",
-            "description": "Precio del servicio en pesos",
-            "format": "float",
-            "example": 1500.0
-          }
-        },
-        "description": "Datos para crear o actualizar un servicio"
-      },
-      "ServicioResponseDTO": {
         "required": [
           "id",
-          "precio",
-          "tipo"
-        ],
+          "name",
+          "price"
+        ]
+      },
+      "ServiceCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
+      },
+      "ServicePatch": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          }
+        }
+      },
+      "Admin": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID único del servicio",
-            "format": "int64",
-            "example": 1
+            "format": "int64"
           },
-          "tipo": {
-            "type": "string",
-            "description": "Nombre o tipo de servicio",
-            "example": "Corte de pelo"
+          "firstName": {
+            "type": "string"
           },
-          "precio": {
-            "type": "number",
-            "description": "Precio del servicio en pesos",
-            "format": "float",
-            "example": 1500.0
-          }
-        },
-        "description": "Servicio disponible en la barbería"
-      },
-      "ClienteRequestDTO": {
-        "required": [
-          "apellido",
-          "nombre",
-          "telefono"
-        ],
-        "type": "object",
-        "properties": {
-          "telefono": {
-            "type": "string",
-            "description": "Número de teléfono del cliente (usado como ID)",
-            "example": "1155551234"
-          },
-          "nombre": {
-            "type": "string",
-            "description": "Nombre del cliente",
-            "example": "Juan"
-          },
-          "apellido": {
-            "type": "string",
-            "description": "Apellido del cliente",
-            "example": "Pérez"
+          "lastName": {
+            "type": "string"
           },
           "email": {
+            "type": "string"
+          },
+          "role": {
             "type": "string",
-            "description": "Email del cliente",
-            "example": "juan.perez@email.com"
+            "enum": [
+              "owner",
+              "admin",
+              "staff"
+            ]
           }
         },
-        "description": "Datos para crear o actualizar un cliente"
-      },
-      "ClienteResponseDTO": {
         "required": [
-          "apellido",
-          "nombre",
-          "telefono"
-        ],
-        "type": "object",
-        "properties": {
-          "telefono": {
-            "type": "string",
-            "description": "Número de teléfono del cliente",
-            "example": "1155551234"
-          },
-          "nombre": {
-            "type": "string",
-            "description": "Nombre del cliente",
-            "example": "Juan"
-          },
-          "apellido": {
-            "type": "string",
-            "description": "Apellido del cliente",
-            "example": "Pérez"
-          },
-          "email": {
-            "type": "string",
-            "description": "Email del cliente",
-            "example": "juan.perez@email.com"
-          }
-        },
-        "description": "Cliente registrado en la barbería"
-      },
-      "AdministradorRequestDTO": {
-        "required": [
-          "apellido",
-          "contrasenia",
+          "id",
+          "firstName",
+          "lastName",
           "email",
-          "nombre"
-        ],
+          "role"
+        ]
+      },
+      "AdminCreate": {
         "type": "object",
         "properties": {
-          "nombre": {
-            "type": "string",
-            "description": "Nombre del administrador",
-            "example": "Carlos"
+          "firstName": {
+            "type": "string"
           },
-          "apellido": {
-            "type": "string",
-            "description": "Apellido del administrador",
-            "example": "López"
+          "lastName": {
+            "type": "string"
           },
           "email": {
-            "type": "string",
-            "description": "Email del administrador (usado para iniciar sesión)",
-            "example": "carlos.lopez@barberia.com"
+            "type": "string"
           },
-          "contrasenia": {
-            "maxLength": 2147483647,
-            "minLength": 8,
+          "password": {
             "type": "string",
-            "description": "Contraseña en texto plano (se hashea antes de persistir)",
-            "example": "miPassword123"
+            "minLength": 8
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "staff"
+            ]
           }
         },
-        "description": "Datos para crear un nuevo administrador"
-      },
-      "AdministradorResponseDTO": {
         "required": [
-          "apellido",
+          "firstName",
+          "lastName",
           "email",
-          "id",
-          "nombre"
-        ],
+          "password"
+        ]
+      },
+      "AdminPatch": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "ID único del administrador",
-            "format": "int64",
-            "example": 1
+          "firstName": {
+            "type": "string"
           },
-          "nombre": {
-            "type": "string",
-            "description": "Nombre del administrador",
-            "example": "Carlos"
-          },
-          "apellido": {
-            "type": "string",
-            "description": "Apellido del administrador",
-            "example": "López"
+          "lastName": {
+            "type": "string"
           },
           "email": {
+            "type": "string"
+          },
+          "password": {
             "type": "string",
-            "description": "Email del administrador",
-            "example": "carlos.lopez@barberia.com"
+            "minLength": 8
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "staff"
+            ]
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
           }
         },
-        "description": "Administrador registrado en el sistema"
-      },
-      "LoginRequestDTO": {
         "required": [
-          "contrasenia",
-          "email"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "Email del administrador",
-            "example": "admin@barberia.com"
-          },
-          "contrasenia": {
-            "maxLength": 2147483647,
-            "minLength": 8,
-            "type": "string",
-            "description": "Contraseña del administrador",
-            "example": "miPassword123"
-          }
-        },
-        "description": "Credenciales de inicio de sesión para administradores"
+          "email",
+          "password"
+        ]
       },
-      "LoginResponseDTO": {
+      "LoginResponse": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID único del administrador",
-            "format": "int64",
-            "example": 1
+            "format": "int64"
           },
-          "nombre": {
-            "type": "string",
-            "description": "Nombre del administrador",
-            "example": "Carlos"
+          "firstName": {
+            "type": "string"
           },
-          "apellido": {
-            "type": "string",
-            "description": "Apellido del administrador",
-            "example": "López"
+          "lastName": {
+            "type": "string"
           },
           "email": {
+            "type": "string"
+          },
+          "role": {
             "type": "string",
-            "description": "Email del administrador",
-            "example": "carlos@barberia.com"
+            "enum": [
+              "owner",
+              "admin",
+              "staff"
+            ]
           },
           "token": {
-            "type": "string",
-            "description": "Token JWT para autenticación",
-            "example": "eyJhbGciOiJIUzI1NiJ9..."
+            "type": "string"
           }
         },
-        "description": "Respuesta de inicio de sesión con JWT"
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "role",
+          "token"
+        ]
       },
-      "Cliente": {
+      "DailyRevenue": {
         "type": "object",
         "properties": {
-          "nombre": {
+          "date": {
             "type": "string"
           },
-          "apellido": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "telefono": {
-            "type": "string"
+          "total": {
+            "type": "number"
           }
-        }
+        },
+        "required": [
+          "date",
+          "total"
+        ]
       },
-      "Servicio": {
+      "ServiceCount": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
             "format": "int64"
           },
-          "tipo": {
+          "name": {
             "type": "string"
           },
-          "precio": {
-            "type": "number",
-            "format": "float"
+          "count": {
+            "type": "integer",
+            "format": "int64"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "count"
+        ]
       },
-      "Turno": {
+      "HourCount": {
         "type": "object",
         "properties": {
-          "id": {
+          "hour": {
+            "type": "integer"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "hour",
+          "count"
+        ]
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "appointmentsToday": {
             "type": "integer",
             "format": "int64"
           },
-          "fechaHora": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "cliente": {
-            "$ref": "#/components/schemas/Cliente"
-          },
-          "servicio": {
-            "$ref": "#/components/schemas/Servicio"
-          }
-        }
-      },
-      "Administrador": {
-        "type": "object",
-        "properties": {
-          "nombre": {
-            "type": "string"
-          },
-          "apellido": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "id": {
+          "appointmentsYesterday": {
             "type": "integer",
             "format": "int64"
           },
-          "contrasenia": {
-            "type": "string"
+          "revenueThisMonth": {
+            "type": "number"
+          },
+          "revenueLastMonth": {
+            "type": "number"
+          },
+          "customerCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dailyRevenue": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyRevenue"
+            }
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceCount"
+            }
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HourCount"
+            }
           }
-        }
+        },
+        "required": [
+          "appointmentsToday",
+          "appointmentsYesterday",
+          "revenueThisMonth",
+          "revenueLastMonth",
+          "customerCount",
+          "dailyRevenue",
+          "services",
+          "hours"
+        ]
       },
-      "PageTurno": {
+      "AppointmentPage": {
         "type": "object",
         "properties": {
-          "totalElements": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Appointment"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "total": {
             "type": "integer",
             "format": "int64"
           },
           "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "content": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "total",
+          "totalPages"
+        ]
+      },
+      "CustomerPage": {
+        "type": "object",
+        "properties": {
+          "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Turno"
+              "$ref": "#/components/schemas/Customer"
             }
           },
-          "number": {
-            "type": "integer",
-            "format": "int32"
+          "page": {
+            "type": "integer"
           },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
+          "size": {
+            "type": "integer"
           },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "empty": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PageableObject": {
-        "type": "object",
-        "properties": {
-          "offset": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
-          },
-          "paged": {
-            "type": "boolean"
-          },
-          "pageNumber": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "unpaged": {
-            "type": "boolean"
-          }
-        }
-      },
-      "SortObject": {
-        "type": "object",
-        "properties": {
-          "empty": {
-            "type": "boolean"
-          },
-          "sorted": {
-            "type": "boolean"
-          },
-          "unsorted": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PageServicio": {
-        "type": "object",
-        "properties": {
-          "totalElements": {
+          "total": {
             "type": "integer",
             "format": "int64"
           },
           "totalPages": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "total",
+          "totalPages"
+        ]
+      },
+      "ServicePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            }
           },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
+          "page": {
+            "type": "integer"
           },
           "size": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
           },
-          "content": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Servicio"
-            }
-          },
-          "number": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
-          },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "empty": {
-            "type": "boolean"
-          }
-        }
-      },
-      "HorarioEstadisticaDTO": {
-        "type": "object",
-        "properties": {
-          "hora": {
-            "type": "integer",
-            "description": "Hora del día (0-23)",
-            "format": "int32",
-            "example": 14
-          },
-          "cantidadRealizado": {
-            "type": "integer",
-            "description": "Cantidad de turnos realizados en esa hora",
-            "format": "int64"
-          }
-        },
-        "description": "Cantidad de turnos realizados en una hora específica"
-      },
-      "IngresoDiarioDTO": {
-        "type": "object",
-        "properties": {
-          "fecha": {
-            "type": "string",
-            "description": "Fecha del ingreso",
-            "format": "date-time"
-          },
-          "ingresoTotal": {
-            "type": "number",
-            "description": "Monto total ingresado en el día",
-            "format": "double"
-          }
-        },
-        "description": "Ingreso total registrado en un día específico"
-      },
-      "PanelEstadisticaDTO": {
-        "type": "object",
-        "properties": {
-          "turnosHoy": {
-            "type": "integer",
-            "description": "Cantidad de turnos para el día de hoy",
-            "format": "int32"
-          },
-          "turnosAyer": {
-            "type": "integer",
-            "description": "Cantidad de turnos para el día de ayer",
-            "format": "int32"
-          },
-          "ingresosMes": {
-            "type": "number",
-            "description": "Ingresos totales del mes actual",
-            "format": "double"
-          },
-          "ingresosMesAnterior": {
-            "type": "number",
-            "description": "Ingresos totales del mes anterior",
-            "format": "double"
-          },
-          "cantClientes": {
-            "type": "integer",
-            "description": "Cantidad total de clientes registrados",
-            "format": "int64"
-          },
-          "ingresosDiarios": {
-            "type": "array",
-            "description": "Ingresos diarios de los últimos 30 días",
-            "items": {
-              "$ref": "#/components/schemas/IngresoDiarioDTO"
-            }
-          },
-          "servicios": {
-            "type": "array",
-            "description": "Servicios más realizados en el último mes",
-            "items": {
-              "$ref": "#/components/schemas/ServicioEstadisticaDTO"
-            }
-          },
-          "horarios": {
-            "type": "array",
-            "description": "Horarios con más turnos en lo que va del año",
-            "items": {
-              "$ref": "#/components/schemas/HorarioEstadisticaDTO"
-            }
-          }
-        },
-        "description": "Panel completo de estadísticas del negocio"
-      },
-      "ServicioEstadisticaDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "ID del servicio",
-            "format": "int64"
-          },
-          "nombre": {
-            "type": "string",
-            "description": "Nombre o tipo del servicio"
-          },
-          "cantidadRealizado": {
-            "type": "integer",
-            "description": "Cantidad de veces que se realizó el servicio",
-            "format": "int64"
-          }
-        },
-        "description": "Estadística de un servicio: cantidad de veces realizado en un período"
-      },
-      "PageCliente": {
-        "type": "object",
-        "properties": {
-          "totalElements": {
+          "total": {
             "type": "integer",
             "format": "int64"
           },
           "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "content": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Cliente"
-            }
-          },
-          "number": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
-          },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "empty": {
-            "type": "boolean"
+            "type": "integer"
           }
-        }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "total",
+          "totalPages"
+        ]
       },
-      "PageAdministrador": {
+      "AdminPage": {
         "type": "object",
         "properties": {
-          "totalElements": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Admin"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "total": {
             "type": "integer",
             "format": "int64"
           },
           "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "first": {
-            "type": "boolean"
-          },
-          "last": {
-            "type": "boolean"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "content": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Administrador"
-            }
-          },
-          "number": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "sort": {
-            "$ref": "#/components/schemas/SortObject"
-          },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageable": {
-            "$ref": "#/components/schemas/PageableObject"
-          },
-          "empty": {
-            "type": "boolean"
+            "type": "integer"
           }
-        }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "description": "Token JWT obtenido de POST /administradores/login",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "total",
+          "totalPages"
+        ]
       }
     }
   }

@@ -5,11 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "@/context/AuthContext"
 import Login from "@/pages/Login"
 
-describe("Login (F-01)", () => {
-  it("renderiza el formulario de login", () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+describe("Login", () => {
+  it("renders the form in Spanish", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     render(
-      <QueryClientProvider client={qc}>
+      <QueryClientProvider client={queryClient}>
         <MemoryRouter>
           <AuthProvider>
             <Login />
@@ -17,6 +17,7 @@ describe("Login (F-01)", () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    expect(screen.getByRole("button", { name: /iniciar sesión/i })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /iniciar sesión/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument()
   })
 })

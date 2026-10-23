@@ -1,0 +1,49 @@
+{
+  "title": "Atajos de teclado",
+  "empty": "No hay atajos en esta vista.",
+  "scopes": { "global": "Globales", "customer": "Reserva", "admin": "Administración" },
+  "booking": {
+    "pick": "Elegir servicio u horario",
+    "next": "Paso siguiente",
+    "previous": "Paso anterior",
+    "escape": "Limpiar el error o volver",
+    "again": "Reservar otro turno (en la confirmación)"
+  },
+  "login": {
+    "escape": "Limpiar el error",
+    "togglePassword": "Mostrar u ocultar la contraseña",
+    "submit": "Iniciar sesión"
+  },
+  "admin": {
+    "reload": "Recargar los datos del panel",
+    "logout": "Cerrar sesión",
+    "go": {
+      "dashboard": "Ir al panel",
+      "stats": "Ir a estadísticas",
+      "appointments": "Ir a turnos",
+      "theme": "Ir al tema",
+      "settings": "Ir a ajustes",
+      "site": "Ir al sitio público"
+    }
+  },
+  "stats": { "refresh": "Refrescar los datos" },
+  "appointments": {
+    "list": "Vista de lista",
+    "calendar": "Vista de calendario",
+    "search": "Buscar",
+    "close": "Cerrar el panel o el diálogo",
+    "filterAll": "Filtro: todos",
+    "filterPast": "Filtro: confirmados",
+    "filterUpcoming": "Filtro: pendientes",
+    "filterToday": "Filtro: hoy",
+    "clearFilters": "Limpiar filtros",
+    "goToday": "Ir a hoy (calendario)",
+    "nextDay": "Día siguiente (calendario)",
+    "previousDay": "Día anterior (calendario)",
+    "selectNext": "Seleccionar el día siguiente",
+    "selectPrevious": "Seleccionar el día anterior",
+    "editFirst": "Editar el primer turno del día",
+    "deleteFirst": "Eliminar el primer turno",
+    "openCustomer": "Abrir el cliente del turno"
+  }
+}

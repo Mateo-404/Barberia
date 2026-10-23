@@ -1,38 +1,38 @@
 /**
- * Query keys jerárquicas y tipadas. Toda key lleva el tenant primero, así
- * - `invalidateQueries({ queryKey: queryKeys.turnos.all(tenant) })` refrésca
- *   sólo turnos de ese negocio;
- * - `queryClient.clear()` (logout / cambio de cuenta) descarta todo.
+ * Hierarchical, typed query keys. Every key starts with the tenant, so
+ * - `invalidateQueries({ queryKey: queryKeys.appointments.all(tenant) })`
+ *   refreshes only that business's appointments;
+ * - `queryClient.clear()` (logout / account switch) drops everything.
  */
 export type TenantSlug = string
 
-export interface FiltrosTurno {
-  busqueda?: string
-  estado?: string
-  servicio?: number | "todos"
-  desde?: string
-  hasta?: string
+export interface AppointmentFilters {
+  search?: string
+  status?: string
+  service?: number | "all"
+  from?: string
+  to?: string
 }
 
 export const queryKeys = {
-  servicios: (tenant: TenantSlug) => ["servicios", tenant] as const,
-  /** Disponibilidad/fechas ocupadas: invalidar tras cada reserva exitosa. */
-  disponibilidad: (tenant: TenantSlug) => ["disponibilidad", tenant] as const,
-  turnos: {
-    all: (tenant: TenantSlug) => ["turnos", tenant] as const,
-    lista: (tenant: TenantSlug, filtros: FiltrosTurno) =>
-      ["turnos", tenant, "lista", filtros] as const,
-    pagina: (tenant: TenantSlug, page: number, size: number) =>
-      ["turnos", tenant, "pagina", { page, size }] as const,
-    ultimos: (tenant: TenantSlug, size: number) =>
-      ["turnos", tenant, "ultimos", size] as const,
+  services: (tenant: TenantSlug) => ["services", tenant] as const,
+  /** Booked slots: invalidate after every successful booking. */
+  availability: (tenant: TenantSlug) => ["availability", tenant] as const,
+  appointments: {
+    all: (tenant: TenantSlug) => ["appointments", tenant] as const,
+    list: (tenant: TenantSlug, filters: AppointmentFilters) =>
+      ["appointments", tenant, "list", filters] as const,
+    page: (tenant: TenantSlug, page: number, size: number) =>
+      ["appointments", tenant, "page", { page, size }] as const,
+    latest: (tenant: TenantSlug, size: number) =>
+      ["appointments", tenant, "latest", size] as const,
   },
-  estadisticas: {
-    panel: (tenant: TenantSlug) => ["estadisticas", tenant, "panel"] as const,
+  stats: {
+    dashboard: (tenant: TenantSlug) => ["stats", tenant, "dashboard"] as const,
   },
-  /** Marca del negocio: estado del admin, borrador y versiones publicadas. */
+  /** Brand settings: admin state, draft and published versions. */
   settings: {
     admin: (tenant: TenantSlug) => ["settings", tenant, "admin"] as const,
-    versiones: (tenant: TenantSlug) => ["settings", tenant, "versiones"] as const,
+    versions: (tenant: TenantSlug) => ["settings", tenant, "versions"] as const,
   },
 } as const

@@ -1,14 +1,14 @@
 import { createContext, useContext, type ReactNode } from "react"
 
 /**
- * Identificador del negocio (tenant) cuyos datos se piden a la API.
+ * Identifier of the business (tenant) whose data the app requests.
  *
- * IMPORTANTE: el slug es un *scope de datos* para la caché, NUNCA una
- * autorización. El aislamiento entre negocios lo impone la API (backend Go).
+ * IMPORTANT: the slug is a cache *data scope*, NEVER an authorization. Tenant
+ * isolation is enforced by the API (Go backend).
  *
- * Hoy el valor sale de `VITE_TENANT_SLUG` (despliegue de un solo negocio).
- * Cuando existan rutas públicas por negocio (`/:slug/reservar`), se resuelve
- * desde la URL dentro de este provider — las query keys no cambian.
+ * Today it comes from `VITE_TENANT_SLUG` (single-business deployment). With
+ * per-business public routes it would be resolved from the URL in this
+ * provider; the query keys would not change.
  */
 const TenantContext = createContext<string>(import.meta.env.VITE_TENANT_SLUG ?? "default")
 

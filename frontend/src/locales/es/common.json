@@ -1,0 +1,11 @@
+{
+  "back": "Volver",
+  "retry": "Reintentar",
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "delete": "Eliminar",
+  "close": "Cerrar",
+  "loading": "Cargando…",
+  "instagram": "Instagram",
+  "theme": { "toLight": "Cambiar a modo claro", "toDark": "Cambiar a modo oscuro" }
+}

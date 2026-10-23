@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type KpiTone =
   | "blue"
@@ -58,11 +59,12 @@ export function KpiCard({
   tone?: KpiTone
   animated?: boolean
 }) {
+  const { i18n } = useTranslation()
   const t = TONES[tone]
 
   const numericValue = animated ? parseInt(value.replace(/\D/g, ""), 10) : 0
   const count = useCountUp(animated ? numericValue : 0)
-  const formattedCount = `${value.replace(/[\d.,\s]+/g, "")}${count.toLocaleString("es-AR")}`
+  const formattedCount = `${value.replace(/[\d.,\s]+/g, "")}${count.toLocaleString(i18n.language)}`
   const animatable = animated && !isNaN(numericValue)
 
   return (
@@ -78,7 +80,7 @@ export function KpiCard({
           className="w-2 h-2 rounded-full"
           style={{ backgroundColor: t.badge }}
         />
-        <span className="text-xs text-white/80 uppercase tracking-wide font-medium">
+        <span className="text-xs text-white/80 font-medium">
           {label}
         </span>
       </div>

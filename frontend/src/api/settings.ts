@@ -66,7 +66,7 @@ export function usePublishSettings() {
       api<SettingsPublishResponse>("/api/admin/settings/publish", { method: "POST" }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versiones(tenant) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versions(tenant) })
     },
   })
 }
@@ -75,7 +75,7 @@ export function usePublishSettings() {
 export function useSettingsVersions() {
   const tenant = useTenant()
   return useQuery({
-    queryKey: queryKeys.settings.versiones(tenant),
+    queryKey: queryKeys.settings.versions(tenant),
     queryFn: ({ signal }: { signal: AbortSignal }) =>
       api<SettingsVersion[]>("/api/admin/settings/versions", { signal }),
   })
@@ -93,25 +93,13 @@ export function useRollbackSettings() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versiones(tenant) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versions(tenant) })
     },
   })
 }
 
-/**
- * Extrae los errores por campo de un 422 del backend
- * (`{error, code:"validation_failed", details:[{field,message}]}`).
- */
+/** Field errors of a 422 response, as `{ field, message }` where message is the code. */
 export function validationDetails(error: unknown): SettingsValidationDetail[] {
-  if (!(error instanceof ApiError) || error.status !== 422) return []
-  const body = error.body
-  if (!body || typeof body !== "object") return []
-  const details = (body as { details?: unknown }).details
-  if (!Array.isArray(details)) return []
-  return details.flatMap((item) => {
-    if (!item || typeof item !== "object") return []
-    const { field, message } = item as { field?: unknown; message?: unknown }
-    if (typeof field !== "string" || typeof message !== "string") return []
-    return [{ field, message }]
-  })
+  if (!(error instanceof ApiError)) return []
+  return error.fieldErrors.map((e) => ({ field: e.field, message: e.code }))
 }

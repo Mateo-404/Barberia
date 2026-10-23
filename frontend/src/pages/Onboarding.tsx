@@ -67,7 +67,7 @@ export default function Onboarding() {
         return
       }
       setGeneralError(
-        err instanceof ApiError ? err.detail : "No se pudo guardar la configuración.",
+        err instanceof ApiError ? err.code : "No se pudo guardar la configuración.",
       )
     }
   }

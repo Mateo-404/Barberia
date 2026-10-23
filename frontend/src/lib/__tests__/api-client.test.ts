@@ -1,133 +1,111 @@
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { api } from "@/lib/api-client"
 
+const json = (body: unknown, status = 200) => ({
+  ok: status < 400,
+  status,
+  headers: new Headers({ "content-type": "application/json" }),
+  json: async () => body,
+  text: async () => JSON.stringify(body),
+})
+
 describe("api-client", () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     sessionStorage.clear()
   })
 
-  it("devuelve JSON en éxito", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, status: 200,
-      headers: new Headers({ "content-type": "application/json" }),
-      text: async () => JSON.stringify({ hello: "world" }),
-    }))
-    const res = await api<{ hello: string }>("/x")
-    expect(res.hello).toBe("world")
+  it("returns JSON on success", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({ hello: "world" })))
+    expect((await api<{ hello: string }>("/x")).hello).toBe("world")
   })
 
-  it("devuelve undefined en 204", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, status: 204, headers: new Headers(),
-      text: async () => "",
-    }))
-    const res = await api<void>("/x", { method: "DELETE" })
-    expect(res).toBeUndefined()
+  it("returns undefined on 204", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 204, headers: new Headers(), text: async () => "" }))
+    expect(await api<void>("/x", { method: "DELETE" })).toBeUndefined()
   })
 
-  it("clasifica error HTTP (RFC 9457)", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false, status: 409,
-      headers: new Headers({ "content-type": "application/json" }),
-      json: async () => ({ title: "Conflict", detail: "turno tomado", type: "urn:conflict" }),
-      text: async () => "",
-    }))
-    await expect(api("/x")).rejects.toMatchObject({ kind: "http", status: 409, detail: "turno tomado", isConflict: true })
+  it("classifies an HTTP problem by its code and params", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      json({ type: "/errors/conflict", code: "appointment.slot_taken", params: { startsAt: "2026-10-22T15:00" } }, 409),
+    ))
+    await expect(api("/x")).rejects.toMatchObject({
+      kind: "http",
+      status: 409,
+      code: "appointment.slot_taken",
+      params: { startsAt: "2026-10-22T15:00" },
+      isConflict: true,
+    })
   })
 
-  it("clasifica error de red", async () => {
+  it("exposes field errors of a validation problem", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      json({ code: "request.invalid_fields", errors: [{ field: "customerPhone", code: "required" }, { nope: 1 }] }, 400),
+    ))
+    await expect(api("/x")).rejects.toMatchObject({ fieldErrors: [{ field: "customerPhone", code: "required" }] })
+  })
+
+  it("falls back to server.unknown / server.internal without a problem body", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 502, json: async () => { throw new Error("no json") } }))
+    await expect(api("/x")).rejects.toMatchObject({ code: "server.internal", isRetriable: true })
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 418, json: async () => { throw new Error("no json") } }))
+    await expect(api("/x")).rejects.toMatchObject({ code: "server.unknown", isRetriable: false })
+  })
+
+  it("classifies network errors", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")))
-    await expect(api("/x")).rejects.toMatchObject({ kind: "network", status: 0, isRetriable: true })
+    await expect(api("/x")).rejects.toMatchObject({ kind: "network", code: "client.network", status: 0, isRetriable: true })
   })
 
-  it("respeta AbortSignal del caller (cancelado)", async () => {
-    const ctrl = new AbortController()
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((_u: unknown, init: { signal?: AbortSignal }) => {
-      return new Promise((_r, reject) => {
+  it("honors the caller's AbortSignal", async () => {
+    const controller = new AbortController()
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((_u: unknown, init: { signal?: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
         if (init?.signal?.aborted) reject(new DOMException("aborted", "AbortError"))
-        init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
-      })
-    }))
-    ctrl.abort()
-    await expect(api("/x", { signal: ctrl.signal })).rejects.toMatchObject({ kind: "cancelled" })
-  })
-
-  it("envía Authorization cuando hay token", async () => {
-    sessionStorage.setItem("auth_token", "tok-123")
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true, status: 200, headers: new Headers({ "content-type": "application/json" }),
-      text: async () => JSON.stringify({}),
-    })
-    vi.stubGlobal("fetch", fetchMock)
-    await api("/x")
-    const headers = fetchMock.mock.calls[0][1].headers
-    expect(headers.Authorization).toBe("Bearer tok-123")
-  })
-
-  it("no envía Authorization en endpoints públicos", async () => {
-    sessionStorage.setItem("auth_token", "tok-secreto")
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true, status: 200, headers: new Headers({ "content-type": "application/json" }),
-      text: async () => JSON.stringify([]),
-    })
-    vi.stubGlobal("fetch", fetchMock)
-
-    await api("/servicios")
-    await api("/turnos/findDateTimes")
-    await api("/ping")
-    await api("/administradores/login", {
-      method: "POST",
-      body: JSON.stringify({ email: "a@b.com", contrasenia: "12345678" }),
-    })
-    await api("/turnos", { method: "POST", body: "{}" })
-
-    for (const llamada of fetchMock.mock.calls) {
-      expect(llamada[1].headers.Authorization).toBeUndefined()
-    }
-  })
-
-  it("envía Authorization en endpoints protegidos", async () => {
-    sessionStorage.setItem("auth_token", "tok-123")
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true, status: 200, headers: new Headers({ "content-type": "application/json" }),
-      text: async () => JSON.stringify([]),
-    })
-    vi.stubGlobal("fetch", fetchMock)
-
-    await api("/turnos")
-    await api("/turnos/1", { method: "PATCH", body: "{}" })
-
-    for (const llamada of fetchMock.mock.calls) {
-      expect(llamada[1].headers.Authorization).toBe("Bearer tok-123")
-    }
-  })
-
-  it("en 5xx no expone el detalle interno del backend", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false, status: 500,
-      headers: new Headers({ "content-type": "application/problem+json" }),
-      json: async () => ({
-        title: "Error interno del servidor",
-        detail: "pq: relation \"turnos\" does not exist (SQLSTATE 42P01)",
       }),
-    }))
-    await expect(api("/turnos")).rejects.toMatchObject({
-      status: 500,
-      detail: expect.not.stringContaining("SQLSTATE"),
+    ))
+    controller.abort()
+    await expect(api("/x", { signal: controller.signal })).rejects.toMatchObject({ kind: "cancelled" })
+  })
+
+  describe("Authorization header", () => {
+    const stub = () => {
+      const fetchMock = vi.fn().mockResolvedValue(json([]))
+      vi.stubGlobal("fetch", fetchMock)
+      return fetchMock
+    }
+
+    it("is sent on protected routes", async () => {
+      sessionStorage.setItem("auth_token", "tok-123")
+      const fetchMock = stub()
+      await api("/api/appointments")
+      await api("/api/appointments/1", { method: "PATCH", body: "{}" })
+      await api("/api/services", { method: "POST", body: "{}" })
+      for (const call of fetchMock.mock.calls) expect(call[1].headers.Authorization).toBe("Bearer tok-123")
     })
-    await expect(api("/turnos")).rejects.toMatchObject({
-      detail: expect.stringContaining("error inesperado"),
+
+    it("is not sent on public routes", async () => {
+      sessionStorage.setItem("auth_token", "tok-secret")
+      const fetchMock = stub()
+      await api("/api/services")
+      await api("/api/services/1")
+      await api("/api/appointments/booked-slots")
+      await api("/api/public/settings")
+      await api("/healthz")
+      await api("/api/auth/login", { method: "POST", body: "{}" })
+      await api("/api/appointments", { method: "POST", body: "{}" })
+      for (const call of fetchMock.mock.calls) expect(call[1].headers.Authorization).toBeUndefined()
     })
   })
 
-  it("mantiene el detalle del backend en 4xx", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: false, status: 400,
-      headers: new Headers({ "content-type": "application/problem+json" }),
-      json: async () => ({ title: "Bad Request", detail: "La hora debe estar entre 13:00 y 20:00." }),
-    }))
-    await expect(api("/turnos", { method: "POST", body: "{}" }))
-      .rejects.toMatchObject({ detail: expect.stringContaining("13:00") })
+  it("emits auth:expired on a 401 outside login, but not on login", async () => {
+    const onExpired = vi.fn()
+    window.addEventListener("auth:expired", onExpired)
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({ code: "auth.invalid_token" }, 401)))
+    await expect(api("/api/appointments")).rejects.toMatchObject({ status: 401 })
+    expect(onExpired).toHaveBeenCalledTimes(1)
+    await expect(api("/api/auth/login", { method: "POST", body: "{}" })).rejects.toMatchObject({ status: 401 })
+    expect(onExpired).toHaveBeenCalledTimes(1)
+    window.removeEventListener("auth:expired", onExpired)
   })
 })

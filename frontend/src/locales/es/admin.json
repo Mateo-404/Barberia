@@ -1,0 +1,217 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "stats": "Estadísticas",
+    "appointments": "Turnos",
+    "theme": "Tema",
+    "settings": "Ajustes"
+  },
+  "layout": {
+    "accountMenu": "Menú de cuenta",
+    "viewSite": "Ver sitio",
+    "logout": "Cerrar sesión"
+  },
+  "status": {
+    "today": "Hoy",
+    "upcoming": "Pendiente",
+    "past": "Confirmado",
+    "scheduled": "Agendado"
+  },
+  "login": {
+    "title": "¡Bienvenido de vuelta!",
+    "subtitle": "Iniciá sesión para entrar al panel",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "admin@barberia.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Tu contraseña",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submitLabel": "Iniciar sesión",
+    "submitting": "Ingresando…",
+    "home": "Volver al sitio",
+    "rights": "© {{year}} {{name}}. Todos los derechos reservados."
+  },
+  "dashboard": {
+    "title": "Panel de estadísticas",
+    "subtitle": "Resumen del negocio en tiempo real.",
+    "loadError": "No pudimos cargar las estadísticas. Intentá de nuevo más tarde.",
+    "kpi": {
+      "today": "Turnos hoy",
+      "yesterday": "Ayer: {{count}}",
+      "revenue": "Ingresos del mes",
+      "lastMonth": "Mes anterior: {{amount}}",
+      "customers": "Total de clientes",
+      "recorded": "Turnos recientes"
+    },
+    "topServices": "Servicios más solicitados",
+    "noServices": "Todavía no hay servicios registrados este mes.",
+    "latest": "Últimos turnos",
+    "latestError": "No pudimos cargar los turnos.",
+    "noAppointments": "Todavía no hay turnos registrados.",
+    "columns": {
+      "customer": "Cliente",
+      "service": "Servicio",
+      "date": "Fecha",
+      "time": "Hora",
+      "price": "Precio",
+      "status": "Estado"
+    }
+  },
+  "appointments": {
+    "title": "Gestión de turnos",
+    "subtitle": "Administrá los turnos del negocio.",
+    "viewList": "Lista",
+    "viewCalendar": "Calendario",
+    "shortcuts": "atajos",
+    "kpi": {
+      "total": "Total de turnos",
+      "past": "Confirmados",
+      "upcoming": "Pendientes",
+      "revenueToday": "Ingresos de hoy"
+    },
+    "searchPlaceholder": "Buscar por cliente o teléfono",
+    "statusFilter": "Filtrar por estado",
+    "serviceFilter": "Filtrar por servicio",
+    "allStatuses": "Todos los estados",
+    "allServices": "Todos los servicios",
+    "from": "Desde",
+    "to": "Hasta",
+    "clear": "Limpiar",
+    "history": "Historial de turnos",
+    "noMatches": "No hay turnos que coincidan con los filtros.",
+    "columns": {
+      "date": "Fecha",
+      "time": "Hora",
+      "customer": "Cliente",
+      "service": "Servicio",
+      "status": "Estado",
+      "price": "Precio",
+      "actions": "Acciones"
+    },
+    "editFor": "Editar el turno de {{name}}",
+    "moveFor": "Mover el turno de {{name}}",
+    "moveHint": "Mover a otra fecha el turno de {{name}}",
+    "deleteFor": "Eliminar el turno de {{name}}",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "today": "Hoy",
+    "more": "+{{count}} más",
+    "dayTitle": "Turnos del día",
+    "dropHere": "Soltá acá para mover el turno.",
+    "pickDay": "Elegí un día del calendario para ver sus turnos.",
+    "drag": "Arrastrar",
+    "deleteTitle": "¿Eliminar el turno?",
+    "deleteWarning": "Esta acción no se puede deshacer.",
+    "deleting": "Eliminando…",
+    "moveTitle": "Mover turno",
+    "move": "Mover",
+    "moving": "Moviendo…",
+    "newDate": "Nueva fecha",
+    "noPastMove": "No se pueden mover turnos a fechas pasadas.",
+    "editTitle": "Editar turno",
+    "saving": "Guardando…",
+    "date": "Fecha",
+    "time": "Hora",
+    "mustBeFuture": "La fecha debe ser futura."
+  },
+  "customer": {
+    "back": "Volver a turnos",
+    "firstVisit": "Primera visita: {{date}}",
+    "lastVisit": "Última visita: {{date}}",
+    "kpi": {
+      "total": "Total de turnos",
+      "spent": "Total gastado",
+      "average": "Ticket promedio",
+      "services": "Servicios distintos",
+      "next": "Próxima reserva"
+    },
+    "servicesUsed": "Servicios utilizados",
+    "spendPerVisit": "Gasto por visita",
+    "noData": "Sin datos.",
+    "appointmentsCount_one": "{{count}} turno",
+    "appointmentsCount_other": "{{count}} turnos",
+    "amount": "Monto",
+    "history": "Historial de turnos"
+  },
+  "stats": {
+    "title": "Panel de estadísticas",
+    "subtitle": "Resumen del negocio en tiempo real.",
+    "loadError": "No pudimos cargar los datos",
+    "noService": "Sin servicio",
+    "customer": "Cliente",
+    "revenue": "Ingresos",
+    "noAppointments": "Todavía no hay turnos registrados.",
+    "appointmentsCount_one": "{{count}} turno",
+    "appointmentsCount_other": "{{count}} turnos",
+    "vsYesterday": "Vs. ayer: {{change}}",
+    "vsLastMonth": "Vs. mes anterior: {{change}}",
+    "kpi": {
+      "billed": "Total facturado",
+      "billedHint": "{{count}} turnos · Ticket: {{ticket}}",
+      "customers": "Clientes registrados"
+    },
+    "daily": {
+      "title": "Ingresos diarios",
+      "subtitle": "Últimos 30 días",
+      "empty": "Todavía no hay datos de ingresos diarios."
+    },
+    "hours": {
+      "title": "Turnos por hora",
+      "peak": "Horario pico: {{hour}}:00 · {{count}} turnos",
+      "none": "Último año · sin turnos registrados",
+      "empty": "Todavía no hay datos por horario."
+    },
+    "weekday": {
+      "title": "Turnos e ingresos por día",
+      "subtitle": "Todos los turnos registrados",
+      "appointments": "Turnos"
+    },
+    "popular": {
+      "title": "Servicios más populares",
+      "subtitle": "Último mes",
+      "empty": "Todavía no hay datos de servicios en el último mes."
+    },
+    "byService": {
+      "title": "Ingresos por servicio",
+      "subtitle": "Total facturado por servicio"
+    },
+    "regulars": {
+      "title": "Clientes frecuentes",
+      "subtitle": "Ordenados por cantidad de turnos (mínimo 2 visitas)",
+      "empty": "Todavía no hay clientes habituales."
+    },
+    "monthly": {
+      "title": "Evolución mensual de ingresos",
+      "subtitle": "Histórico mes a mes"
+    }
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Administrá tu cuenta y el comercio.",
+    "soon": "Próximamente",
+    "sections": {
+      "theme": {
+        "title": "Tema",
+        "description": "Colores, tipografía, logo y modo claro u oscuro de tu sitio.",
+        "action": "Abrir el editor"
+      },
+      "business": {
+        "title": "Negocio",
+        "description": "Horarios, moneda, WhatsApp, Instagram y dirección.",
+        "action": "Editar"
+      },
+      "account": {
+        "title": "Cuenta",
+        "description": "Nombre, apellido y contraseña del administrador.",
+        "action": "Editar"
+      },
+      "security": {
+        "title": "Seguridad",
+        "description": "Sesiones activas y rotación de credenciales.",
+        "action": "Ver"
+      }
+    }
+  }
+}

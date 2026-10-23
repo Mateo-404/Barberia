@@ -1,30 +1,21 @@
 /**
- * ╔══════════════════════════════════════════════════════════════════════════╗
- * ║ CONFIGURACIÓN DEL NEGOCIO — MÓDULO INTERINO                             ║
- * ║                                                                          ║
- * ║ Estos valores estaban codificados en Reserva.tsx y TurnosAdmin.tsx       ║
- * ║ (duplicados) y en turno-schema.ts. Se centralizan aquí mientras el       ║
- * ║ backend no expone la configuración pública del negocio:                  ║
- * ║   GET /publico/negocios/{slug}/configuracion                            ║
- * ║ Ver docs/frontend/04-contrato-configuracion-negocio.md.                  ║
- * ║                                                                          ║
- * ║ Al existir ese endpoint, este módulo se reemplaza por el hook que lo     ║
- * ║ consuma y desaparece esta configuración local. NO agregar más reglas     ║
- * ║ comerciales al cliente: el backend es la autoridad.                      ║
- * ╚══════════════════════════════════════════════════════════════════════════╝
+ * Interim business configuration: opening hours and the slot grid used by the
+ * booking wizard, until every screen reads them from the backend's public
+ * settings (`GET /api/public/settings`, `biz.*`). Do NOT add more commercial
+ * rules here: the backend is the authority.
  */
 
 export interface BusinessConfig {
-  /** IANA. Las horas de este módulo se interpretan en ESTA zona. */
+  /** IANA. Times in this module are read in THIS zone. */
   timeZone: string
-  /** Apertura en "HH:MM" (hora del negocio). */
+  /** Opening time "HH:MM" (business time). */
   openTime: string
-  /** Cierre en "HH:MM" (hora del negocio), exclusivo. */
+  /** Closing time "HH:MM" (business time), exclusive. */
   closeTime: string
-  /** Intervalo entre turnos en minutos. */
+  /** Minutes between appointments. */
   intervalMinutes: number
   branding: {
-    nombre: string
+    name: string
     logoSrc: string
     instagramUrl: string
   }
@@ -36,13 +27,13 @@ export const businessConfig: BusinessConfig = {
   closeTime: "20:00",
   intervalMinutes: 30,
   branding: {
-    nombre: "TH Barber Club",
+    name: "TH Barber Club",
     logoSrc: "/logo.svg",
     instagramUrl: "https://instagram.com",
   },
 }
 
-/** Grilla de horarios [apertura, cierre) generada desde la config. */
+/** Slot grid [opening, closing) built from the config. */
 export function timeSlots(config: BusinessConfig = businessConfig): string[] {
   const [oh, om] = config.openTime.split(":").map(Number)
   const [ch, cm] = config.closeTime.split(":").map(Number)
@@ -57,7 +48,7 @@ export function timeSlots(config: BusinessConfig = businessConfig): string[] {
   return slots
 }
 
-/** true si la "HH:MM" cae exactamente en un slot de la grilla. */
+/** True when "HH:MM" falls exactly on a grid slot. */
 export function isValidSlotTime(time: string, config: BusinessConfig = businessConfig): boolean {
   return timeSlots(config).includes(time)
 }

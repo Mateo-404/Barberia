@@ -240,7 +240,7 @@ FROM appointments a
 LEFT JOIN customers c ON a.customer_phone = c.phone AND c.tenant_id = a.tenant_id
 LEFT JOIN services s ON a.service_id = s.id AND s.tenant_id = a.tenant_id
 WHERE a.tenant_id = $1
-ORDER BY a.id
+ORDER BY a.id DESC
 LIMIT $3 OFFSET $2
 `
 
@@ -262,6 +262,7 @@ type PageAppointmentsRow struct {
 	ServicePrice *float32
 }
 
+// Most recent first (highest id), so page 0 is "the latest appointments".
 func (q *Queries) PageAppointments(ctx context.Context, arg PageAppointmentsParams) ([]PageAppointmentsRow, error) {
 	rows, err := q.db.Query(ctx, pageAppointments, arg.TenantID, arg.RowOffset, arg.RowLimit)
 	if err != nil {

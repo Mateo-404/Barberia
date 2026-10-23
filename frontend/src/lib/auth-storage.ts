@@ -1,11 +1,11 @@
 import type { components } from "@/types/api"
 
-export type Admin = components["schemas"]["AdministradorResponseDTO"]
+export type Admin = components["schemas"]["Admin"]
 
 /**
- * Único punto de lectura/escritura de la sesión en `sessionStorage`.
- * `api-client` sólo conoce el token; `AuthContext` admin + token.
- * Al migrar a cookies HttpOnly (backend Go), este es el único módulo a tocar.
+ * The only place that reads or writes the session in `sessionStorage`.
+ * `api-client` only knows the token; `AuthContext` the admin + token.
+ * Moving to HttpOnly cookies would only touch this module.
  */
 const TOKEN_KEY = "auth_token"
 const ADMIN_KEY = "admin"

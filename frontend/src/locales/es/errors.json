@@ -1,0 +1,68 @@
+{
+  "unknown": "Ocurrió un error inesperado. Intentá de nuevo en unos minutos.",
+  "client": {
+    "timeout": "La conexión tardó demasiado. Intentá de nuevo.",
+    "network": "No se pudo conectar con el servidor. Revisá tu conexión.",
+    "cancelled": "Se canceló la operación.",
+    "invalid_response": "El servidor respondió algo que no pudimos interpretar."
+  },
+  "server": {
+    "internal": "Ocurrió un error en el servidor. Intentá de nuevo más tarde.",
+    "unknown": "Ocurrió un error inesperado. Intentá de nuevo en unos minutos."
+  },
+  "auth": {
+    "unauthorized": "Iniciá sesión para continuar.",
+    "invalid_token": "Tu sesión venció. Iniciá sesión de nuevo.",
+    "forbidden": "No tenés permiso para hacer esto.",
+    "invalid_credentials": "El email o la contraseña no son correctos."
+  },
+  "request": {
+    "malformed": "No pudimos leer los datos enviados. Revisalos e intentá de nuevo.",
+    "invalid_fields": "Revisá los campos marcados.",
+    "rate_limited": "Hiciste demasiados intentos. Esperá un minuto y probá de nuevo.",
+    "not_found": "No encontramos lo que buscabas.",
+    "method_not_allowed": "Esta acción no está disponible."
+  },
+  "resource": {
+    "not_found": "No encontramos ese registro.",
+    "in_use": "No se puede eliminar porque tiene otros registros asociados.",
+    "invalid": "Los datos no cumplen las reglas del sistema."
+  },
+  "appointment": {
+    "slot_taken": "Ese horario ya fue reservado. Elegí otro.",
+    "outside_hours": "El horario debe estar entre las {{open}} y las {{close}}.",
+    "invalid_interval": "El horario debe ser en intervalos de {{minutes}} minutos."
+  },
+  "service": {
+    "not_found": "El servicio elegido ya no existe."
+  },
+  "customer": {
+    "already_exists": "Ya hay un cliente con el teléfono {{phone}}."
+  },
+  "admin": {
+    "already_exists": "Ya hay un administrador con el email {{email}}."
+  },
+  "settings": {
+    "invalid": "La configuración tiene campos inválidos.",
+    "no_draft": "No hay cambios guardados para publicar.",
+    "version_not_found": "La versión {{version}} no existe."
+  },
+  "field": {
+    "required": "Este campo es obligatorio.",
+    "invalid_email": "Ingresá un email válido.",
+    "too_long": "El texto es demasiado largo.",
+    "too_short": "El texto es demasiado corto.",
+    "must_be_future": "Elegí una fecha futura.",
+    "must_be_positive": "Ingresá un número mayor que cero.",
+    "invalid_datetime": "Ingresá una fecha y hora válidas.",
+    "invalid_value": "El valor no es válido.",
+    "invalid_json": "El formato de los datos no es válido.",
+    "invalid_length": "La longitud no es válida.",
+    "invalid_format": "El formato no es válido.",
+    "invalid_color": "Elegí un color válido.",
+    "invalid_font": "Elegí una tipografía de la lista.",
+    "low_contrast": "El contraste entre colores es bajo; el texto puede costar leerse.",
+    "insufficient_contrast": "El contraste entre colores es insuficiente para leer el texto.",
+    "invalid_phone": "Ingresá un teléfono válido: solo números, espacios, guiones o +."
+  }
+}

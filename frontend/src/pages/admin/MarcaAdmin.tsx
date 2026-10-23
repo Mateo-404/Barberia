@@ -88,7 +88,7 @@ export default function MarcaAdmin() {
         setGeneralError("Revisá los campos marcados.")
         return
       }
-      setGeneralError(err instanceof ApiError ? err.detail : "No se pudo guardar el borrador.")
+      setGeneralError(err instanceof ApiError ? err.code : "No se pudo guardar el borrador.")
     }
   }
 
@@ -98,7 +98,7 @@ export default function MarcaAdmin() {
       const result = await publish.mutateAsync()
       setPublished(result)
     } catch (err) {
-      setGeneralError(err instanceof ApiError ? err.detail : "No se pudo publicar.")
+      setGeneralError(err instanceof ApiError ? err.code : "No se pudo publicar.")
     }
   }
 
@@ -111,7 +111,7 @@ export default function MarcaAdmin() {
     return (
       <div className="space-y-4 p-6">
         <div role="alert" className="border-l-2 border-destructive pl-4 text-sm text-destructive">
-          {error instanceof ApiError ? error.detail : "No se pudo cargar la configuración."}
+          {error instanceof ApiError ? error.code : "No se pudo cargar la configuración."}
         </div>
         <button onClick={() => void refetch()} className="text-sm underline underline-offset-4">
           Reintentar

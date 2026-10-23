@@ -1,13 +1,15 @@
 /**
- * Único punto de acceso HTTP de la aplicación.
+ * The single HTTP entry point of the app.
  *
- * - Respeta el `AbortSignal` del llamador (React Query cancela en unmount) y
- *   lo compone con un timeout propio: cancelación y timeout son distinguibles.
- * - Errores clasificados en `kind`: "http" (respuesta del servidor),
- *   "network" (fetch rechazó), "timeout" y "cancelled".
- * - Ante un 401 fuera del login emite `auth:expired`; AuthContext limpia la
- *   sesión y la caché de React Query y el router se encarga de navegar.
- *   Nunca se loguean datos personales ni tokens.
+ * - Honors the caller's `AbortSignal` (React Query cancels on unmount) and
+ *   combines it with its own timeout, so cancellation and timeout differ.
+ * - Errors are classified by `kind`: "http" (server answered), "network"
+ *   (fetch rejected), "timeout" and "cancelled".
+ * - Every error carries a stable `code` (and `params`); the UI translates it
+ *   (see lib/error-message.ts). The server's English `detail` is never shown.
+ * - A 401 outside login emits `auth:expired`; AuthContext clears the session
+ *   and the query cache and the router navigates. Personal data and tokens
+ *   are never logged.
  */
 
 import { readToken } from "@/lib/auth-storage"
@@ -15,48 +17,53 @@ import { readToken } from "@/lib/auth-storage"
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"
 const REQUEST_TIMEOUT_MS = 15_000
 
-/** URL base del API. Se exporta para los recursos que no van por `api()`
- *  (CSS del tema, previews) y que necesitan una URL absoluta. */
+/** API base URL, exported for resources that do not go through `api()`
+ *  (theme CSS, previews) and need an absolute URL. */
 export const API_BASE_URL = BASE_URL
 
-/** Disparado cuando el backend responde 401 (token ausente/inválido/expirado). */
+/** Fired when the backend answers 401 (missing, invalid or expired token). */
 export const AUTH_EXPIRED_EVENT = "auth:expired"
 
 export type ApiErrorKind = "http" | "network" | "timeout" | "cancelled"
 
+/** A field-level validation error returned by the API. */
+export interface FieldError {
+  field: string
+  code: string
+}
+
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
   readonly status: number
-  readonly title: string
-  readonly detail: string
+  /** Stable identifier to translate, e.g. "appointment.slot_taken". */
+  readonly code: string
+  readonly params: Record<string, unknown>
+  readonly fieldErrors: FieldError[]
+  /** Problem `type`, e.g. "/errors/invalid-token". */
   readonly type?: string
-  /** Body JSON parseado de la respuesta de error (ej. `details[]` del 422). */
-  readonly body?: unknown
 
   constructor(
     kind: ApiErrorKind,
     status: number,
-    title: string,
-    detail: string,
-    type?: string,
-    body?: unknown,
+    code: string,
+    options: { params?: Record<string, unknown>; fieldErrors?: FieldError[]; type?: string } = {},
   ) {
-    super(detail)
+    super(code)
     this.name = "ApiError"
     this.kind = kind
     this.status = status
-    this.title = title
-    this.detail = detail
-    this.type = type
-    this.body = body
+    this.code = code
+    this.params = options.params ?? {}
+    this.fieldErrors = options.fieldErrors ?? []
+    this.type = options.type
   }
 
-  /** true si un reintento automático tiene sentido (no en 4xx). */
+  /** True when an automatic retry makes sense (never on 4xx). */
   get isRetriable(): boolean {
     return this.kind === "network" || this.kind === "timeout" || this.status >= 500
   }
 
-  /** El backend rechazó la operación (ej. turno tomado por otro usuario). */
+  /** The server rejected the operation as a conflict (e.g. slot taken). */
   get isConflict(): boolean {
     return this.status === 409
   }
@@ -66,7 +73,7 @@ export type ApiOptions = RequestInit & { timeoutMs?: number }
 
 function buildHeaders(init: ApiOptions): Record<string, string> {
   const headers: Record<string, string> = {}
-  // Content-Type sólo cuando hay cuerpo: no ensuciar GET/HEAD.
+  // Content-Type only when there is a body.
   if (init.body !== undefined && init.body !== null) {
     headers["Content-Type"] = "application/json"
   }
@@ -84,50 +91,35 @@ function notifyAuthExpired() {
   }
 }
 
-/** Lee el body de error tolerando respuestas no JSON o vacías. */
-async function readErrorBody(res: Response): Promise<{
-  title: string
-  detail: string
-  type?: string
-  body?: unknown
-}> {
+/** Reads an RFC 7807 error body, tolerating empty or non-JSON responses. */
+async function readProblem(res: Response): Promise<ApiError> {
   try {
     const body: unknown = await res.json()
     if (body && typeof body === "object") {
       const b = body as Record<string, unknown>
-      // En 5xx el detalle interno puede filtrar información (traza, SQL):
-      // se muestra siempre el mensaje genérico, no el del servidor.
-      const detail =
-        res.status >= 500
-          ? "Ocurrió un error inesperado. Intentá de nuevo más tarde."
-          : typeof b.detail === "string"
-            ? b.detail
-            : res.statusText || "Error del servidor"
-      return {
-        title: typeof b.title === "string" ? b.title : "Error",
-        detail,
+      const errors = Array.isArray(b.errors) ? (b.errors as FieldError[]) : []
+      return new ApiError("http", res.status, typeof b.code === "string" ? b.code : "server.unknown", {
+        params: b.params && typeof b.params === "object" ? (b.params as Record<string, unknown>) : {},
+        fieldErrors: errors.filter((e) => typeof e?.field === "string" && typeof e?.code === "string"),
         type: typeof b.type === "string" ? b.type : undefined,
-        body,
-      }
+      })
     }
   } catch {
-    // body no JSON: cae al fallback
+    // not JSON: fall through
   }
-  return { title: "Error", detail: res.statusText || "Error del servidor" }
+  return new ApiError("http", res.status, res.status >= 500 ? "server.internal" : "server.unknown")
 }
 
-/**
- * Rutas que el backend expone sin autenticación: no se les manda el Bearer
- * (evita filtrar el token en peticiones que no lo necesitan).
- */
-const RUTAS_PUBLICAS = [/^\/ping$/, /^\/healthz$/, /^\/readyz$/, /^\/turnos\/findDateTimes$/]
+const LOGIN_PATH = "/api/auth/login"
 
-function esRutaProtegida(path: string, method: string): boolean {
-  const soloPath = path.split("?")[0]
-  if (RUTAS_PUBLICAS.some((re) => re.test(soloPath))) return false
-  if (soloPath === "/servicios" || soloPath.startsWith("/servicios/")) return false
-  if (soloPath === "/administradores/login") return false
-  if (method === "POST" && soloPath === "/turnos") return false
+/** Routes the backend serves without authentication get no Bearer header
+ *  (the token is not leaked to requests that do not need it). */
+function isProtected(path: string, method: string): boolean {
+  const p = path.split("?")[0]
+  if (p === "/healthz" || p === "/readyz" || p === LOGIN_PATH) return false
+  if (p.startsWith("/api/public/") || p === "/api/appointments/booked-slots") return false
+  if (method === "GET" && (p === "/api/services" || p.startsWith("/api/services/"))) return false
+  if (method === "POST" && p === "/api/appointments") return false
   return true
 }
 
@@ -138,8 +130,8 @@ export async function api<T>(path: string, init: ApiOptions = {}): Promise<T> {
   const signal = callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal
 
   const headers = buildHeaders({ ...rest, headers: callerHeaders })
-  const metodo = (rest.method ?? "GET").toUpperCase()
-  if (esRutaProtegida(path, metodo)) {
+  const method = (rest.method ?? "GET").toUpperCase()
+  if (isProtected(path, method)) {
     const token = readToken()
     if (token) headers["Authorization"] = `Bearer ${token}`
   }
@@ -154,18 +146,17 @@ export async function api<T>(path: string, init: ApiOptions = {}): Promise<T> {
     })
   } catch {
     if (timeoutSignal.aborted) {
-      throw new ApiError("timeout", 0, "Tiempo de espera agotado", "La conexión tardó demasiado. Intentá de nuevo.")
+      throw new ApiError("timeout", 0, "client.timeout")
     }
     if (callerSignal?.aborted) {
-      throw new ApiError("cancelled", 0, "Petición cancelada", "La petición fue cancelada.")
+      throw new ApiError("cancelled", 0, "client.cancelled")
     }
-    throw new ApiError("network", 0, "Sin conexión", "No se pudo conectar con el servidor. Revisá tu conexión.")
+    throw new ApiError("network", 0, "client.network")
   }
 
   if (!res.ok) {
-    const { title, detail, type, body } = await readErrorBody(res)
-    const error = new ApiError("http", res.status, title, detail, type, body)
-    if (res.status === 401 && path !== "/administradores/login") {
+    const error = await readProblem(res)
+    if (res.status === 401 && path !== LOGIN_PATH) {
       notifyAuthExpired()
     }
     throw error
@@ -178,6 +169,6 @@ export async function api<T>(path: string, init: ApiOptions = {}): Promise<T> {
   try {
     return JSON.parse(text) as T
   } catch {
-    throw new ApiError("http", res.status, "Respuesta inválida", "El servidor devolvió una respuesta que no se pudo interpretar.")
+    throw new ApiError("http", res.status, "client.invalid_response")
   }
 }

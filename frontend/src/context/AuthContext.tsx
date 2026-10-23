@@ -14,18 +14,17 @@ interface AuthContextType {
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, contrasenia: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-/** Exportado para poder testear la política de expiración del token. */
+/** Exported so the token expiry policy can be tested. */
 export function isTokenExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]))
-    // Un token sin `exp` no puede considerarse válido: el backend exige
-    // expiración (WithExpirationRequired), así que aceptarlo sería un bypass.
+    // A token without `exp` is never valid: the backend requires expiry.
     if (typeof payload.exp !== "number") return true
     return Date.now() >= payload.exp * 1000
   } catch {
@@ -33,7 +32,7 @@ export function isTokenExpired(token: string): boolean {
   }
 }
 
-/** Devuelve el token si existe y no expiró; si no, limpia la sesión. */
+/** Returns the token when present and unexpired; otherwise clears the session. */
 function loadValidToken(): string | null {
   const token = readToken()
   if (!token || isTokenExpired(token)) {
@@ -52,8 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const { mutateAsync, isPending } = useLogin()
 
-  /** Cierra sesión y descarta TODO el estado remoto: la siguiente sesión no
-   * puede ver datos de la anterior (turnos, clientes, estadísticas). */
+  /** Ends the session and drops ALL remote state, so the next session cannot
+   * see the previous one's data. */
   const terminateSession = useCallback(() => {
     setAdmin(null)
     setToken(null)
@@ -61,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear()
   }, [queryClient])
 
-  // El cliente HTTP avisa de un 401 (token inválido/expirado en cualquier request).
+  // The HTTP client reports a 401 (invalid or expired token on any request).
   useEffect(() => {
     const onExpired = () => {
       terminateSession()
@@ -72,11 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [terminateSession, navigate])
 
   const login = useCallback(
-    async (email: string, contrasenia: string) => {
-      const data: LoginResponse = await mutateAsync({ email, contrasenia })
-      const { id, nombre, apellido, email: adminEmail, token: jwt } = data
-      const adminData: Admin = { id, nombre, apellido, email: adminEmail }
-      // Una sesión nueva arranca sin restos de la anterior.
+    async (email: string, password: string) => {
+      const data: LoginResponse = await mutateAsync({ email, password })
+      const { token: jwt, ...adminData } = data satisfies Admin & { token: string }
+      // A new session starts clean.
       queryClient.clear()
       setAdmin(adminData)
       setToken(jwt)

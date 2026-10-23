@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useShortcutsRegistry, type ShortcutDef } from "@/hooks/useShortcutsRegistry"
 import { useHotkeys } from "@/hooks/useHotkeys"
 
@@ -10,7 +11,9 @@ function kbd(key: string) {
   )
 }
 
-export function ShortcutsHelp({ scope }: { scope: "global" | "cliente" | "admin" }) {
+export function ShortcutsHelp({ scope }: { scope: "global" | "customer" | "admin" }) {
+  const { t } = useTranslation("shortcuts")
+  const { t: tc } = useTranslation()
   const [open, setOpen] = useState(false)
   const all = useShortcutsRegistry()
   const own = all.filter((e) => e.scope === scope)
@@ -37,7 +40,7 @@ export function ShortcutsHelp({ scope }: { scope: "global" | "cliente" | "admin"
     ;(acc[e.scope] ??= []).push(e)
     return acc
   }, {})
-  const scopes = (["global", "cliente", "admin"] as const).filter((s) => grouped[s]?.length)
+  const scopes = (["global", "customer", "admin"] as const).filter((s) => grouped[s]?.length)
 
   return (
     <div
@@ -51,11 +54,11 @@ export function ShortcutsHelp({ scope }: { scope: "global" | "cliente" | "admin"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Atajos de teclado</h2>
+          <h2 className="text-lg font-bold text-foreground">{t("title")}</h2>
           <button
             onClick={() => setOpen(false)}
             className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1 transition-colors"
-            aria-label="Cerrar"
+            aria-label={tc("close")}
           >
             ✕
           </button>
@@ -63,7 +66,7 @@ export function ShortcutsHelp({ scope }: { scope: "global" | "cliente" | "admin"
         {scopes.map((s) => (
           <div key={s} className="space-y-1.5">
             <h3 className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-              {s === "global" ? "Globales" : s === "cliente" ? "Reserva" : "Administración"}
+              {t(`scopes.${s}`)}
             </h3>
             {grouped[s].map((d, i) => (
               <div key={i} className="flex items-center justify-between gap-4 text-sm">
@@ -74,7 +77,7 @@ export function ShortcutsHelp({ scope }: { scope: "global" | "cliente" | "admin"
           </div>
         ))}
         {own.length === 0 && (
-          <p className="text-sm text-muted-foreground">No hay atajos en esta vista.</p>
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
         )}
       </div>
     </div>
