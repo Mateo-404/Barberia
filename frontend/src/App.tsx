@@ -3,19 +3,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { AuthProvider } from "@/context/AuthContext"
+import { ThemeProvider } from "@/context/ThemeContext"
 import { TenantProvider } from "@/context/TenantContext"
 import { ApiError } from "@/lib/api-client"
 import Booking from "@/pages/Booking"
 import Login from "@/pages/Login"
-import Onboarding from "@/pages/Onboarding"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { ShortcutsHelp } from "@/components/ShortcutsHelp"
+import { PreviewBridge } from "@/components/PreviewBridge"
 
 const Dashboard = lazy(() => import("@/pages/admin/Dashboard"))
 const Appointments = lazy(() => import("@/pages/admin/Appointments"))
 const Stats = lazy(() => import("@/pages/admin/Stats"))
-const MarcaAdmin = lazy(() => import("@/pages/admin/MarcaAdmin"))
+const Welcome = lazy(() => import("@/pages/theme/Welcome"))
+const ThemeEditorPage = lazy(() => import("@/pages/theme/ThemeEditorPage"))
+const BusinessPage = lazy(() => import("@/pages/admin/BusinessPage"))
 const SettingsPage = lazy(() => import("@/pages/admin/SettingsPage"))
 
 const queryClient = new QueryClient({
@@ -53,23 +56,27 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TenantProvider slug={import.meta.env.VITE_TENANT_SLUG ?? "default"}>
         <BrowserRouter>
+          <ThemeProvider>
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Booking />} />
               <Route path="/login" element={<Login />} />
               <Route element={<ProtectedRoute />}>
-                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/welcome" element={<Lazy><Welcome /></Lazy>} />
+                <Route path="/admin/theme" element={<Lazy><ThemeEditorPage /></Lazy>} />
                 <Route element={<AdminLayout />}>
                   <Route path="/admin" element={<Lazy><Dashboard /></Lazy>} />
                   <Route path="/admin/appointments" element={<Lazy><Appointments /></Lazy>} />
-                  <Route path="/admin/theme" element={<Lazy><MarcaAdmin /></Lazy>} />
                   <Route path="/admin/settings" element={<Lazy><SettingsPage /></Lazy>} />
+                  <Route path="/admin/business" element={<Lazy><BusinessPage /></Lazy>} />
                   <Route path="/admin/stats" element={<Lazy><Stats /></Lazy>} />
                 </Route>
               </Route>
             </Routes>
             <Shell />
+            <PreviewBridge />
           </AuthProvider>
+          </ThemeProvider>
         </BrowserRouter>
       </TenantProvider>
     </QueryClientProvider>

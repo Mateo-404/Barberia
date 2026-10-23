@@ -271,3 +271,43 @@ func TestPublishWithoutDraftIsRejected(t *testing.T) {
 		t.Fatalf("code = %q", code)
 	}
 }
+
+func TestUnpublishedChangesFlag(t *testing.T) {
+	e := newEnv(t)
+	token := e.ownerToken(t)
+	flag := func() bool {
+		var s struct {
+			Has bool `json:"hasUnpublishedChanges"`
+		}
+		e.call(t, http.MethodGet, "/api/admin/settings", "", token).expect(200, "state").json(&s)
+		return s.Has
+	}
+	if !flag() {
+		t.Fatal("a tenant that never published has unpublished changes")
+	}
+	e.call(t, http.MethodPut, "/api/admin/settings/draft", validTheme, token).expect(200, "draft")
+	e.call(t, http.MethodPost, "/api/admin/settings/publish", "", token).expect(200, "publish")
+	if flag() {
+		t.Fatal("right after publishing there is nothing unpublished")
+	}
+	e.call(t, http.MethodPut, "/api/admin/settings/draft", themeWith(`"name":"Test"`, `"name":"Other"`), token).expect(200, "draft")
+	if !flag() {
+		t.Fatal("editing the draft must raise the flag")
+	}
+}
+
+func TestPreviewReportsContrastRatios(t *testing.T) {
+	e := newEnv(t)
+	var out struct {
+		Light, Dark struct {
+			Primary string
+			Ratios  struct{ Text, Muted, Primary, OnPrimary float64 }
+		}
+	}
+	e.call(t, http.MethodPost, "/api/admin/theme/preview", validTheme, e.ownerToken(t)).expect(200, "preview").json(&out)
+	for name, s := range map[string]struct{ Text, Muted, Primary, OnPrimary float64 }{"light": out.Light.Ratios, "dark": out.Dark.Ratios} {
+		if s.Text < 7 || s.Muted < 4.5 || s.Primary < 3 || s.OnPrimary < 4.5 {
+			t.Errorf("%s ratios are not accessible: %+v", name, s)
+		}
+	}
+}

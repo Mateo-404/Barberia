@@ -1,7 +1,11 @@
 {
   "title": "Atajos de teclado",
   "empty": "No hay atajos en esta vista.",
-  "scopes": { "global": "Globales", "customer": "Reserva", "admin": "Administración" },
+  "scopes": {
+    "global": "Globales",
+    "customer": "Reserva",
+    "admin": "Administración"
+  },
   "booking": {
     "pick": "Elegir servicio u horario",
     "next": "Paso siguiente",
@@ -21,12 +25,14 @@
       "dashboard": "Ir al panel",
       "stats": "Ir a estadísticas",
       "appointments": "Ir a turnos",
-      "theme": "Ir al tema",
+      "theme": "Ir al editor de tema",
       "settings": "Ir a ajustes",
       "site": "Ir al sitio público"
     }
   },
-  "stats": { "refresh": "Refrescar los datos" },
+  "stats": {
+    "refresh": "Refrescar los datos"
+  },
   "appointments": {
     "list": "Vista de lista",
     "calendar": "Vista de calendario",
@@ -45,5 +51,8 @@
     "editFirst": "Editar el primer turno del día",
     "deleteFirst": "Eliminar el primer turno",
     "openCustomer": "Abrir el cliente del turno"
+  },
+  "theme": {
+    "save": "Guardar los cambios ahora"
   }
 }

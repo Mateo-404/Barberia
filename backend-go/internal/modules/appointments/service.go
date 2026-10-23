@@ -5,6 +5,7 @@ package appointments
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -12,21 +13,14 @@ import (
 	"github.com/Mateo-404/Barberia/backend-go/internal/pgutil"
 	"github.com/Mateo-404/Barberia/backend-go/internal/platform/database"
 	"github.com/Mateo-404/Barberia/backend-go/internal/platform/database/sqlc"
+	"github.com/Mateo-404/Barberia/backend-go/internal/settings"
 	"github.com/Mateo-404/Barberia/backend-go/internal/timeutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Opening hours and slot size of a booking.
-const (
-	openMinute    = 13 * 60
-	closeMinute   = 20 * 60
-	slotMinutes   = 30
-	openingLabel  = "13:00"
-	closingLabel  = "20:00"
-	savepointName = "sp_customer"
-)
+const savepointName = "sp_customer"
 
 // Customer is the association (may be partial in a PATCH).
 type Customer struct {
@@ -196,7 +190,11 @@ func (s *Service) createInTx(ctx context.Context, q *sqlc.Queries, tx pgx.Tx, te
 	if err != nil {
 		return nil, err
 	}
-	if err := validateStartsAt(in.StartsAt); err != nil {
+	business, err := businessOf(ctx, q, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateStartsAt(in.StartsAt, business, s.now()); err != nil {
 		return nil, err
 	}
 	taken, err := s.slotTaken(ctx, q, tenantID, in.StartsAt)
@@ -381,17 +379,50 @@ func (s *Service) BookedSlots(ctx context.Context, tenantID int64) ([]string, er
 	return out, err
 }
 
-func validateStartsAt(t time.Time) error {
-	minute := t.Hour()*60 + t.Minute()
-	if minute < openMinute || minute > closeMinute {
-		return apperr.New(apperr.KindBusinessRule, "appointment.outside_hours",
-			apperr.Params{"open": openingLabel, "close": closingLabel},
-			"the time must be between %s and %s", openingLabel, closingLabel)
+// businessOf loads the tenant's opening hours, slot length and notice.
+func businessOf(ctx context.Context, q *sqlc.Queries, tenantID int64) (settings.Business, error) {
+	row, err := q.GetTenantSettings(ctx, tenantID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return settings.DefaultBusiness(), nil
 	}
-	if t.Minute()%slotMinutes != 0 {
+	if err != nil {
+		return settings.Business{}, err
+	}
+	return settings.LoadBusiness(row.Business, row.Published, row.Draft), nil
+}
+
+func minutesOf(hhmm string) int {
+	var h, m int
+	_, _ = fmt.Sscanf(hhmm, "%d:%d", &h, &m)
+	return h*60 + m
+}
+
+// validateStartsAt applies the business rules to a booking time given as a
+// local date-time of the business: it must be in the future (with the
+// business's minimum notice), start on a slot boundary and finish before
+// closing. Past and notice checks use the business time zone.
+func validateStartsAt(startsAt time.Time, b settings.Business, now time.Time) error {
+	if loc, err := time.LoadLocation(b.Tz); err == nil {
+		local := time.Date(startsAt.Year(), startsAt.Month(), startsAt.Day(), startsAt.Hour(), startsAt.Minute(), 0, 0, loc)
+		if local.Before(now) {
+			return apperr.New(apperr.KindBusinessRule, "appointment.in_the_past", nil, "the time is in the past")
+		}
+		if hours := b.Notice; hours > 0 && local.Before(now.Add(time.Duration(hours)*time.Hour)) {
+			return apperr.New(apperr.KindBusinessRule, "appointment.too_soon", apperr.Params{"hours": hours},
+				"bookings need %d hour(s) of notice", hours)
+		}
+	}
+	open, closing := minutesOf(b.Open), minutesOf(b.Close)
+	minute := startsAt.Hour()*60 + startsAt.Minute()
+	if minute < open || minute+b.Slot > closing {
+		return apperr.New(apperr.KindBusinessRule, "appointment.outside_hours",
+			apperr.Params{"open": b.Open, "close": b.Close},
+			"the time must be between %s and %s", b.Open, b.Close)
+	}
+	if (minute-open)%b.Slot != 0 {
 		return apperr.New(apperr.KindBusinessRule, "appointment.invalid_interval",
-			apperr.Params{"minutes": slotMinutes},
-			"the time must be on %d-minute intervals", slotMinutes)
+			apperr.Params{"minutes": b.Slot},
+			"the time must be on %d-minute intervals", b.Slot)
 	}
 	return nil
 }

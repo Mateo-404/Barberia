@@ -1,23 +1,30 @@
 /**
- * Bootstrap del tema público (F-02).
+ * Runtime of the business theme.
  *
- * El CSS publicado por el backend (`GET /api/public/theme.css`) se inyecta en
- * el `<head>` del documento ANTES de montar React, para que quede en el HTML
- * inicial que sirve la app. Además se replican las variables del tema sobre
- * las que usa la UI (Tailwind) para que la página pública use la marca.
+ * The backend renders the whole theme as CSS custom properties
+ * (`/api/public/theme.css`). Here we only (1) put that CSS in the document,
+ * (2) load the fonts it names, and (3) expose the few values the app needs
+ * from it (mode, button style). Mapping tokens to Tailwind lives in
+ * index.css, so there is no color logic in JavaScript.
  *
- * Si el backend no responde, la app arranca igual con los valores por
- * defecto de `index.css`: el tema es una mejora, nunca un bloqueo.
+ * If the backend does not answer, the app starts with the defaults of
+ * index.css: the theme is an enhancement, never a blocker.
  */
 
 import { API_BASE_URL } from "@/lib/api-client"
-import { hexToRgba } from "@/lib/settings"
+import { firstFamily, loadFont } from "@/lib/fonts"
 
 const THEME_STYLE_ID = "tenant-theme"
 const THEME_TIMEOUT_MS = 3000
 
-/** Devuelve (o crea) el `<style id="tenant-theme">` del head. */
-function ensureThemeStyle(): HTMLStyleElement {
+/** Fired on `window` after a theme is applied. */
+export const THEME_APPLIED_EVENT = "theme:applied"
+
+export type ThemeMode = "light" | "dark" | "auto"
+export type ButtonStyle = "solid" | "outline"
+
+/** Returns (or creates) the `<style id="tenant-theme">` of the head. */
+function themeStyle(): HTMLStyleElement {
   const existing = document.getElementById(THEME_STYLE_ID)
   if (existing instanceof HTMLStyleElement) return existing
   const style = document.createElement("style")
@@ -26,74 +33,36 @@ function ensureThemeStyle(): HTMLStyleElement {
   return style
 }
 
-/** Extrae las custom properties de un bloque CSS. */
-export function extractCssVars(css: string): Record<string, string> {
-  const vars: Record<string, string> = {}
-  const pattern = /(--[a-z0-9-]+)\s*:\s*([^;}]+)/gi
-  let match: RegExpExecArray | null
-  while ((match = pattern.exec(css)) !== null) {
-    vars[match[1]] = match[2].trim()
-  }
-  return vars
+/** Reads one custom property declared at :root in a block of theme CSS. */
+export function themeVar(css: string, name: string): string | undefined {
+  return new RegExp(`${name}\\s*:\\s*([^;}]+)`).exec(css)?.[1].trim()
 }
 
-/**
- * Replica las variables del tema sobre las que consume la UI.
- * Las que no tienen equivalente directo (muted-foreground, border, accent)
- * se derivan para no perder la jerarquía visual de la app.
- */
-function applyAppVars(vars: Record<string, string>): void {
-  const root = document.documentElement
-  const primary = vars["--color-primary"]
-  const accent = vars["--color-accent"]
-  const text = vars["--color-text"]
-
-  const set = (name: string, value: string | undefined) => {
-    if (value) root.style.setProperty(name, value)
-  }
-
-  set("--primary", primary)
-  set("--primary-foreground", vars["--color-on-primary"])
-  set("--background", vars["--color-bg"])
-  set("--foreground", text)
-  set("--card", vars["--color-surface"])
-  set("--card-foreground", text)
-  set("--popover", vars["--color-surface"])
-  set("--popover-foreground", text)
-  set("--input", vars["--color-surface"])
-  set("--muted", vars["--color-surface"])
-  set("--radius", vars["--radius"])
-
-  if (text) set("--muted-foreground", hexToRgba(text, 0.72))
-  if (accent) set("--accent", hexToRgba(accent, 0.15))
-  if (text) set("--accent-foreground", text)
-  if (primary) {
-    set("--border", hexToRgba(primary, 0.25))
-    set("--ring", primary)
-    set("--focus-ring", hexToRgba(primary, 0.4))
-  }
-
-  // La fuente del tema se aplica al body: `@theme inline` resuelve
-  // `font-sans` en tiempo de build, así que la variable no basta.
-  const bodyFont = vars["--font-body"]
-  if (bodyFont) document.body.style.fontFamily = bodyFont
-}
-
-/** Escribe el CSS en el head y aplica las variables a la app. */
+/** Puts the CSS in the document, loads its fonts and announces the change. */
 export function applyThemeCss(css: string): void {
-  ensureThemeStyle().textContent = css
-  applyAppVars(extractCssVars(css))
+  themeStyle().textContent = css
+  for (const name of ["--font-heading", "--font-body"]) {
+    const stack = themeVar(css, name)
+    if (stack) void loadFont(firstFamily(stack))
+  }
+  document.documentElement.dataset.button = themeVar(css, "--button-style") === "outline" ? "outline" : "solid"
+  window.dispatchEvent(new CustomEvent(THEME_APPLIED_EVENT))
 }
 
-/** Descarga el CSS publicado y lo deja en el head. */
+/** The color mode of the applied theme; "auto" until a theme says otherwise. */
+export function currentThemeMode(): ThemeMode {
+  const mode = getComputedStyle(document.documentElement).getPropertyValue("--theme-mode").trim()
+  return mode === "light" || mode === "dark" ? mode : "auto"
+}
+
+/** Downloads the published theme and applies it. */
 export async function loadPublicTheme(): Promise<void> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/public/theme.css`, {
       signal: AbortSignal.timeout(THEME_TIMEOUT_MS),
     })
-    if (!res.ok) return
-    applyThemeCss(await res.text())
+    if (res.ok) applyThemeCss(await res.text())
   } catch {
-    // Sin tema publicado (o backend caído): se sigue con los defaults.
+    // No published theme or backend down: keep the defaults.
   }
 }

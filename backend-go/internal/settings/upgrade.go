@@ -104,3 +104,22 @@ func NormalizeTheme(raw json.RawMessage) (Theme, error) {
 	err := json.Unmarshal(raw, &t)
 	return t, err
 }
+
+// LoadBusiness resolves the business data of a tenant from its settings row:
+// the saved data if any, else what legacy v1 documents carried, else defaults.
+func LoadBusiness(business, published, draft []byte) Business {
+	if len(business) > 0 {
+		var b Business
+		if json.Unmarshal(business, &b) == nil {
+			return b
+		}
+	}
+	for _, doc := range [][]byte{published, draft} {
+		if len(doc) > 0 && IsLegacy(doc) {
+			if _, b, err := UpgradeV1(doc); err == nil {
+				return b
+			}
+		}
+	}
+	return DefaultBusiness()
+}

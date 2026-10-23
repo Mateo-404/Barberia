@@ -1,16 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource/poppins/400.css";
-@import "@fontsource/poppins/500.css";
-@import "@fontsource/poppins/600.css";
-@import "@fontsource/poppins/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design tokens.
+ *
+ * The backend generates the business's palette (both color schemes) as the
+ * --color-* custom properties and loads them before React mounts (see
+ * lib/tenant-theme.ts). The semantic tokens below (--background, --primary…)
+ * are what Tailwind utilities read; the fallbacks after each var() are the
+ * classic dark theme, used only if the theme could not be fetched.
+ */
 @theme inline {
   --font-sans: var(--font-body, "Poppins", sans-serif);
-  --font-heading: "Poppins", sans-serif;
+  --font-heading: var(--font-heading, "Poppins", sans-serif);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -48,91 +53,117 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
 }
 
 :root {
-  --background: var(--color-bg, #1c1c1c);
-  --foreground: var(--color-text, #ffffff);
-  --card: var(--color-surface, #2c2c2c);
-  --card-foreground: #ffffff;
-  --popover: #2c2c2c;
-  --popover-foreground: #ffffff;
-  --primary: var(--color-primary, #ff6600);
-  --primary-foreground: var(--color-on-primary, #ffffff);
-  --secondary: #2c2c2c;
-  --secondary-foreground: #ffffff;
-  --muted: #2c2c2c;
-  --muted-foreground: #999999;
-  --accent: var(--color-accent, rgba(255, 102, 0, 0.1));
-  --accent-foreground: #ffffff;
-  --destructive: #dc3545;
-  --success: #28a745;
-  --warning: #ffc107;
-  --border: rgba(255, 102, 0, 0.2);
-  --input: #2c2c2c;
-  --ring: var(--color-primary, #ff6600);
-  --focus-ring: rgba(255, 102, 0, 0.4);
-  --radius: 0.75rem;
+  --radius: 8px;
   --nav-height: 4.5rem;
-  --chart-1: #ff6600;
-  --chart-2: #28a745;
-  --chart-3: #ffc107;
-  --chart-4: #dc3545;
-  --chart-5: #999999;
-  --sidebar: #2c2c2c;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ff6600;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 102, 0, 0.1);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 102, 0, 0.2);
-  --sidebar-ring: #ff6600;
+
+  --background: var(--color-bg, #161616);
+  --foreground: var(--color-text, #f4f0e8);
+  --card: var(--color-surface, #222222);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: var(--color-primary, #c9a24b);
+  --primary-foreground: var(--color-on-primary, #111111);
+  --secondary: var(--color-accent, #2a2a2a);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--color-accent, #2a2a2a);
+  --muted-foreground: var(--color-muted, #a8a39a);
+  --accent: var(--color-accent, #2a2a2a);
+  --accent-foreground: var(--foreground);
+  --border: var(--color-border, #3a3a3a);
+  --input: var(--card);
+  --ring: var(--primary);
+  --focus-ring: color-mix(in oklab, var(--primary) 45%, transparent);
+
+  /* Status colors are not themed: they keep their meaning in every palette. */
+  --destructive: #d6334a;
+  --success: #1e7e34;
+  --warning: #ffc107;
+
+  --chart-1: var(--primary);
+  --chart-2: #2fa67a;
+  --chart-3: #e0a82e;
+  --chart-4: #d6334a;
+  --chart-5: var(--muted-foreground);
+
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--primary);
 }
 
-
-.light {
-  --background: #f4f1ea;
-  --foreground: #1a1814;
+/*
+ * The theme editor and its siblings are tools, not part of the business's
+ * site: they keep a neutral palette so editing a color can never make the
+ * editor unreadable. Follows the system light/dark preference.
+ */
+.neutral-ui {
+  --radius: 8px;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --background: #f3f3f1;
+  --foreground: #1b1b1f;
   --card: #ffffff;
-  --card-foreground: #1a1814;
+  --card-foreground: #1b1b1f;
   --popover: #ffffff;
-  --popover-foreground: #1a1814;
-  --primary: var(--color-primary, #ff6600);
+  --popover-foreground: #1b1b1f;
+  --primary: #1b1b1f;
   --primary-foreground: #ffffff;
-  --secondary: #ece7dd;
-  --secondary-foreground: #1a1814;
-  --muted: #ece7dd;
-  --muted-foreground: #6b6660;
-  --accent: var(--color-accent, rgba(255, 102, 0, 0.08));
-  --accent-foreground: #1a1814;
-  --destructive: #dc3545;
-  --success: #28a745;
-  --warning: #ffc107;
-  --border: rgba(0, 0, 0, 0.1);
+  --secondary: #e8e8e5;
+  --secondary-foreground: #1b1b1f;
+  --muted: #e8e8e5;
+  --muted-foreground: #5b5b63;
+  --accent: #ebebe8;
+  --accent-foreground: #1b1b1f;
+  --border: #d9d9d4;
   --input: #ffffff;
-  --ring: var(--color-primary, #ff6600);
-  --focus-ring: rgba(255, 102, 0, 0.4);
-  --radius: var(--radius, 0.75rem);
-  --chart-1: #ff6600;
-  --chart-2: #28a745;
-  --chart-3: #ffc107;
-  --chart-4: #dc3545;
-  --chart-5: #999999;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1a1814;
-  --sidebar-primary: var(--color-primary, #ff6600);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 102, 0, 0.08);
-  --sidebar-accent-foreground: #1a1814;
-  --sidebar-border: rgba(0, 0, 0, 0.1);
-  --sidebar-ring: var(--color-primary, #ff6600);
+  --ring: #1b1b1f;
+  --focus-ring: rgba(27, 27, 31, 0.35);
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-body);
+}
+
+.neutral-ui h1,
+.neutral-ui h2,
+.neutral-ui h3 {
+  font-family: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .neutral-ui {
+    --background: #121214;
+    --foreground: #ececef;
+    --card: #1b1b1f;
+    --card-foreground: #ececef;
+    --popover: #1b1b1f;
+    --popover-foreground: #ececef;
+    --primary: #ececef;
+    --primary-foreground: #121214;
+    --secondary: #26262b;
+    --secondary-foreground: #ececef;
+    --muted: #26262b;
+    --muted-foreground: #a4a4ad;
+    --accent: #232328;
+    --accent-foreground: #ececef;
+    --border: #35353b;
+    --input: #1b1b1f;
+    --ring: #ececef;
+    --focus-ring: rgba(236, 236, 239, 0.4);
+  }
 }
 
 @layer base {
@@ -142,24 +173,26 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Poppins", sans-serif;
+    font-family: var(--font-body, "Poppins", sans-serif);
   }
 
-  html {
-    @apply font-sans;
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading, var(--font-body, "Poppins", sans-serif));
   }
 
   ::selection {
     background-color: var(--primary);
-    color: white;
+    color: var(--primary-foreground);
   }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
-    -webkit-text-fill-color: white;
-    -webkit-box-shadow: 0 0 0px 1000px var(--background) inset;
-    caret-color: white;
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+    caret-color: var(--foreground);
   }
 }
 
@@ -171,8 +204,19 @@
 
   .card-hover:hover {
     transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 102, 0, 0.3);
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--foreground) 12%, transparent);
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+  }
+
+  /* "outline" button style chosen in the theme: same action, lighter weight. */
+  [data-button="outline"] .btn-primary {
+    background: transparent;
+    color: var(--primary);
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+
+  [data-button="outline"] .btn-primary:hover {
+    background: var(--accent);
   }
 
   .page-enter {

@@ -98,13 +98,11 @@ func (s *Server) handleAppointmentCreate(w http.ResponseWriter, r *http.Request)
 	var v validator
 	var in appointments.Input
 	if v.required("startsAt", req.StartsAt) {
-		at, err := timeutil.ParseLocalDateTime(*req.StartsAt)
-		switch {
-		case err != nil:
+		// "In the future" is a business rule, checked in the business time
+		// zone by the service.
+		if at, err := timeutil.ParseLocalDateTime(*req.StartsAt); err != nil {
 			v.add("startsAt", codeInvalidDate)
-		case !at.After(s.now()):
-			v.add("startsAt", codeMustBeFuture)
-		default:
+		} else {
 			in.StartsAt = at
 		}
 	}

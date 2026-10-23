@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -8,8 +8,13 @@ import { useBookedSlots, useCreateAppointment } from "@/api/appointments"
 import { appointmentSchema, type AppointmentFormData } from "@/lib/schemas/appointment-schema"
 import { errorMessage, fieldErrorMessage } from "@/lib/error-message"
 import { formatCurrency, formatDate } from "@/lib/format"
-import { businessConfig, timeSlots } from "@/lib/business-config"
+import { timeSlots } from "@/lib/business-config"
+import { ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { InstagramIcon } from "@/components/InstagramIcon"
+import { SiteMark } from "@/components/SiteMark"
+import { usePublicSettings, useSiteIdentity } from "@/api/site"
+import { isPreview } from "@/lib/site-preview"
 import { todayInBusinessTz } from "@/lib/datetime"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +59,14 @@ export default function Booking() {
   } = useServices()
   const { data: bookedSlots } = useBookedSlots()
   const createAppointment = useCreateAppointment()
+  const site = useSiteIdentity()
+  const { data: publicSettings } = usePublicSettings()
+  const previewing = isPreview()
+  useEffect(() => {
+    if (site.name) document.title = `${site.name} — ${t("title")}`
+  }, [site.name, t])
+  const handle = publicSettings?.business.instagram.replace(/^@/, "")
+  const instagramUrl = handle ? `https://instagram.com/${handle}` : null
 
   const {
     register,
@@ -197,6 +210,7 @@ export default function Booking() {
   useRegisterShortcuts("customer", shortcutDefs)
 
   function onSubmit(data: AppointmentFormData) {
+    if (previewing) return
     createAppointment.mutate(
       { ...data, customerEmail: data.customerEmail || undefined },
       {
@@ -215,29 +229,34 @@ export default function Booking() {
       <nav className="flex items-center justify-between px-4" style={{ height: "var(--nav-height)" }}>
         {step > 0 ? (
           <button onClick={handleBack} className="bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-            <img src="/img/flecha.svg" alt={tc("back")} className="h-8" />
+            <ArrowLeft className="h-6 w-6 text-foreground" aria-label={tc("back")} />
           </button>
         ) : (
           <div className="w-8" />
         )}
-        <Link to="/" className="inline-flex" aria-label={businessConfig.branding.name}>
-          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.name} className="h-16" />
+        <Link to="/" className="inline-flex items-center" aria-label={site.name}>
+          <SiteMark />
         </Link>
-        <ThemeToggle />
-        <a
-          href={businessConfig.branding.instagramUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex"
-        >
-          <img src="/img/icono-instagram.svg" alt="Instagram" className="h-8" />
-        </a>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {instagramUrl && (
+            <a
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={tc("instagram")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              <InstagramIcon className="h-5 w-5" />
+            </a>
+          )}
+        </div>
       </nav>
 
       <main className="flex-1 px-4 pb-8 max-w-lg mx-auto w-full">
         <div className="text-center mb-6 page-enter">
           <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
+          <p className="text-sm text-muted-foreground mt-1">{site.tagline || t("subtitle")}</p>
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-8">
@@ -364,7 +383,7 @@ export default function Booking() {
                           type="button"
                           disabled={occupied}
                           onClick={() => setSelectedTime(time)}
-                          className={`px-4 sm:px-5 min-h-11 rounded-[20px] border-2 text-sm font-medium transition-all duration-200 ${
+                          className={`px-4 sm:px-5 min-h-11 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
                             occupied
                               ? "border-border bg-card text-muted-foreground line-through cursor-not-allowed opacity-50"
                               : selected
@@ -480,7 +499,7 @@ export default function Booking() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={createAppointment.isPending}
+                disabled={createAppointment.isPending || previewing}
                 className="flex-1"
               >
                 {createAppointment.isPending ? t("actions.submitting") : t("actions.submit")}

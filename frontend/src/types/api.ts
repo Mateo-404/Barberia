@@ -2681,6 +2681,7 @@ export interface components {
             draft: components["schemas"]["Theme"];
             publishedVersion: number;
             hash: string;
+            hasUnpublishedChanges: boolean;
             preferences: components["schemas"]["Preferences"];
         };
         DraftResult: {
@@ -2691,10 +2692,21 @@ export interface components {
             version: number;
             hash: string;
         };
+        Ratios: {
+            text: number;
+            muted: number;
+            primary: number;
+            onPrimary: number;
+        };
+        SchemeView: components["schemas"]["Scheme"] & {
+            ratios: components["schemas"]["Ratios"];
+        };
         PreviewResult: {
             css: string;
             hash: string;
             warnings: components["schemas"]["FieldProblem"][];
+            light: components["schemas"]["SchemeView"];
+            dark: components["schemas"]["SchemeView"];
         };
         Scheme: {
             bg: string;

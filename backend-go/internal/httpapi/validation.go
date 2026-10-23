@@ -26,7 +26,6 @@ const (
 	codeInvalidEmail   = "invalid_email"
 	codeTooLong        = "too_long"
 	codeTooShort       = "too_short"
-	codeMustBeFuture   = "must_be_future"
 	codeMustBePositive = "must_be_positive"
 	codeInvalidDate    = "invalid_datetime"
 )

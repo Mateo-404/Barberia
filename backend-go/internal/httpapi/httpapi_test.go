@@ -147,7 +147,7 @@ func TestMalformedJSONIs400(t *testing.T) {
 
 func TestAppointmentValidationListsEveryField(t *testing.T) {
 	rec := do(newTestServer(t, 5), http.MethodPost, "/api/appointments",
-		`{"startsAt":"2020-01-01T14:00:00","customerEmail":"not-an-email"}`, "")
+		`{"startsAt":"not-a-date","customerEmail":"not-an-email"}`, "")
 	p := decodeProblem(t, rec)
 	if rec.Code != http.StatusBadRequest || p.Code != "request.invalid_fields" {
 		t.Fatalf("status = %d problem = %+v", rec.Code, p)
@@ -157,7 +157,7 @@ func TestAppointmentValidationListsEveryField(t *testing.T) {
 		got[e.Field] = e.Code
 	}
 	want := map[string]string{
-		"startsAt":          codeMustBeFuture,
+		"startsAt":          codeInvalidDate,
 		"serviceId":         codeRequired,
 		"customerPhone":     codeRequired,
 		"customerFirstName": codeRequired,

@@ -1,105 +1,96 @@
 /**
- * API de la marca del negocio (SPEC §8).
- *
- * Todas las rutas cuelgan de `/api/admin/*` y requieren el Bearer del admin:
- * el `api-client` lo agrega automáticamente.
+ * Site settings of the business: the theme draft and its publishing, plus the
+ * owner's preferences for the admin panel. Every route lives under
+ * `/api/admin/*` and needs the admin's Bearer, which the api-client adds.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { api, ApiError } from "@/lib/api-client"
+import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
 import { useTenant } from "@/context/TenantContext"
-import type {
-  Settings,
-  SettingsAdminState,
-  SettingsDraftResponse,
-  SettingsPublishResponse,
-  SettingsValidationDetail,
-  SettingsVersion,
-} from "@/types/settings"
+import type { components } from "@/types/api"
 
-/** Opciones de la query del estado de marca (compartidas con `fetchQuery`). */
-export function adminSettingsQueryOptions(tenant: string) {
+export type Theme = components["schemas"]["Theme"]
+export type SettingsState = components["schemas"]["SettingsState"]
+export type Preferences = components["schemas"]["Preferences"]
+export type DraftResult = components["schemas"]["DraftResult"]
+export type PublishResult = components["schemas"]["PublishResult"]
+export type SettingsVersion = components["schemas"]["SettingsVersion"]
+
+/** Query options of the settings state (shared with `fetchQuery`). */
+export function settingsQueryOptions(tenant: string) {
   return {
     queryKey: queryKeys.settings.admin(tenant),
-    queryFn: ({ signal }: { signal: AbortSignal }) =>
-      api<SettingsAdminState>("/api/admin/settings", { signal }),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api<SettingsState>("/api/admin/settings", { signal }),
   }
 }
 
 /**
- * Estado de la marca del negocio.
- *
- * `enabled: false` evita pedirla sin sesión (p. ej. en la pantalla de login,
- * donde sólo se consulta una vez autenticado).
+ * Draft, preferences and publish state. `enabled: false` avoids asking
+ * without a session (e.g. on the login screen).
  */
 export function useAdminSettings(options: { enabled?: boolean } = {}) {
   const tenant = useTenant()
-  return useQuery({
-    ...adminSettingsQueryOptions(tenant),
-    enabled: options.enabled ?? true,
-  })
+  return useQuery({ ...settingsQueryOptions(tenant), enabled: options.enabled ?? true })
 }
 
-/** Guarda el borrador. No cambia el sitio público. */
+/** Saves the draft. The public site does not change until it is published. */
 export function useSaveDraft() {
   const tenant = useTenant()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (settings: Settings) =>
-      api<SettingsDraftResponse>("/api/admin/settings/draft", {
-        method: "PUT",
-        body: JSON.stringify(settings),
-      }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) })
-    },
+    mutationFn: (theme: Theme) =>
+      api<DraftResult>("/api/admin/settings/draft", { method: "PUT", body: JSON.stringify(theme) }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) }),
   })
 }
 
-/** Publica el borrador: crea la versión N+1 y marca `onboarded = true`. */
-export function usePublishSettings() {
+/** Publishes the draft as version N+1 and marks the business as onboarded. */
+export function usePublish() {
   const tenant = useTenant()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () =>
-      api<SettingsPublishResponse>("/api/admin/settings/publish", { method: "POST" }),
+    mutationFn: () => api<PublishResult>("/api/admin/settings/publish", { method: "POST" }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versions(tenant) })
+      void queryClient.invalidateQueries({ queryKey: ["public-settings", tenant] })
     },
   })
 }
 
-/** Últimas versiones publicadas. */
-export function useSettingsVersions() {
+/** Last published versions. */
+export function useVersions(enabled = true) {
   const tenant = useTenant()
   return useQuery({
     queryKey: queryKeys.settings.versions(tenant),
-    queryFn: ({ signal }: { signal: AbortSignal }) =>
-      api<SettingsVersion[]>("/api/admin/settings/versions", { signal }),
+    queryFn: ({ signal }) => api<SettingsVersion[]>("/api/admin/settings/versions", { signal }),
+    enabled,
   })
 }
 
-/** Restaura una versión: el backend crea una versión nueva con ese contenido. */
-export function useRollbackSettings() {
+/** Restores a version: the backend publishes a new one with that content. */
+export function useRollback() {
   const tenant = useTenant()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (version: number) =>
-      api<SettingsPublishResponse>("/api/admin/settings/rollback", {
-        method: "POST",
-        body: JSON.stringify({ version }),
-      }),
+      api<PublishResult>("/api/admin/settings/rollback", { method: "POST", body: JSON.stringify({ version }) }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.versions(tenant) })
+      void queryClient.invalidateQueries({ queryKey: ["public-settings", tenant] })
     },
   })
 }
 
-/** Field errors of a 422 response, as `{ field, message }` where message is the code. */
-export function validationDetails(error: unknown): SettingsValidationDetail[] {
-  if (!(error instanceof ApiError)) return []
-  return error.fieldErrors.map((e) => ({ field: e.field, message: e.code }))
+/** Switches the theme editor menu and the welcome wizard on or off. */
+export function useUpdatePreferences() {
+  const tenant = useTenant()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (patch: Partial<Preferences>) =>
+      api<Preferences>("/api/admin/settings/preferences", { method: "PATCH", body: JSON.stringify(patch) }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: queryKeys.settings.admin(tenant) }),
+  })
 }

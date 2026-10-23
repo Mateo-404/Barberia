@@ -8,7 +8,8 @@ import { safeInternalPath } from "@/lib/paths"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 import { loginSchema, type LoginFormData } from "@/lib/schemas/login-schema"
-import { businessConfig } from "@/lib/business-config"
+import { SiteMark } from "@/components/SiteMark"
+import { useSiteIdentity } from "@/api/site"
 import { errorMessage, fieldErrorMessage } from "@/lib/error-message"
 import { useAdminSettings } from "@/api/settings"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ export default function Login() {
   const { t } = useTranslation("admin")
   const { t: tc } = useTranslation()
   const { t: ts } = useTranslation("shortcuts")
+  const site = useSiteIdentity()
   const { login, isAuthenticated } = useAuth()
   // Brand state: only queried once signed in.
   const settingsQuery = useAdminSettings({ enabled: isAuthenticated })
@@ -31,7 +33,8 @@ export default function Login() {
   useEffect(() => {
     if (!isAuthenticated) return
     if (settingsQuery.isLoading) return
-    const target = settingsQuery.data?.onboarded === false ? "/onboarding" : from
+    const prefs = settingsQuery.data
+    const target = prefs && !prefs.onboarded && prefs.preferences.onboardingEnabled ? "/welcome" : from
     navigate(target, { replace: true })
   }, [isAuthenticated, settingsQuery.isLoading, settingsQuery.data, from, navigate])
 
@@ -78,7 +81,7 @@ export default function Login() {
     <main className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-sm space-y-6 page-enter">
         <div className="text-center space-y-2">
-          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.name} className="mx-auto h-16 sm:h-20 mb-4" />
+          <SiteMark className="mx-auto mb-4 text-3xl" imageClassName="h-16 sm:h-20" />
           <h1 className="text-xl font-bold text-foreground">{t("login.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
         </div>
@@ -142,7 +145,7 @@ export default function Login() {
           <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">
             {t("login.home")}
           </a>
-          <p className="text-xs text-muted-foreground">{t("login.rights", { year: new Date().getFullYear(), name: businessConfig.branding.name })}</p>
+          <p className="text-xs text-muted-foreground">{t("login.rights", { year: new Date().getFullYear(), name: site.name })}</p>
         </div>
       </div>
     </main>

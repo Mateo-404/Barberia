@@ -1,20 +1,17 @@
 import type { TFunction } from "i18next"
 import { ApiError } from "@/lib/api-client"
-
-type LooseT = (key: string, options?: Record<string, unknown>) => string
+import { loose } from "@/lib/i18n-loose"
 
 /** Translated, user-facing message for any error the UI can catch. */
 export function errorMessage(t: TFunction, err: unknown): string {
-  const loose = t as unknown as LooseT
-  const fallback = loose("unknown", { ns: "errors" })
+    const fallback = loose(t)("unknown", { ns: "errors" })
   if (!(err instanceof ApiError)) return fallback
-  return loose(err.code, { ns: "errors", defaultValue: fallback, ...err.params })
+  return loose(t)(err.code, { ns: "errors", defaultValue: fallback, ...err.params })
 }
 
 /** Translated message for one field-level validation code ("required", …). */
 export function fieldErrorMessage(t: TFunction, code: string): string {
-  const loose = t as unknown as LooseT
-  return loose(`field.${code}`, { ns: "errors", defaultValue: loose("field.invalid_value", { ns: "errors" }) })
+    return loose(t)(`field.${code}`, { ns: "errors", defaultValue: loose(t)("field.invalid_value", { ns: "errors" }) })
 }
 
 /** Field errors of a 400/422 response keyed by field path ("customerPhone"). */

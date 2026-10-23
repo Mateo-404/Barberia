@@ -4,17 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1c1c1c" />
     <!--
-      connect-src se inyecta en build-time por vite.config.ts: origen de
-      VITE_API_BASE_URL + orígenes extra de VITE_CSP_CONNECT_SRC (ver .env.example).
+      connect-src is injected at build time by vite.config.ts: the origin of
+      VITE_API_BASE_URL plus the extra origins of VITE_CSP_CONNECT_SRC
+      (see .env.example). Logos may be https URLs, hence img-src https:.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' __CSP_CONNECT_SRC__; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' __CSP_CONNECT_SRC__; base-uri 'self'; form-action 'self'"
     />
-    <meta name="description" content="TH Barber Club — reservá tu turno online en segundos." />
-    <title>TH Barber Club — Reserva tu turno</title>
+    <meta name="description" content="Online appointment booking." />
+    <title>Reservas</title>
   </head>
   <body>
     <div id="root"></div>

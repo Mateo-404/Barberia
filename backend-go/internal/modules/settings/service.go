@@ -43,7 +43,10 @@ type State struct {
 	Draft            settings.Theme `json:"draft"`
 	PublishedVersion int32          `json:"publishedVersion"`
 	Hash             string         `json:"hash"`
-	Preferences      Preferences    `json:"preferences"`
+	// HasUnpublishedChanges is true when the draft differs from what the
+	// public site shows.
+	HasUnpublishedChanges bool        `json:"hasUnpublishedChanges"`
+	Preferences           Preferences `json:"preferences"`
 }
 
 // Version is one history entry.
@@ -65,11 +68,20 @@ type PublishResult struct {
 	Hash    string `json:"hash"`
 }
 
-// PreviewResult is the stylesheet of an unsaved theme.
+// SchemeView is a generated scheme with how readable it is.
+type SchemeView struct {
+	settings.Scheme
+	Ratios settings.Ratios `json:"ratios"`
+}
+
+// PreviewResult is the stylesheet of an unsaved theme plus the palettes it
+// generates, so the editor can show swatches and contrast.
 type PreviewResult struct {
 	CSS      string            `json:"css"`
 	Hash     string            `json:"hash"`
 	Warnings []settings.Detail `json:"warnings"`
+	Light    SchemeView        `json:"light"`
+	Dark     SchemeView        `json:"dark"`
 }
 
 // PresetView is a preset with its generated palettes, for the gallery.
@@ -153,8 +165,9 @@ func (s *Service) GetAdmin(ctx context.Context, tenantID int64) (*State, error) 
 			hash = themeHash(loadTheme(row.Published))
 		}
 		out = &State{
-			Onboarded: row.Onboarded, Draft: draft, PublishedVersion: row.PublishedVersion,
-			Hash: hash, Preferences: rowPreferences(row.ThemeEditorEnabled, row.OnboardingEnabled),
+			Onboarded: row.Onboarded, Draft: draft, PublishedVersion: row.PublishedVersion, Hash: hash,
+			HasUnpublishedChanges: len(row.Published) == 0 || !bytes.Equal(canonical(loadTheme(row.Published)), canonical(draft)),
+			Preferences:           rowPreferences(row.ThemeEditorEnabled, row.OnboardingEnabled),
 		}
 		return nil
 	})
@@ -186,7 +199,11 @@ func (s *Service) Preview(raw json.RawMessage) (*PreviewResult, error) {
 		return nil, &ValidationError{Details: res.Details}
 	}
 	css := settings.RenderCSS(res.Theme)
-	return &PreviewResult{CSS: css, Hash: settings.Hash(css), Warnings: res.Warnings}, nil
+	light, dark := settings.Generate(res.Theme.Brand, res.Theme.Overrides)
+	return &PreviewResult{
+		CSS: css, Hash: settings.Hash(css), Warnings: res.Warnings,
+		Light: SchemeView{light, settings.RatiosOf(light)}, Dark: SchemeView{dark, settings.RatiosOf(dark)},
+	}, nil
 }
 
 // Presets lists the starting points with their generated palettes.
@@ -302,23 +319,8 @@ func (s *Service) UpdatePreferences(ctx context.Context, tenantID int64, themeEd
 	return out, err
 }
 
-// businessOf reads the business data of a row, falling back to the data the
-// legacy v1 documents carried and finally to the defaults.
 func businessOf(row sqlc.TenantSetting) settings.Business {
-	if len(row.Business) > 0 {
-		var b settings.Business
-		if json.Unmarshal(row.Business, &b) == nil {
-			return b
-		}
-	}
-	for _, doc := range [][]byte{row.Published, row.Draft} {
-		if len(doc) > 0 && settings.IsLegacy(doc) {
-			if _, b, err := settings.UpgradeV1(doc); err == nil {
-				return b
-			}
-		}
-	}
-	return settings.DefaultBusiness()
+	return settings.LoadBusiness(row.Business, row.Published, row.Draft)
 }
 
 // GetBusiness returns the tenant's business data.

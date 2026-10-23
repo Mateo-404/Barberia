@@ -93,7 +93,8 @@ func TestBookingRules(t *testing.T) {
 	}{
 		{"13:00", "", 201},
 		{"13:30", "", 201},
-		{"20:00", "", 201},
+		{"19:30", "", 201}, // the last slot ends at closing time
+		{"20:00", "appointment.outside_hours", 400},
 		{"12:30", "appointment.outside_hours", 400},
 		{"20:30", "appointment.outside_hours", 400},
 		{"14:15", "appointment.invalid_interval", 400},
@@ -110,7 +111,10 @@ func TestBookingRules(t *testing.T) {
 	}
 
 	past := time.Now().AddDate(0, 0, -1)
-	e.call(t, http.MethodPost, "/api/appointments", bookingBody(past, serviceID, "1150000000", "V", "P"), "").expect(400, "past date")
+	if code := e.call(t, http.MethodPost, "/api/appointments", bookingBody(past, serviceID, "1150000000", "V", "P"), "").
+		expect(400, "past date").problemCode(); code != "appointment.in_the_past" {
+		t.Fatalf("code = %q", code)
+	}
 
 	if code := e.call(t, http.MethodPost, "/api/appointments", bookingBody(futureAt(6, 14, 0), 9999, "1150000000", "V", "P"), "").
 		expect(404, "unknown service").problemCode(); code != "service.not_found" {
@@ -482,5 +486,33 @@ func TestBookedSlotsAreTenantScoped(t *testing.T) {
 		if len(slots) != 1 {
 			t.Fatalf("host %q sees %v, want exactly its own slot", host, slots)
 		}
+	}
+}
+
+// The owner's business hours drive what can be booked.
+func TestBookingFollowsTheBusinessHours(t *testing.T) {
+	e := newEnv(t)
+	token := e.ownerToken(t)
+	serviceID := e.createService(t, token, "Cut", 5000)
+	e.call(t, http.MethodPut, "/api/admin/business",
+		`{"whatsapp":"","instagram":"","address":"","currency":"ARS","slot":60,"notice":0,"open":"09:00","close":"12:00","tz":"America/Argentina/Buenos_Aires"}`,
+		token).expect(200, "save business")
+
+	day := futureAt(6, 0, 0)
+	book := func(hour, minute int, phone string) response {
+		at := time.Date(day.Year(), day.Month(), day.Day(), hour, minute, 0, 0, time.Local)
+		return e.call(t, http.MethodPost, "/api/appointments", bookingBody(at, serviceID, phone, "N", "A"), "")
+	}
+	book(9, 0, "1160000001").expect(201, "09:00 is the first slot")
+	book(11, 0, "1160000002").expect(201, "11:00 is the last slot")
+	if code := book(12, 0, "1160000003").expect(400, "12:00").problemCode(); code != "appointment.outside_hours" {
+		t.Fatalf("code = %q", code)
+	}
+	if code := book(9, 30, "1160000004").expect(400, "09:30").problemCode(); code != "appointment.invalid_interval" {
+		t.Fatalf("code = %q", code)
+	}
+	// The old hardcoded 13:00 hour is now closed.
+	if code := book(14, 0, "1160000005").expect(400, "14:00").problemCode(); code != "appointment.outside_hours" {
+		t.Fatalf("code = %q", code)
 	}
 }

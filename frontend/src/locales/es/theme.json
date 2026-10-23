@@ -1,1 +1,165 @@
-{}
+{
+  "title": "Editor de tema",
+  "loading": "Abriendo el editor…",
+  "sidebar": "Opciones del tema",
+  "exit": {
+    "label": "Salir",
+    "discard": "No se pudieron guardar los últimos cambios. ¿Salir igual y descartarlos?"
+  },
+  "status": {
+    "saved": "Guardado",
+    "dirty": "Cambios sin guardar",
+    "saving": "Guardando…",
+    "error": "No se pudo guardar",
+    "published": "Publicado"
+  },
+  "device": {
+    "label": "Dispositivo",
+    "mobile": "Celular",
+    "desktop": "Escritorio"
+  },
+  "scheme": {
+    "label": "Ver en modo",
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
+  "preview": {
+    "title": "Vista previa de tu sitio de reservas",
+    "loading": "Cargando la vista previa…"
+  },
+  "warnings": {
+    "lowContrast": "Algunos colores tienen poco contraste y el texto puede costar leerse."
+  },
+  "sections": {
+    "presets": "Tema",
+    "color": "Color",
+    "typography": "Tipografía",
+    "shape": "Formas",
+    "identity": "Identidad"
+  },
+  "presets": {
+    "custom": "Personalizado",
+    "loadError": "No pudimos cargar los temas.",
+    "sampleButton": "Reservar",
+    "names": {
+      "classic": "Clásico",
+      "vintage": "Vintage",
+      "minimal": "Minimal",
+      "urban": "Urbano",
+      "natural": "Natural",
+      "navy": "Marino"
+    },
+    "descriptions": {
+      "classic": "Oscuro con dorado",
+      "vintage": "Claro y burdeos",
+      "minimal": "Limpio y sobrio",
+      "urban": "Oscuro y filoso",
+      "natural": "Claro y suave",
+      "navy": "Se adapta al sistema"
+    }
+  },
+  "color": {
+    "brand": "Color de marca",
+    "brandHint": "Elegí uno solo: generamos el resto de la paleta, con buen contraste en modo claro y oscuro.",
+    "mode": "Modo del sitio",
+    "modes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "auto": "Automático"
+    },
+    "modeHints": {
+      "light": "Tu sitio siempre se ve claro.",
+      "dark": "Tu sitio siempre se ve oscuro.",
+      "auto": "Cada cliente lo ve como tiene configurado su dispositivo, y puede cambiarlo."
+    },
+    "showAdvanced": "Ajustar colores uno por uno",
+    "hideAdvanced": "Ocultar el ajuste fino",
+    "scheme": "Modo a ajustar",
+    "tokens": {
+      "bg": "Fondo",
+      "surface": "Superficie",
+      "text": "Texto",
+      "primary": "Principal",
+      "accent": "Realce"
+    },
+    "grades": {
+      "aaa": "AAA",
+      "aa": "AA",
+      "low": "Bajo"
+    },
+    "ratio": "Contraste {{ratio}} a 1",
+    "reset": "Restablecer",
+    "advancedHint": "Si cambiás un color a mano, dejamos de generarlo. «Restablecer» vuelve al automático."
+  },
+  "typography": {
+    "pairs": "Combinaciones de tipografía",
+    "sampleHeading": "Corte y barba",
+    "sampleBody": "Reservá tu turno en segundos.",
+    "showSeparate": "Elegir cada tipografía por separado",
+    "hideSeparate": "Ocultar la elección por separado",
+    "heading": "Títulos",
+    "body": "Textos"
+  },
+  "shape": {
+    "radius": "Redondeo de los bordes",
+    "radiusHint": "Afecta botones, tarjetas y campos.",
+    "button": "Estilo del botón principal",
+    "solid": "Relleno",
+    "outline": "Contorno",
+    "sample": "Reservar"
+  },
+  "identity": {
+    "name": "Nombre del negocio",
+    "tagline": "Frase corta",
+    "taglinePlaceholder": "Corte clásico, estilo propio",
+    "logo": "Logo",
+    "uploadLogo": "Subir logo",
+    "replaceLogo": "Cambiar logo",
+    "removeLogo": "Quitar",
+    "logoHint": "PNG, JPG o WebP, hasta 300 KB. Sin logo se muestra el nombre.",
+    "logoType": "El logo tiene que ser PNG, JPG o WebP.",
+    "logoSize": "El logo no puede pesar más de 300 KB.",
+    "logoRead": "No pudimos leer el archivo. Probá con otro."
+  },
+  "publish": {
+    "action": "Publicar",
+    "title": "¿Publicar el nuevo diseño?",
+    "body": "Tus clientes van a ver estos cambios apenas publiques. Podés volver a una versión anterior cuando quieras.",
+    "warnings": "Antes de publicar, tené en cuenta:",
+    "confirm": "Publicar",
+    "publishing": "Publicando…",
+    "failed": "No se pudo publicar. Intentá de nuevo."
+  },
+  "versions": {
+    "open": "Historial",
+    "title": "Versiones publicadas",
+    "loadError": "No pudimos cargar el historial.",
+    "empty": "Todavía no publicaste ninguna versión.",
+    "version": "Versión {{number}}",
+    "current": "En línea",
+    "restore": "Restaurar",
+    "confirmRestore": "Confirmar",
+    "restoring": "Restaurando…",
+    "hint": "Restaurar publica esa versión como una nueva; el historial no se borra."
+  },
+  "welcome": {
+    "step": "Paso {{current}} de {{total}}",
+    "skip": "Saltar y no volver a mostrar",
+    "next": "Siguiente",
+    "identity": {
+      "title": "Contanos de tu barbería",
+      "body": "Así van a verte tus clientes cuando reserven."
+    },
+    "style": {
+      "title": "Elegí un estilo",
+      "body": "Es solo un punto de partida: después podés ajustar cada detalle."
+    },
+    "done": {
+      "title": "Todo listo",
+      "body": "Revisá la vista previa y publicá cuando quieras.",
+      "summary": "«{{name}}» va a salir con el estilo {{style}}. Podés cambiar cualquier cosa más tarde desde Ajustes → Tema.",
+      "customize": "Personalizar más",
+      "publish": "Publicar y entrar al panel"
+    }
+  }
+}

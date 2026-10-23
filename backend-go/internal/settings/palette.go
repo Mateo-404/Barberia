@@ -44,7 +44,7 @@ func Generate(brand string, overrides Overrides) (light, dark Scheme) {
 }
 
 func buildScheme(brand oklch, a anchors, dark bool, over TokenOverrides) Scheme {
-	tint := math.Min(brand.C*0.15, 0.02)
+	tint := math.Min(brand.C*0.10, 0.012)
 	neutral := func(l, chroma float64) string { return hexOf(oklch{L: l, C: chroma, H: brand.H}) }
 
 	s := Scheme{
@@ -109,4 +109,27 @@ func mutedText(text, bg string) string {
 		}
 	}
 	return text
+}
+
+// Ratios are the WCAG contrast ratios of the pairs the interface relies on,
+// so the editor can show them without reimplementing the formula.
+type Ratios struct {
+	Text      float64 `json:"text"`
+	Muted     float64 `json:"muted"`
+	Primary   float64 `json:"primary"`
+	OnPrimary float64 `json:"onPrimary"`
+}
+
+// RatiosOf measures a scheme.
+func RatiosOf(s Scheme) Ratios {
+	ratio := func(fg, bg string) float64 {
+		r, _ := Contrast(fg, bg)
+		return math.Round(r*10) / 10
+	}
+	return Ratios{
+		Text:      ratio(s.Text, s.Bg),
+		Muted:     ratio(s.Muted, s.Bg),
+		Primary:   ratio(s.Primary, s.Bg),
+		OnPrimary: ratio(s.OnPrimary, s.Primary),
+	}
 }

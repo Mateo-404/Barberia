@@ -3411,6 +3411,9 @@
           "hash": {
             "type": "string"
           },
+          "hasUnpublishedChanges": {
+            "type": "boolean"
+          },
           "preferences": {
             "$ref": "#/components/schemas/Preferences"
           }
@@ -3420,6 +3423,7 @@
           "draft",
           "publishedVersion",
           "hash",
+          "hasUnpublishedChanges",
           "preferences"
         ]
       },
@@ -3456,6 +3460,47 @@
           "hash"
         ]
       },
+      "Ratios": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "number"
+          },
+          "muted": {
+            "type": "number"
+          },
+          "primary": {
+            "type": "number"
+          },
+          "onPrimary": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "text",
+          "muted",
+          "primary",
+          "onPrimary"
+        ]
+      },
+      "SchemeView": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Scheme"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ratios": {
+                "$ref": "#/components/schemas/Ratios"
+              }
+            },
+            "required": [
+              "ratios"
+            ]
+          }
+        ]
+      },
       "PreviewResult": {
         "type": "object",
         "properties": {
@@ -3470,12 +3515,20 @@
             "items": {
               "$ref": "#/components/schemas/FieldProblem"
             }
+          },
+          "light": {
+            "$ref": "#/components/schemas/SchemeView"
+          },
+          "dark": {
+            "$ref": "#/components/schemas/SchemeView"
           }
         },
         "required": [
           "css",
           "hash",
-          "warnings"
+          "warnings",
+          "light",
+          "dark"
         ]
       },
       "Scheme": {

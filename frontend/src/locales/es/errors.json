@@ -31,7 +31,9 @@
   "appointment": {
     "slot_taken": "Ese horario ya fue reservado. Elegí otro.",
     "outside_hours": "El horario debe estar entre las {{open}} y las {{close}}.",
-    "invalid_interval": "El horario debe ser en intervalos de {{minutes}} minutos."
+    "invalid_interval": "El horario debe ser en intervalos de {{minutes}} minutos.",
+    "in_the_past": "Ese horario ya pasó. Elegí uno futuro.",
+    "too_soon": "Hay que reservar con al menos {{hours}} hora(s) de anticipación."
   },
   "service": {
     "not_found": "El servicio elegido ya no existe."

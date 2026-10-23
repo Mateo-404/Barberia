@@ -4,7 +4,8 @@ import { useTheme } from "@/context/ThemeContext"
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const { t } = useTranslation()
-  const { resolved, toggle } = useTheme()
+  const { resolved, toggle, canToggle } = useTheme()
+  if (!canToggle) return null
   return (
     <button
       type="button"

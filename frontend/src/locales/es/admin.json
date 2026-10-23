@@ -212,6 +212,40 @@
         "description": "Sesiones activas y rotación de credenciales.",
         "action": "Ver"
       }
+    },
+    "panel": {
+      "title": "Opciones del panel",
+      "subtitle": "Elegí qué herramientas querés ver. Apagarlas no cambia tu sitio publicado.",
+      "themeEditor": {
+        "title": "Editor de tema",
+        "description": "Muestra «Tema» en el menú para cambiar colores, tipografía y logo."
+      },
+      "onboarding": {
+        "title": "Asistente de bienvenida",
+        "description": "Muestra la guía de configuración inicial hasta que publiques tu sitio."
+      }
     }
+  },
+  "business": {
+    "title": "Datos del negocio",
+    "subtitle": "Se guardan al instante y no necesitan publicarse.",
+    "contact": "Contacto",
+    "hours": "Atención",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "address": "Dirección",
+    "currency": "Moneda",
+    "slot": "Duración de cada turno (minutos)",
+    "notice": "Anticipación mínima (horas)",
+    "open": "Apertura",
+    "close": "Cierre",
+    "tz": "Zona horaria",
+    "instagramPlaceholder": "@tubarberia",
+    "whatsappPlaceholder": "+54 9 3492 123456",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "saved": "Cambios guardados",
+    "back": "Volver a ajustes",
+    "loadError": "No pudimos cargar los datos del negocio."
   }
 }

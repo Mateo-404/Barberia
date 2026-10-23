@@ -3,13 +3,13 @@ import { useTranslation } from "react-i18next"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { useAdminSettings } from "@/api/settings"
-import { safeLogoSrc } from "@/lib/settings"
+import { useSiteIdentity } from "@/api/site"
 import { cn } from "@/lib/utils"
-import { businessConfig } from "@/lib/business-config"
+import { SiteMark } from "@/components/SiteMark"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
-import { Settings, LogOut, Store, LayoutDashboard } from "lucide-react"
+import { ArrowLeft, Settings, LogOut, Store, LayoutDashboard } from "lucide-react"
 
 const NAV_ITEMS = [
   { to: "/admin", key: "dashboard", hotkey: "Shift+g" },
@@ -26,7 +26,8 @@ export default function AdminLayout() {
   const { admin, logout } = useAuth()
   const { data: settingsState } = useAdminSettings()
   const navigate = useNavigate()
-  const logoSrc = safeLogoSrc(settingsState?.draft?.logo ?? "")
+  const logoSrc = useSiteIdentity().logo
+  const themeEditorEnabled = settingsState?.preferences.themeEditorEnabled !== false
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -46,12 +47,18 @@ export default function AdminLayout() {
     }
   }, [menuOpen])
 
+  // The theme editor menu is optional (Settings → Theme).
+  const navItems = useMemo(
+    () => NAV_ITEMS.filter((item) => item.key !== "theme" || themeEditorEnabled),
+    [themeEditorEnabled],
+  )
+
   const hotkeyMap = useMemo(
     () => ({
       "Shift+g": () => navigate("/admin"),
       "Shift+e": () => navigate("/admin/stats"),
       "Shift+t": () => navigate("/admin/appointments"),
-      "Shift+m": () => navigate("/admin/theme"),
+      ...(themeEditorEnabled ? { "Shift+m": () => navigate("/admin/theme") } : {}),
       "Shift+s": () => navigate("/admin/settings"),
       "Shift+h": () => navigate("/"),
       "Ctrl+Shift+q": () => {
@@ -59,18 +66,18 @@ export default function AdminLayout() {
         navigate("/login")
       },
     }),
-    [navigate, logout],
+    [navigate, logout, themeEditorEnabled],
   )
 
   useHotkeys(hotkeyMap, true, { ignoreWhenDialogOpen: true })
 
   const navDefs = useMemo(
     () => [
-      ...NAV_ITEMS.map((item) => ({ key: item.hotkey, description: ts(`admin.go.${item.key}`) })),
+      ...navItems.map((item) => ({ key: item.hotkey, description: ts(`admin.go.${item.key}`) })),
       { key: "Shift+h", description: ts("admin.go.site") },
       { key: "Ctrl+Shift+q", description: ts("admin.logout") },
     ],
-    [ts],
+    [ts, navItems],
   )
   useRegisterShortcuts("admin", navDefs)
 
@@ -88,11 +95,11 @@ export default function AdminLayout() {
         style={{ height: "var(--nav-height)" }}
       >
         <button onClick={() => navigate("/")} className="bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-          <img src="/img/flecha.svg" alt={tc("back")} className="h-8" />
+          <ArrowLeft className="h-6 w-6 text-foreground" aria-label={tc("back")} />
         </button>
 
-        <Link to="/" className="inline-flex" aria-label={businessConfig.branding.name}>
-          <img src={businessConfig.branding.logoSrc} alt={businessConfig.branding.name} className="h-16" />
+        <Link to="/" className="inline-flex items-center">
+          <SiteMark />
         </Link>
 
         <ThemeToggle />
@@ -148,7 +155,7 @@ export default function AdminLayout() {
 
       <div className="flex flex-col gap-2 px-4 mb-4">
         <nav className="flex gap-1 bg-card rounded-xl p-1 border border-border overflow-x-auto">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -167,7 +174,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <span key={item.to}>
               <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">{item.hotkey}</kbd> {t(`nav.${item.key}`)}
             </span>
