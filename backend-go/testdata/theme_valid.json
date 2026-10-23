@@ -1,0 +1,116 @@
+{
+  "_doc": "Valid theme documents: 'base' plus variants. A variant's 'patch' is a JSON Merge Patch (RFC 7396) over base.",
+  "base": {
+    "v": 2,
+    "name": "Barbería Don Mateo",
+    "tagline": "Corte clásico, estilo propio",
+    "logo": "",
+    "preset": "classic",
+    "mode": "dark",
+    "brand": "#c9a24b",
+    "font": {
+      "heading": "Playfair Display",
+      "body": "Inter"
+    },
+    "shape": {
+      "radius": 8,
+      "button": "solid"
+    },
+    "overrides": {
+      "light": {},
+      "dark": {}
+    }
+  },
+  "variants": [
+    {
+      "name": "script_in_name_is_plain_text",
+      "patch": {
+        "name": "<script>alert(1)</script>",
+        "tagline": "\"><img src=x onerror=alert(1)>"
+      }
+    },
+    {
+      "name": "emoji_and_accents",
+      "patch": {
+        "name": "Peluquería Ñandú ✂️"
+      }
+    },
+    {
+      "name": "name_60_chars",
+      "patch": {
+        "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "name": "logo_https",
+      "patch": {
+        "logo": "https://cdn.example.com/logo.png"
+      }
+    },
+    {
+      "name": "logo_data_png",
+      "patch": {
+        "logo": "data:image/png;base64,iVBORw0KGgo="
+      }
+    },
+    {
+      "name": "radius_zero",
+      "patch": {
+        "shape": {
+          "radius": 0
+        }
+      }
+    },
+    {
+      "name": "radius_max",
+      "patch": {
+        "shape": {
+          "radius": 24
+        }
+      }
+    },
+    {
+      "name": "outline_button",
+      "patch": {
+        "shape": {
+          "button": "outline"
+        }
+      }
+    },
+    {
+      "name": "light_mode",
+      "patch": {
+        "mode": "light"
+      }
+    },
+    {
+      "name": "auto_mode",
+      "patch": {
+        "mode": "auto"
+      }
+    },
+    {
+      "name": "custom_preset",
+      "patch": {
+        "preset": "custom"
+      }
+    },
+    {
+      "name": "uppercase_brand_is_normalized",
+      "patch": {
+        "brand": "#C9A24B"
+      }
+    },
+    {
+      "name": "readable_overrides",
+      "patch": {
+        "overrides": {
+          "dark": {
+            "bg": "#101820",
+            "text": "#f0f0f0"
+          }
+        }
+      }
+    }
+  ]
+}

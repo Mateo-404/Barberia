@@ -1,0 +1,30 @@
+{
+  "_doc": "A settings v1 document as stored before the theme v2 migration.",
+  "document": {
+    "name": "Barbería Don Mateo",
+    "tagline": "Corte clásico, estilo propio",
+    "logo": "",
+    "c": {
+      "primary": "#c9a24b",
+      "accent": "#e8d9a8",
+      "bg": "#161616",
+      "surface": "#222222",
+      "text": "#f4f0e8"
+    },
+    "hf": "Playfair Display",
+    "bf": "Inter",
+    "r": 8,
+    "btn": "solid",
+    "biz": {
+      "whatsapp": "+54 9 3492 123456",
+      "instagram": "@donmateo",
+      "address": "Bv. Santa Fe 123, Rafaela",
+      "currency": "ARS",
+      "slot": 30,
+      "notice": 1,
+      "open": "09:00",
+      "close": "20:00",
+      "tz": "America/Argentina/Buenos_Aires"
+    }
+  }
+}

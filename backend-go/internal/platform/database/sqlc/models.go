@@ -57,13 +57,16 @@ type TenantDomain struct {
 }
 
 type TenantSetting struct {
-	TenantID         int64
-	Draft            []byte
-	Published        []byte
-	PublishedVersion int32
-	Onboarded        bool
-	UpdatedAt        pgtype.Timestamptz
-	PublishedAt      pgtype.Timestamptz
+	TenantID           int64
+	Draft              []byte
+	Published          []byte
+	PublishedVersion   int32
+	Onboarded          bool
+	UpdatedAt          pgtype.Timestamptz
+	PublishedAt        pgtype.Timestamptz
+	ThemeEditorEnabled bool
+	OnboardingEnabled  bool
+	Business           []byte
 }
 
 type TenantSettingsVersion struct {

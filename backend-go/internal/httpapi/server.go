@@ -135,14 +135,23 @@ func (s *Server) Handler() http.Handler {
 
 		r.Get("/stats/dashboard", s.handleDashboard)
 
-		r.Route("/admin/settings", func(r chi.Router) {
+		// Site settings: owner and admin only.
+		r.Route("/admin", func(r chi.Router) {
 			r.Use(requireRole(auth.RoleOwner, auth.RoleAdmin))
-			r.Get("/", s.handleSettingsGet)
-			r.Put("/draft", s.handleSettingsDraft)
-			r.Post("/publish", s.handleSettingsPublish)
-			r.Get("/versions", s.handleSettingsVersions)
-			r.Post("/rollback", s.handleSettingsRollback)
-			r.Get("/preview/theme.css", s.handleSettingsPreview)
+			r.Route("/settings", func(r chi.Router) {
+				r.Get("/", s.handleSettingsGet)
+				r.Put("/draft", s.handleSettingsDraft)
+				r.Post("/publish", s.handleSettingsPublish)
+				r.Get("/versions", s.handleSettingsVersions)
+				r.Post("/rollback", s.handleSettingsRollback)
+				r.Patch("/preferences", s.handleSettingsPreferences)
+			})
+			r.Route("/theme", func(r chi.Router) {
+				r.Post("/preview", s.handleThemePreview)
+				r.Get("/presets", s.handleThemePresets)
+			})
+			r.Get("/business", s.handleBusinessGet)
+			r.Put("/business", s.handleBusinessPut)
 		})
 
 		r.Route("/public", func(r chi.Router) {

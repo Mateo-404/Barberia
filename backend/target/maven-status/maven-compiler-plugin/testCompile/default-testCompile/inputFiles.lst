@@ -1,0 +1,13 @@
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/BarberBackendApplicationTests.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/config/Argon2PasswordEncoderIntegrationTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/controller/AdministradorControllerTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/controller/ClienteControllerTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/controller/ServicioControllerTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/controller/TestControllerTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/controller/TurnoControllerTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/repository/IAdministradorRepositoryTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/repository/IClienteRepositoryTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/repository/ITurnoRepositoryTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/service/AdministradorServiceTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/service/PanelEstadisticaDTOServiceTest.java
+/home/mateo/Documentos/repositorios/barber/backend/src/test/java/com/barber/barberBackend/service/TurnoServiceTest.java

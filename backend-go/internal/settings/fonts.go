@@ -1,36 +1,29 @@
 package settings
 
+// FontAllowlist is every typeface a tenant may pick, with the CSS generic
+// family used as fallback. The frontend ships a self-hosted copy of each
+// (frontend/src/lib/fonts.ts): keep both lists in sync.
 var FontAllowlist = map[string]string{
 	"Playfair Display":   "serif",
 	"Lora":               "serif",
 	"Merriweather":       "serif",
 	"Cinzel":             "serif",
 	"Cormorant Garamond": "serif",
-	"Libre Baskerville":  "serif",
 	"Inter":              "sans-serif",
 	"DM Sans":            "sans-serif",
 	"Montserrat":         "sans-serif",
 	"Poppins":            "sans-serif",
 	"Raleway":            "sans-serif",
-	"Roboto":             "sans-serif",
-	"Rubik":              "sans-serif",
 	"Work Sans":          "sans-serif",
-	"Nunito":             "sans-serif",
-	"Josefin Sans":       "sans-serif",
-	"Space Grotesk":      "sans-serif",
-	"Bebas Neue":         "display",
+	"Bebas Neue":         "sans-serif",
 	"Oswald":             "sans-serif",
 	"Barlow Condensed":   "sans-serif",
-	"Archivo Black":      "sans-serif",
-	"Anton":              "sans-serif",
 }
 
-func fontGeneric(f string) string {
-	if g, ok := FontAllowlist[f]; ok {
-		if g == "display" {
-			return "sans-serif"
-		}
-		return g
+func fontStack(name string) string {
+	generic, ok := FontAllowlist[name]
+	if !ok {
+		generic = "sans-serif"
 	}
-	return "sans-serif"
+	return `"` + name + `",` + generic
 }

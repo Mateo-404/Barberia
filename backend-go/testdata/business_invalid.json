@@ -1,0 +1,91 @@
+{
+  "_doc": "Invalid business patches over business_valid.json's base.",
+  "cases": [
+    {
+      "name": "reversed_hours",
+      "patch": {
+        "open": "20:00",
+        "close": "09:00"
+      },
+      "expect_field": "open"
+    },
+    {
+      "name": "equal_hours",
+      "patch": {
+        "open": "09:00",
+        "close": "09:00"
+      },
+      "expect_field": "open"
+    },
+    {
+      "name": "bad_time",
+      "patch": {
+        "open": "25:00"
+      },
+      "expect_field": "open"
+    },
+    {
+      "name": "slot_5",
+      "patch": {
+        "slot": 5
+      },
+      "expect_field": "slot"
+    },
+    {
+      "name": "slot_241",
+      "patch": {
+        "slot": 241
+      },
+      "expect_field": "slot"
+    },
+    {
+      "name": "notice_negative",
+      "patch": {
+        "notice": -1
+      },
+      "expect_field": "notice"
+    },
+    {
+      "name": "notice_169",
+      "patch": {
+        "notice": 169
+      },
+      "expect_field": "notice"
+    },
+    {
+      "name": "whatsapp_invalid",
+      "patch": {
+        "whatsapp": "abc"
+      },
+      "expect_field": "whatsapp"
+    },
+    {
+      "name": "instagram_invalid",
+      "patch": {
+        "instagram": "@bad name!"
+      },
+      "expect_field": "instagram"
+    },
+    {
+      "name": "currency_invalid",
+      "patch": {
+        "currency": "XYZ"
+      },
+      "expect_field": "currency"
+    },
+    {
+      "name": "tz_invalid",
+      "patch": {
+        "tz": "Mars/Olympus"
+      },
+      "expect_field": "tz"
+    },
+    {
+      "name": "unknown_field",
+      "patch": {
+        "evil": "x"
+      },
+      "expect_field": "evil"
+    }
+  ]
+}

@@ -1832,6 +1832,658 @@
         ]
       }
     },
+    "/api/admin/settings": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Settings state (draft, preferences)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/settings/draft": {
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Save the draft",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Theme"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/settings/publish": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Publish the draft as a new version",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/settings/versions": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Last published versions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsVersion"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/settings/rollback": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Publish an earlier version again",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/settings/preferences": {
+      "patch": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Change admin-panel preferences",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "themeEditorEnabled": {
+                    "type": "boolean"
+                  },
+                  "onboardingEnabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/theme/preview": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Render an unsaved theme (stores nothing)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Theme"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/theme/presets": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Preset gallery with generated palettes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresetView"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/business": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Business data",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Save business data",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem detail",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Business"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/settings": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Published theme and business data",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/public/theme.css": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Published theme as CSS custom properties",
+        "security": [],
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Current hash: makes the response cacheable forever"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSS",
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "tags": [
@@ -2542,6 +3194,388 @@
           "size",
           "total",
           "totalPages"
+        ]
+      },
+      "TokenOverrides": {
+        "type": "object",
+        "properties": {
+          "bg": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "surface": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "text": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "primary": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "accent": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        }
+      },
+      "Overrides": {
+        "type": "object",
+        "properties": {
+          "light": {
+            "$ref": "#/components/schemas/TokenOverrides"
+          },
+          "dark": {
+            "$ref": "#/components/schemas/TokenOverrides"
+          }
+        },
+        "required": [
+          "light",
+          "dark"
+        ]
+      },
+      "Theme": {
+        "type": "object",
+        "properties": {
+          "v": {
+            "type": "integer",
+            "enum": [
+              2
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 60
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "logo": {
+            "type": "string",
+            "description": "Empty, https URL or data:image/(png|jpeg|webp);base64"
+          },
+          "preset": {
+            "type": "string",
+            "description": "Preset id or custom"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ]
+          },
+          "brand": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "font": {
+            "type": "object",
+            "properties": {
+              "heading": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "heading",
+              "body"
+            ]
+          },
+          "shape": {
+            "type": "object",
+            "properties": {
+              "radius": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 24
+              },
+              "button": {
+                "type": "string",
+                "enum": [
+                  "solid",
+                  "outline"
+                ]
+              }
+            },
+            "required": [
+              "radius",
+              "button"
+            ]
+          },
+          "overrides": {
+            "$ref": "#/components/schemas/Overrides"
+          }
+        },
+        "required": [
+          "v",
+          "name",
+          "tagline",
+          "logo",
+          "preset",
+          "mode",
+          "brand",
+          "font",
+          "shape",
+          "overrides"
+        ]
+      },
+      "Business": {
+        "type": "object",
+        "properties": {
+          "whatsapp": {
+            "type": "string"
+          },
+          "instagram": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "ARS",
+              "USD",
+              "EUR",
+              "UYU",
+              "CLP"
+            ]
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 240
+          },
+          "notice": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 168
+          },
+          "open": {
+            "type": "string"
+          },
+          "close": {
+            "type": "string"
+          },
+          "tz": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "whatsapp",
+          "instagram",
+          "address",
+          "currency",
+          "slot",
+          "notice",
+          "open",
+          "close",
+          "tz"
+        ]
+      },
+      "Preferences": {
+        "type": "object",
+        "properties": {
+          "themeEditorEnabled": {
+            "type": "boolean"
+          },
+          "onboardingEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "themeEditorEnabled",
+          "onboardingEnabled"
+        ]
+      },
+      "SettingsState": {
+        "type": "object",
+        "properties": {
+          "onboarded": {
+            "type": "boolean"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "publishedVersion": {
+            "type": "integer"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          }
+        },
+        "required": [
+          "onboarded",
+          "draft",
+          "publishedVersion",
+          "hash",
+          "preferences"
+        ]
+      },
+      "DraftResult": {
+        "type": "object",
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldProblem"
+            }
+          }
+        },
+        "required": [
+          "draft",
+          "warnings"
+        ]
+      },
+      "PublishResult": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "hash"
+        ]
+      },
+      "PreviewResult": {
+        "type": "object",
+        "properties": {
+          "css": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldProblem"
+            }
+          }
+        },
+        "required": [
+          "css",
+          "hash",
+          "warnings"
+        ]
+      },
+      "Scheme": {
+        "type": "object",
+        "properties": {
+          "bg": {
+            "type": "string"
+          },
+          "surface": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "muted": {
+            "type": "string"
+          },
+          "primary": {
+            "type": "string"
+          },
+          "onPrimary": {
+            "type": "string"
+          },
+          "accent": {
+            "type": "string"
+          },
+          "border": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bg",
+          "surface",
+          "text",
+          "muted",
+          "primary",
+          "onPrimary",
+          "accent",
+          "border"
+        ]
+      },
+      "PresetView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "light": {
+            "$ref": "#/components/schemas/Scheme"
+          },
+          "dark": {
+            "$ref": "#/components/schemas/Scheme"
+          }
+        },
+        "required": [
+          "id",
+          "theme",
+          "light",
+          "dark"
+        ]
+      },
+      "SettingsVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "hash",
+          "createdAt"
+        ]
+      },
+      "PublicSettings": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "business": {
+            "$ref": "#/components/schemas/Business"
+          },
+          "hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "business",
+          "hash"
         ]
       }
     }

@@ -1,0 +1,46 @@
+{
+  "_doc": "Valid business data: 'base' plus variants (merge patches).",
+  "base": {
+    "whatsapp": "+54 9 3492 123456",
+    "instagram": "@donmateo",
+    "address": "Bv. Santa Fe 123, Rafaela",
+    "currency": "ARS",
+    "slot": 30,
+    "notice": 1,
+    "open": "09:00",
+    "close": "20:00",
+    "tz": "America/Argentina/Buenos_Aires"
+  },
+  "variants": [
+    {
+      "name": "no_timezone_uses_default",
+      "patch": {
+        "tz": ""
+      }
+    },
+    {
+      "name": "slot_min",
+      "patch": {
+        "slot": 10
+      }
+    },
+    {
+      "name": "slot_max",
+      "patch": {
+        "slot": 240
+      }
+    },
+    {
+      "name": "empty_whatsapp",
+      "patch": {
+        "whatsapp": ""
+      }
+    },
+    {
+      "name": "instagram_without_at",
+      "patch": {
+        "instagram": "donmateo"
+      }
+    }
+  ]
+}

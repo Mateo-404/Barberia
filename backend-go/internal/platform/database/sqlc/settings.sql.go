@@ -42,7 +42,7 @@ func (q *Queries) GetSettingsVersion(ctx context.Context, arg GetSettingsVersion
 }
 
 const getTenantSettings = `-- name: GetTenantSettings :one
-SELECT tenant_id, draft, published, published_version, onboarded, updated_at, published_at
+SELECT tenant_id, draft, published, published_version, onboarded, updated_at, published_at, theme_editor_enabled, onboarding_enabled, business
 FROM tenant_settings
 WHERE tenant_id = $1
 `
@@ -58,6 +58,9 @@ func (q *Queries) GetTenantSettings(ctx context.Context, tenantID int64) (Tenant
 		&i.Onboarded,
 		&i.UpdatedAt,
 		&i.PublishedAt,
+		&i.ThemeEditorEnabled,
+		&i.OnboardingEnabled,
+		&i.Business,
 	)
 	return i, err
 }
@@ -137,7 +140,7 @@ SET published = draft,
     published_at = now(),
     updated_at = now()
 WHERE tenant_id = $1
-RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at
+RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at, theme_editor_enabled, onboarding_enabled, business
 `
 
 func (q *Queries) PublishTenantSettings(ctx context.Context, tenantID int64) (TenantSetting, error) {
@@ -151,6 +154,79 @@ func (q *Queries) PublishTenantSettings(ctx context.Context, tenantID int64) (Te
 		&i.Onboarded,
 		&i.UpdatedAt,
 		&i.PublishedAt,
+		&i.ThemeEditorEnabled,
+		&i.OnboardingEnabled,
+		&i.Business,
+	)
+	return i, err
+}
+
+const updateSettingsPreferences = `-- name: UpdateSettingsPreferences :one
+INSERT INTO tenant_settings (tenant_id, theme_editor_enabled, onboarding_enabled)
+VALUES (
+    $1,
+    COALESCE($2::boolean, TRUE),
+    COALESCE($3::boolean, TRUE)
+)
+ON CONFLICT (tenant_id) DO UPDATE
+SET theme_editor_enabled = COALESCE($2::boolean, tenant_settings.theme_editor_enabled),
+    onboarding_enabled   = COALESCE($3::boolean, tenant_settings.onboarding_enabled),
+    updated_at = now()
+RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at, theme_editor_enabled, onboarding_enabled, business
+`
+
+type UpdateSettingsPreferencesParams struct {
+	TenantID           int64
+	ThemeEditorEnabled *bool
+	OnboardingEnabled  *bool
+}
+
+// Creates the row when the tenant has none; null arguments keep the value.
+func (q *Queries) UpdateSettingsPreferences(ctx context.Context, arg UpdateSettingsPreferencesParams) (TenantSetting, error) {
+	row := q.db.QueryRow(ctx, updateSettingsPreferences, arg.TenantID, arg.ThemeEditorEnabled, arg.OnboardingEnabled)
+	var i TenantSetting
+	err := row.Scan(
+		&i.TenantID,
+		&i.Draft,
+		&i.Published,
+		&i.PublishedVersion,
+		&i.Onboarded,
+		&i.UpdatedAt,
+		&i.PublishedAt,
+		&i.ThemeEditorEnabled,
+		&i.OnboardingEnabled,
+		&i.Business,
+	)
+	return i, err
+}
+
+const upsertBusiness = `-- name: UpsertBusiness :one
+INSERT INTO tenant_settings (tenant_id, business)
+VALUES ($1, $2)
+ON CONFLICT (tenant_id) DO UPDATE
+SET business = EXCLUDED.business, updated_at = now()
+RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at, theme_editor_enabled, onboarding_enabled, business
+`
+
+type UpsertBusinessParams struct {
+	TenantID int64
+	Business []byte
+}
+
+func (q *Queries) UpsertBusiness(ctx context.Context, arg UpsertBusinessParams) (TenantSetting, error) {
+	row := q.db.QueryRow(ctx, upsertBusiness, arg.TenantID, arg.Business)
+	var i TenantSetting
+	err := row.Scan(
+		&i.TenantID,
+		&i.Draft,
+		&i.Published,
+		&i.PublishedVersion,
+		&i.Onboarded,
+		&i.UpdatedAt,
+		&i.PublishedAt,
+		&i.ThemeEditorEnabled,
+		&i.OnboardingEnabled,
+		&i.Business,
 	)
 	return i, err
 }
@@ -160,7 +236,7 @@ INSERT INTO tenant_settings (tenant_id, draft, updated_at)
 VALUES ($1, $2, now())
 ON CONFLICT (tenant_id) DO UPDATE
 SET draft = EXCLUDED.draft, updated_at = now()
-RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at
+RETURNING tenant_id, draft, published, published_version, onboarded, updated_at, published_at, theme_editor_enabled, onboarding_enabled, business
 `
 
 type UpsertTenantSettingsDraftParams struct {
@@ -179,6 +255,9 @@ func (q *Queries) UpsertTenantSettingsDraft(ctx context.Context, arg UpsertTenan
 		&i.Onboarded,
 		&i.UpdatedAt,
 		&i.PublishedAt,
+		&i.ThemeEditorEnabled,
+		&i.OnboardingEnabled,
+		&i.Business,
 	)
 	return i, err
 }

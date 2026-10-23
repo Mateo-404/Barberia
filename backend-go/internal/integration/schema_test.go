@@ -125,3 +125,30 @@ func readMigration(name string) (string, error) {
 	b, err := migrationsFS.ReadFile("migrations/" + name)
 	return string(b), err
 }
+
+// Migration 000008 moves the business data of existing v1 documents into
+// its own column and leaves the documents themselves untouched.
+func TestThemeMigrationMovesBusinessData(t *testing.T) {
+	pool, _ := migratedDatabase(t)
+	ctx := context.Background()
+	const v1 = `{"name":"Old","biz":{"slot":45,"open":"11:00"}}`
+	if _, err := pool.Exec(ctx, `INSERT INTO tenant_settings (tenant_id, published, draft) SELECT id, $1::jsonb, $1::jsonb FROM tenants WHERE slug = 'default'`, v1); err != nil {
+		t.Fatal(err)
+	}
+	up, err := readMigration("000008_theme_v2.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The migration is idempotent, so running it again over the row simulates
+	// upgrading a database that already had v1 settings.
+	if _, err := pool.Exec(ctx, up); err != nil {
+		t.Fatal(err)
+	}
+	var slot, name string
+	if err := pool.QueryRow(ctx, `SELECT business->>'slot', published->>'name' FROM tenant_settings`).Scan(&slot, &name); err != nil {
+		t.Fatal(err)
+	}
+	if slot != "45" || name != "Old" {
+		t.Fatalf("business slot = %q, published name = %q", slot, name)
+	}
+}

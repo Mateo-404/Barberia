@@ -1,0 +1,13 @@
+com/barber/barberBackend/controller/TurnoControllerTest.class
+com/barber/barberBackend/repository/IAdministradorRepositoryTest.class
+com/barber/barberBackend/service/AdministradorServiceTest.class
+com/barber/barberBackend/config/Argon2PasswordEncoderIntegrationTest.class
+com/barber/barberBackend/BarberBackendApplicationTests.class
+com/barber/barberBackend/controller/ClienteControllerTest.class
+com/barber/barberBackend/controller/ServicioControllerTest.class
+com/barber/barberBackend/repository/ITurnoRepositoryTest.class
+com/barber/barberBackend/controller/AdministradorControllerTest.class
+com/barber/barberBackend/service/TurnoServiceTest.class
+com/barber/barberBackend/controller/TestControllerTest.class
+com/barber/barberBackend/repository/IClienteRepositoryTest.class
+com/barber/barberBackend/service/PanelEstadisticaDTOServiceTest.class
