@@ -1,5 +1,6 @@
-// Package config carga y valida la configuración desde variables de entorno.
-// Todos los valores críticos son fail-closed: si faltan, la app no arranca.
+// Package config loads and validates configuration from environment
+// variables. Critical values are fail-closed: when missing, the app does not
+// start.
 package config
 
 import (
@@ -10,164 +11,155 @@ import (
 	"time"
 )
 
-// Config es la configuración efectiva de la aplicación.
+// Config is the effective application configuration.
 type Config struct {
-	// HTTPAddr es la dirección de escucha del servidor HTTP.
+	// HTTPAddr is the HTTP listen address.
 	HTTPAddr string
-	// DatabaseURL es la cadena de conexión PostgreSQL (sslmode incluido).
+	// DatabaseURL is the PostgreSQL connection string (sslmode included).
 	DatabaseURL string
-	// JWTSecret es la clave HS256. Obligatoria, mínimo 32 bytes.
+	// JWTSecret is the HS256 key. Required, at least 32 bytes.
 	JWTSecret string
-	// JWTExpiry es la validez de los tokens emitidos (default 24h).
+	// JWTExpiry is the lifetime of issued tokens (default 24h).
 	JWTExpiry time.Duration
-	// CORSAllowOrigins lista de orígenes permitidos (vacío = sin CORS).
+	// CORSAllowOrigins lists the allowed origins (empty = no CORS).
 	CORSAllowOrigins []string
-	// DefaultTenantSlug es el tenant para rutas públicas o Host desconocido.
+	// DefaultTenantSlug is the tenant for unknown or local Hosts.
 	DefaultTenantSlug string
-	// AutoMigrate aplica migraciones al arrancar.
+	// AutoMigrate applies migrations at startup.
 	AutoMigrate bool
-	// AdminSeed habilita la creación del admin inicial.
-	AdminSeed         bool
-	AdminSeedEmail    string
-	AdminSeedPassword string
-	AdminSeedNombre   string
-	AdminSeedApellido string
-	// LoginRateLimitPerMinute es el máximo de intentos de login por IP.
+	// AdminSeed enables creating the initial admin.
+	AdminSeed          bool
+	AdminSeedEmail     string
+	AdminSeedPassword  string
+	AdminSeedFirstName string
+	AdminSeedLastName  string
+	// LoginRateLimitPerMinute is the max login attempts per IP.
 	LoginRateLimitPerMinute int
-	// TurnoRateLimitPerMinute es el máximo de POST /turnos por IP (endpoint
-	// público de reserva).
-	TurnoRateLimitPerMinute int
-	// TrustProxyHeaders indica si se confía en X-Forwarded-For (proxy de
-	// confianza); por defecto false para no permitir evadir el rate limit.
+	// BookingRateLimitPerMinute is the max public bookings
+	// (POST /api/appointments) per IP.
+	BookingRateLimitPerMinute int
+	// TrustProxyHeaders trusts X-Forwarded-For (behind a trusted proxy only);
+	// false by default so the rate limit cannot be dodged.
 	TrustProxyHeaders bool
-	// PoolMaxConns / ConnTimeout controlan el pool de conexiones.
+	// PoolMaxConns / ConnTimeout / StatementTimeout tune the database pool.
 	PoolMaxConns     int32
 	ConnTimeout      time.Duration
 	StatementTimeout time.Duration
 	MaxRequestBody   int64
-	AppEnv           string
+	// AppEnv is "dev" or anything else (treated as production).
+	AppEnv string
 }
 
-// Load lee la configuración del entorno. Devuelve error si falta algo crítico.
+// Load reads the configuration from the environment and fails when anything
+// critical is missing or invalid.
 func Load() (*Config, error) {
 	cfg := &Config{
-		HTTPAddr:                getEnv("HTTP_ADDR", ":8080"),
-		DatabaseURL:             strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		JWTSecret:               strings.TrimSpace(os.Getenv("JWT_SECRET")),
-		JWTExpiry:               24 * time.Hour,
-		DefaultTenantSlug:       getEnv("DEFAULT_TENANT_SLUG", "default"),
-		AdminSeedEmail:          getEnv("ADMIN_SEED_EMAIL", "admin@admin.com"),
-		AdminSeedPassword:       os.Getenv("ADMIN_SEED_PASSWORD"),
-		AdminSeedNombre:         getEnv("ADMIN_SEED_NOMBRE", "Admin"),
-		AdminSeedApellido:       getEnv("ADMIN_SEED_APELLIDO", "Barber"),
-		LoginRateLimitPerMinute: 10,
-		TurnoRateLimitPerMinute: 30,
-		PoolMaxConns:            10,
-		ConnTimeout:             5 * time.Second,
-		StatementTimeout:        10 * time.Second,
-		MaxRequestBody:          1 << 20, // 1 MiB
+		HTTPAddr:                  getEnv("HTTP_ADDR", ":8080"),
+		DatabaseURL:               strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		JWTSecret:                 strings.TrimSpace(os.Getenv("JWT_SECRET")),
+		JWTExpiry:                 24 * time.Hour,
+		DefaultTenantSlug:         getEnv("DEFAULT_TENANT_SLUG", "default"),
+		AdminSeedEmail:            getEnv("ADMIN_SEED_EMAIL", "admin@admin.com"),
+		AdminSeedPassword:         os.Getenv("ADMIN_SEED_PASSWORD"),
+		AdminSeedFirstName:        getEnv("ADMIN_SEED_FIRST_NAME", "Admin"),
+		AdminSeedLastName:         getEnv("ADMIN_SEED_LAST_NAME", "Barber"),
+		LoginRateLimitPerMinute:   10,
+		BookingRateLimitPerMinute: 30,
+		PoolMaxConns:              10,
+		ConnTimeout:               5 * time.Second,
+		StatementTimeout:          10 * time.Second,
+		MaxRequestBody:            1 << 20, // 1 MiB
+		// Fail-closed: without an explicit APP_ENV=dev the RLS role check runs.
+		AppEnv: getEnv("APP_ENV", "prod"),
 	}
 
 	var errs []string
+	invalid := func(key, value, hint string) {
+		errs = append(errs, fmt.Sprintf("invalid %s: %q%s", key, value, hint))
+	}
 
 	if cfg.DatabaseURL == "" {
-		errs = append(errs, "DATABASE_URL es obligatoria (ej: postgres://user:pass@localhost:5432/barber?sslmode=disable)")
+		errs = append(errs, "DATABASE_URL is required (e.g. postgres://user:pass@localhost:5432/barber?sslmode=disable)")
 	}
-	// Fail-closed: sin secreto firmemente establecido no se arranca.
 	if len(cfg.JWTSecret) < 32 {
-		errs = append(errs, "JWT_SECRET es obligatoria y debe tener al menos 32 bytes (genere con: openssl rand -base64 32)")
+		errs = append(errs, "JWT_SECRET is required and must be at least 32 bytes (generate one with: openssl rand -base64 32)")
 	}
 
 	if v := strings.TrimSpace(os.Getenv("CORS_ALLOW_ORIGINS")); v != "" {
 		for _, o := range strings.Split(v, ",") {
-			o = strings.TrimSpace(o)
-			if o != "" {
+			if o = strings.TrimSpace(o); o != "" {
 				cfg.CORSAllowOrigins = append(cfg.CORSAllowOrigins, o)
 			}
 		}
 	}
-	if v := os.Getenv("AUTO_MIGRATE"); v != "" {
+
+	// parseBool reports whether key was set.
+	parseBool := func(key string, dst *bool) bool {
+		v := os.Getenv(key)
+		if v == "" {
+			return false
+		}
 		b, err := strconv.ParseBool(v)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("AUTO_MIGRATE inválida: %q", v))
+			invalid(key, v, "")
 		}
-		cfg.AutoMigrate = b
+		*dst = b
+		return true
 	}
-	if v := os.Getenv("ADMIN_SEED"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("ADMIN_SEED inválida: %q", v))
+	parsePositiveInt := func(key string, dst *int) {
+		if v := os.Getenv(key); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n <= 0 {
+				invalid(key, v, "")
+				return
+			}
+			*dst = n
 		}
-		cfg.AdminSeed = b
-	} else {
-		// Si hay password configurada, se habilita implícitamente (paridad con
-		// la lógica condicional de AdminSeedRunner de Java).
+	}
+	parseDuration := func(key string, dst *time.Duration, allowZero bool) {
+		if v := os.Getenv(key); v != "" {
+			d, err := time.ParseDuration(v)
+			if err != nil || d < 0 || (d == 0 && !allowZero) {
+				invalid(key, v, " (use Go duration format, e.g. 5s)")
+				return
+			}
+			*dst = d
+		}
+	}
+
+	parseBool("AUTO_MIGRATE", &cfg.AutoMigrate)
+	if !parseBool("ADMIN_SEED", &cfg.AdminSeed) {
+		// A configured password enables the seed implicitly.
 		cfg.AdminSeed = cfg.AdminSeedPassword != ""
 	}
 	if cfg.AdminSeed && cfg.AdminSeedPassword == "" {
-		errs = append(errs, "ADMIN_SEED_PASSWORD es obligatoria cuando ADMIN_SEED está activa")
+		errs = append(errs, "ADMIN_SEED_PASSWORD is required when ADMIN_SEED is enabled")
 	}
-	if v := os.Getenv("LOGIN_RATE_LIMIT_PER_MINUTE"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil || n <= 0 {
-			errs = append(errs, fmt.Sprintf("LOGIN_RATE_LIMIT_PER_MINUTE inválida: %q", v))
-		} else {
-			cfg.LoginRateLimitPerMinute = n
-		}
-	}
-	if v := os.Getenv("TURNO_RATE_LIMIT_PER_MINUTE"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil || n <= 0 {
-			errs = append(errs, fmt.Sprintf("TURNO_RATE_LIMIT_PER_MINUTE inválida: %q", v))
-		} else {
-			cfg.TurnoRateLimitPerMinute = n
-		}
-	}
-	if v := os.Getenv("TRUST_PROXY_HEADERS"); v != "" {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("TRUST_PROXY_HEADERS inválida: %q", v))
-		}
-		cfg.TrustProxyHeaders = b
-	}
+	parsePositiveInt("LOGIN_RATE_LIMIT_PER_MINUTE", &cfg.LoginRateLimitPerMinute)
+	parsePositiveInt("BOOKING_RATE_LIMIT_PER_MINUTE", &cfg.BookingRateLimitPerMinute)
+	parseBool("TRUST_PROXY_HEADERS", &cfg.TrustProxyHeaders)
+
 	if v := os.Getenv("POOL_MAX_CONNS"); v != "" {
 		n, err := strconv.ParseInt(v, 10, 32)
 		if err != nil || n <= 0 {
-			errs = append(errs, fmt.Sprintf("POOL_MAX_CONNS inválida: %q", v))
+			invalid("POOL_MAX_CONNS", v, "")
 		} else {
 			cfg.PoolMaxConns = int32(n)
 		}
 	}
-	if v := os.Getenv("CONN_TIMEOUT"); v != "" {
-		d, err := time.ParseDuration(v)
-		if err != nil || d <= 0 {
-			errs = append(errs, fmt.Sprintf("CONN_TIMEOUT inválida: %q (use formato Go, ej 5s)", v))
-		} else {
-			cfg.ConnTimeout = d
-		}
-	}
+	parseDuration("CONN_TIMEOUT", &cfg.ConnTimeout, false)
 	if v := os.Getenv("MAX_REQUEST_BODY"); v != "" {
 		n, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || n <= 0 {
-			errs = append(errs, fmt.Sprintf("MAX_REQUEST_BODY inválida: %q", v))
+			invalid("MAX_REQUEST_BODY", v, "")
 		} else {
 			cfg.MaxRequestBody = n
 		}
 	}
-	if v := os.Getenv("STATEMENT_TIMEOUT"); v != "" {
-		d, err := time.ParseDuration(v)
-		if err != nil || d < 0 {
-			errs = append(errs, fmt.Sprintf("STATEMENT_TIMEOUT inválida: %q (use formato Go, ej 10s)", v))
-		} else {
-			cfg.StatementTimeout = d
-		}
-	}
-
-	// Fail-closed: sin APP_ENV=dev explícito se exige el chequeo de rol (RLS).
-	cfg.AppEnv = getEnv("APP_ENV", "prod")
+	parseDuration("STATEMENT_TIMEOUT", &cfg.StatementTimeout, true)
 
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("configuración inválida: %s", strings.Join(errs, "; "))
+		return nil, fmt.Errorf("invalid configuration: %s", strings.Join(errs, "; "))
 	}
 	return cfg, nil
 }

@@ -1,4 +1,5 @@
-// Package auth implementa Argon2id y JWT HS256 compatibles con el backend Java.
+// Package auth implements Argon2id password hashing (compatible with the
+// hashes written by the former Spring backend) and HS256 JWTs.
 package auth
 
 import (
@@ -12,9 +13,9 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-// Parámetros por defecto: los mismos que Spring Security
-// Argon2PasswordEncoder(16, 32, 1, 19456, 2). Solo se usan para generar
-// hashes nuevos; la verificación lee los parámetros del propio hash.
+// Defaults match Spring Security Argon2PasswordEncoder(16, 32, 1, 19456, 2)
+// (OWASP). They only apply to new hashes; verification reads the parameters
+// from the hash itself.
 const (
 	argonSaltLen = 16
 	argonKeyLen  = 32
@@ -23,10 +24,10 @@ const (
 	argonThreads = 1
 )
 
-// ErrInvalidHash indica un hash con formato desconocido o no soportado.
-var ErrInvalidHash = errors.New("hash Argon2id inválido")
+// ErrInvalidHash means an unknown or unsupported hash format.
+var ErrInvalidHash = errors.New("invalid Argon2id hash")
 
-// HashPassword genera un hash Argon2id en el formato PHC de Spring.
+// HashPassword returns an Argon2id hash in PHC format.
 func HashPassword(password string) (string, error) {
 	salt := make([]byte, argonSaltLen)
 	if _, err := cryptoRead(salt); err != nil {
@@ -40,8 +41,8 @@ func HashPassword(password string) (string, error) {
 	), nil
 }
 
-// VerifyPassword compara password contra un hash PHC Argon2id.
-// Es insensible a diferencias de parámetros: los toma del hash.
+// VerifyPassword checks password against a PHC Argon2id hash, using the
+// parameters stored in the hash.
 func VerifyPassword(password, encoded string) (bool, error) {
 	params, salt, want, err := parseHash(encoded)
 	if err != nil {

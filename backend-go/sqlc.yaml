@@ -8,6 +8,7 @@ sql:
       - "db/migrations/000004_settings_versions.up.sql"
       - "db/migrations/000005_admin_roles.up.sql"
       - "db/migrations/000006_composite_fks.up.sql"
+      - "db/migrations/000007_english_schema.up.sql"
     queries: "db/queries"
     gen:
       go:

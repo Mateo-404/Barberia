@@ -6,7 +6,7 @@ import (
 )
 
 func TestValidateFromFixtures(t *testing.T) {
-	b := leerTestdata(t, "settings_valid.json")
+	b := readTestdata(t, "settings_valid.json")
 	var v struct {
 		Base     json.RawMessage  `json:"base"`
 		Variants []map[string]any `json:"variants"`
@@ -22,7 +22,7 @@ func TestValidateFromFixtures(t *testing.T) {
 }
 
 func TestValidateInvalidFixtures(t *testing.T) {
-	b := leerTestdata(t, "settings_invalid.json")
+	b := readTestdata(t, "settings_invalid.json")
 	var v struct {
 		Cases []struct {
 			Name        string          `json:"name"`

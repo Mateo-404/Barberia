@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// mergePatch aplica un JSON Merge Patch (RFC 7396) sobre base.
+// mergePatch applies a JSON Merge Patch (RFC 7396) to base.
 func mergePatch(base, patch json.RawMessage) json.RawMessage {
 	var b map[string]any
 	var p map[string]any
@@ -34,9 +34,9 @@ func mergeMaps(dst, src map[string]any) {
 	}
 }
 
-// S-01: base + variantes válidas validan OK.
+// S-01: base + valid variants validate.
 func TestAcceptanceS01Valid(t *testing.T) {
-	b := leerTestdata(t, "settings_valid.json")
+	b := readTestdata(t, "settings_valid.json")
 	var v struct {
 		Base     json.RawMessage  `json:"base"`
 		Variants []map[string]any `json:"variants"`
@@ -45,13 +45,13 @@ func TestAcceptanceS01Valid(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res := Validate(v.Base); len(res.Details) != 0 {
-		t.Fatalf("base inválido: %+v", res.Details)
+		t.Fatalf("invalid base: %+v", res.Details)
 	}
-	// variantes: cada una es un patch sobre base
-	raw := leerTestdata(t, "settings_valid.json")
+	// each variant is a patch over base
+	raw := readTestdata(t, "settings_valid.json")
 	var rawv map[string]json.RawMessage
 	_ = json.Unmarshal(raw, &rawv)
-	// re-leer variants as raw
+	// re-read variants as raw
 	var doc struct {
 		Base     json.RawMessage `json:"base"`
 		Variants []struct {
@@ -64,14 +64,14 @@ func TestAcceptanceS01Valid(t *testing.T) {
 		merged := mergePatch(doc.Base, vr.Patch)
 		res := Validate(merged)
 		if len(res.Details) != 0 {
-			t.Fatalf("variante %q inválida: %+v", vr.Name, res.Details)
+			t.Fatalf("variant %q invalid: %+v", vr.Name, res.Details)
 		}
 	}
 }
 
-// S-02: casos inválidos fallan con 422 y details menciona expect_field.
+// S-02: invalid cases fail and details mention expect_field.
 func TestAcceptanceS02Invalid(t *testing.T) {
-	b := leerTestdata(t, "settings_invalid.json")
+	b := readTestdata(t, "settings_invalid.json")
 	var doc struct {
 		Cases []struct {
 			Name        string          `json:"name"`
@@ -82,8 +82,8 @@ func TestAcceptanceS02Invalid(t *testing.T) {
 	if err := json.Unmarshal(b, &doc); err != nil {
 		t.Fatal(err)
 	}
-	// base tomada de settings_valid.json
-	vb := leerTestdata(t, "settings_valid.json")
+	// base taken from settings_valid.json
+	vb := readTestdata(t, "settings_valid.json")
 	var vdoc struct {
 		Base json.RawMessage `json:"base"`
 	}
@@ -93,7 +93,7 @@ func TestAcceptanceS02Invalid(t *testing.T) {
 		merged := mergePatch(docBase, c.Patch)
 		res := Validate(merged)
 		if len(res.Details) == 0 {
-			t.Fatalf("caso %q debería fallar", c.Name)
+			t.Fatalf("case %q should fail", c.Name)
 		}
 		found := false
 		for _, d := range res.Details {
@@ -108,9 +108,9 @@ func TestAcceptanceS02Invalid(t *testing.T) {
 	}
 }
 
-// S-03: logo > 400000 caracteres rechazado.
+// S-03: a logo over 400000 characters is rejected.
 func TestAcceptanceS03LogoTooLong(t *testing.T) {
-	base := leerTestdata(t, "settings_valid.json")
+	base := readTestdata(t, "settings_valid.json")
 	var doc struct {
 		Base json.RawMessage `json:"base"`
 	}
@@ -121,13 +121,13 @@ func TestAcceptanceS03LogoTooLong(t *testing.T) {
 	raw, _ := json.Marshal(s)
 	res := Validate(raw)
 	if len(res.Details) == 0 {
-		t.Fatal("logo > 400000 debería fallar")
+		t.Fatal("logo > 400000 should fail")
 	}
 }
 
-// S-04: ratios de contrast_vectors coinciden.
+// S-04: contrast_vectors ratios match.
 func TestAcceptanceS04ContrastVectors(t *testing.T) {
-	b := leerTestdata(t, "contrast_vectors.json")
+	b := readTestdata(t, "contrast_vectors.json")
 	var v struct {
 		Tolerance float64 `json:"tolerance"`
 		Contrast  []struct {
@@ -148,9 +148,9 @@ func TestAcceptanceS04ContrastVectors(t *testing.T) {
 	}
 }
 
-// S-06: RenderCSS determinista.
+// S-06: RenderCSS is deterministic.
 func TestAcceptanceS06Deterministic(t *testing.T) {
-	base := leerTestdata(t, "settings_valid.json")
+	base := readTestdata(t, "settings_valid.json")
 	var doc struct {
 		Base json.RawMessage `json:"base"`
 	}
@@ -163,15 +163,15 @@ func TestAcceptanceS06Deterministic(t *testing.T) {
 	if css1 != css2 || h1 != h2 {
 		t.Fatal("RenderCSS no es determinista")
 	}
-	// solo contiene valores validados: verificar que no haya caracteres peligrosos
+	// only validated values: check there are no dangerous characters
 	if strings.Contains(css1, "<") || strings.Contains(css1, ">") {
 		t.Fatal("RenderCSS contiene caracteres peligrosos")
 	}
 }
 
-// S-07: name con script se acepta como texto.
+// S-07: a name containing <script> is accepted as plain text.
 func TestAcceptanceS07XSSNameAccepted(t *testing.T) {
-	base := leerTestdata(t, "settings_valid.json")
+	base := readTestdata(t, "settings_valid.json")
 	var doc struct {
 		Base json.RawMessage `json:"base"`
 	}
@@ -180,32 +180,32 @@ func TestAcceptanceS07XSSNameAccepted(t *testing.T) {
 	merged := mergePatch(doc.Base, patch)
 	res := Validate(merged)
 	if len(res.Details) != 0 {
-		t.Fatalf("name con script debería validar: %+v", res.Details)
+		t.Fatalf("a name with script should validate: %+v", res.Details)
 	}
 	if res.Settings.Name != "<script>alert(1)</script>" {
-		t.Fatalf("name no se conservó: %q", res.Settings.Name)
+		t.Fatalf("name not preserved: %q", res.Settings.Name)
 	}
 }
 
-// S-11: warnings no bloquean; <3:1 bloquea.
+// S-11: warnings do not block; < 3:1 blocks.
 func TestAcceptanceS11ContrastWarnings(t *testing.T) {
-	base := leerTestdata(t, "settings_valid.json")
+	base := readTestdata(t, "settings_valid.json")
 	var doc struct {
 		Base json.RawMessage `json:"base"`
 	}
 	_ = json.Unmarshal(base, &doc)
-	// warning: ratio 3-4.5 → no details, warnings present
+	// ratio 3–4.5: warnings only
 	patch := json.RawMessage(`{"c":{"text":"#777777"}}`)
 	merged := mergePatch(doc.Base, patch)
 	res := Validate(merged)
 	if len(res.Details) != 0 {
-		t.Fatalf("contraste 3-4.5 no debería bloquear: %+v", res.Details)
+		t.Fatalf("contrast 3–4.5 must not block: %+v", res.Details)
 	}
-	// bloqueo: ratio <3
+	// ratio < 3 blocks
 	patch2 := json.RawMessage(`{"c":{"text":"#ffff00","bg":"#ffffff"}}`)
 	merged2 := mergePatch(doc.Base, patch2)
 	res2 := Validate(merged2)
 	if len(res2.Details) == 0 {
-		t.Fatal("contraste <3 debería bloquear")
+		t.Fatal("contrast < 3 must block")
 	}
 }

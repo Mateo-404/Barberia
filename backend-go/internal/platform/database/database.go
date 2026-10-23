@@ -1,4 +1,4 @@
-// Package database administra el pool pgx y la ejecución de migraciones.
+// Package database manages the pgx pool and runs migrations.
 package database
 
 import (
@@ -16,23 +16,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Options controla la conexión y el pool.
+// Options configures the connection and the pool.
 type Options struct {
 	ConnectionString string
 	MaxConns         int32
 	MaxConnLifetime  time.Duration
 	ConnTimeout      time.Duration
-	// StatementTimeout acota cada consulta en el servidor (0 = sin límite).
+	// StatementTimeout caps every query on the server (0 = no limit).
 	StatementTimeout time.Duration
 }
 
-// NewPool crea un pgxpool validando la conexión.
+// NewPool creates a pgxpool and checks the connection.
 func NewPool(ctx context.Context, opts Options) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(opts.ConnectionString)
 	if err != nil {
-		// No se incluye la cadena de conexión en el error: DATABASE_URL lleva
-		// la contraseña y este error termina en logs de arranque.
-		return nil, errors.New("DATABASE_URL inválida: no se pudo parsear la cadena de conexión")
+		// The connection string is left out on purpose: it carries the
+		// password and this error ends up in startup logs.
+		return nil, errors.New("invalid DATABASE_URL: the connection string could not be parsed")
 	}
 	if opts.MaxConns > 0 {
 		cfg.MaxConns = opts.MaxConns
@@ -54,7 +54,7 @@ func NewPool(ctx context.Context, opts Options) (*pgxpool.Pool, error) {
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("crear pool: %w", err)
+		return nil, fmt.Errorf("create pool: %w", err)
 	}
 	pingCtx, cancel := context.WithTimeout(ctx, opts.ConnTimeout)
 	defer cancel()
@@ -65,11 +65,11 @@ func NewPool(ctx context.Context, opts Options) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// RunMigrations aplica las migraciones embebidas hasta la última versión.
+// RunMigrations applies the embedded migrations up to the latest version.
 func RunMigrations(ctx context.Context, connString string, logger *slog.Logger) error {
 	src, err := iofs.New(db.MigrationsFS, "migrations")
 	if err != nil {
-		return fmt.Errorf("abrir fuente de migraciones: %w", err)
+		return fmt.Errorf("open migrations source: %w", err)
 	}
 	m, err := migrate.NewWithSourceInstance("iofs", src, connString)
 	if err != nil {
@@ -83,14 +83,14 @@ func RunMigrations(ctx context.Context, connString string, logger *slog.Logger) 
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
-			logger.Info("esquema sin cambios")
+			logger.Info("schema unchanged")
 			return nil
 		}
 		return fmt.Errorf("aplicar migraciones: %w", err)
 	}
 	v, dirty, verErr := m.Version()
 	if verErr != nil && !errors.Is(verErr, migrate.ErrNilVersion) {
-		logger.Warn("no se pudo leer la versión de migración", "err", verErr)
+		logger.Warn("could not read the migration version", "err", verErr)
 	}
 	logger.Info("migraciones aplicadas", "version", v, "dirty", dirty)
 	return nil

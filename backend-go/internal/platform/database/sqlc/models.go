@@ -8,28 +8,36 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Administradore struct {
-	ID          int64
-	Nombre      *string
-	Apellido    *string
-	Email       *string
-	Contrasenia *string
-	TenantID    int64
-	Role        string
+type Admin struct {
+	ID           int64
+	FirstName    *string
+	LastName     *string
+	Email        *string
+	PasswordHash *string
+	TenantID     int64
+	Role         string
 }
 
-type Cliente struct {
-	Telefono string
-	Nombre   *string
-	Apellido *string
-	Email    *string
-	TenantID int64
+type Appointment struct {
+	ID            int64
+	StartsAt      pgtype.Timestamp
+	CustomerPhone *string
+	ServiceID     *int64
+	TenantID      int64
 }
 
-type Servicio struct {
+type Customer struct {
+	Phone     string
+	FirstName *string
+	LastName  *string
+	Email     *string
+	TenantID  int64
+}
+
+type Service struct {
 	ID       int64
-	Tipo     *string
-	Precio   *float32
+	Name     *string
+	Price    *float32
 	TenantID int64
 }
 
@@ -64,12 +72,4 @@ type TenantSettingsVersion struct {
 	Hash      string
 	Settings  []byte
 	CreatedAt pgtype.Timestamptz
-}
-
-type Turno struct {
-	ID         int64
-	FechaHora  pgtype.Timestamp
-	ClienteID  *string
-	ServicioID *int64
-	TenantID   int64
 }

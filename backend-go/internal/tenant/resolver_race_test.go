@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// TestResolverConcurrenteSinRace ejerce la caché desde muchas goroutines: antes
-// del RWMutex el map se escribía en paralelo y Go abortaba el proceso por
-// "concurrent map writes" (fallo ALTO de la auditoría de seguridad).
-func TestResolverConcurrenteSinRace(t *testing.T) {
+// TestResolverConcurrentAccess hammers the cache from many goroutines: before
+// the RWMutex the map was written concurrently and Go aborted the process
+// with "concurrent map writes" (a HIGH finding of the security audit).
+func TestResolverConcurrentAccess(t *testing.T) {
 	r := NewResolver(nil, "default")
 	hosts := []string{"a.example", "b.example", "c.example"}
 	var wg sync.WaitGroup
@@ -31,6 +31,6 @@ func TestResolverConcurrenteSinRace(t *testing.T) {
 	wg.Wait()
 
 	if got := len(r.cache); got != len(hosts) {
-		t.Errorf("caché = %d entradas, quiero %d", got, len(hosts))
+		t.Errorf("cache = %d entries, want %d", got, len(hosts))
 	}
 }

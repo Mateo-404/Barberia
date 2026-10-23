@@ -1,9 +1,9 @@
-// Package db contiene las migraciones SQL embebidas en el binario.
+// Package db embeds the SQL migrations in the binary.
 package db
 
 import "embed"
 
-// MigrationsFS expone las migraciones para golang-migrate.
+// MigrationsFS exposes the migrations to golang-migrate.
 //
 //go:embed migrations/*.sql
 var MigrationsFS embed.FS

@@ -1,4 +1,4 @@
-// Command api es el backend de la barbería (Go).
+// Command api is the barbershop booking backend.
 package main
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/Mateo-404/Barberia/backend-go/internal/auth"
 	"github.com/Mateo-404/Barberia/backend-go/internal/config"
 	"github.com/Mateo-404/Barberia/backend-go/internal/httpapi"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/administradores"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/admins"
 	"github.com/Mateo-404/Barberia/backend-go/internal/platform/database"
 	"github.com/Mateo-404/Barberia/backend-go/internal/platform/database/sqlc"
 	"github.com/Mateo-404/Barberia/backend-go/internal/tenant"
@@ -24,7 +24,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("arranque fallido", "err", err)
+		slog.Error("startup failed", "err", err)
 		os.Exit(1)
 	}
 }
@@ -37,7 +37,7 @@ func run() error {
 		return err
 	}
 
-	// Chequeo de rol al arrancar si no es dev
+	// Outside dev, refuse to run with a role that bypasses RLS.
 	if cfg.AppEnv != "dev" {
 		if err := checkAppUserRole(context.Background(), cfg.DatabaseURL); err != nil {
 			return err
@@ -72,20 +72,20 @@ func run() error {
 	q := sqlc.New(pool)
 	resolver := tenant.NewResolver(q, cfg.DefaultTenantSlug)
 
-	// Seed del administrador inicial (paridad con AdminSeedRunner de Java).
+	// Initial admin seed.
 	if cfg.AdminSeed {
-		seedAdmins := administradores.New(pool, q, jwtManager, logger)
+		seedAdmins := admins.New(pool, q, jwtManager, logger)
 		t, err := resolver.Resolve(ctx, "")
-		if err != nil && !errors.Is(err, tenant.ErrTenantNoConfigurado) {
+		if err != nil && !errors.Is(err, tenant.ErrDefaultTenantMissing) {
 			return err
 		}
 		if err == nil {
 			if err := seedAdmins.Seed(ctx, t.ID, cfg.AdminSeedEmail, cfg.AdminSeedPassword,
-				cfg.AdminSeedNombre, cfg.AdminSeedApellido); err != nil {
+				cfg.AdminSeedFirstName, cfg.AdminSeedLastName); err != nil {
 				return err
 			}
 		} else {
-			logger.Warn("seed omitido: tenant por defecto inexistente (ejecute las migraciones)")
+			logger.Warn("seed skipped: default tenant missing (run the migrations)")
 		}
 	}
 
@@ -104,7 +104,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("servidor escuchando", "addr", cfg.HTTPAddr)
+		logger.Info("server listening", "addr", cfg.HTTPAddr)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -116,7 +116,7 @@ func run() error {
 	case <-ctx.Done():
 	}
 
-	logger.Info("apagando servidor")
+	logger.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	return httpServer.Shutdown(shutdownCtx)
@@ -134,7 +134,7 @@ func checkAppUserRole(ctx context.Context, connStr string) error {
 		return err
 	}
 	if rolsuper || rolbypassrls {
-		return fmt.Errorf("app se conecta con rol superusuario o con BYPASSRLS (rolsuper=%v rolbypassrls=%v)", rolsuper, rolbypassrls)
+		return fmt.Errorf("the app connects with a superuser or BYPASSRLS role (rolsuper=%v rolbypassrls=%v); use a restricted role or APP_ENV=dev", rolsuper, rolbypassrls)
 	}
 	return nil
 }

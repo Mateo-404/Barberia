@@ -1,5 +1,5 @@
-// Command migrate aplica las migraciones embebidas con un rol dueño del esquema
-// (MIGRATE_DATABASE_URL), separado del rol de la app (ver docs/DEPLOY_NOTES.md).
+// Command migrate applies the embedded migrations with a schema-owner role
+// (MIGRATE_DATABASE_URL), separate from the app role (see docs/DEPLOY_NOTES.md).
 package main
 
 import (
@@ -17,11 +17,11 @@ func main() {
 		dsn = os.Getenv("DATABASE_URL")
 	}
 	if dsn == "" {
-		logger.Error("MIGRATE_DATABASE_URL o DATABASE_URL requerido")
+		logger.Error("MIGRATE_DATABASE_URL or DATABASE_URL is required")
 		os.Exit(1)
 	}
 	if err := database.RunMigrations(context.Background(), dsn, logger); err != nil {
-		logger.Error("migrar", "err", err)
+		logger.Error("migrate", "err", err)
 		os.Exit(1)
 	}
 }

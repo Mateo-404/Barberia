@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// WithTenantTx abre una transacción, setea app.tenant_id desde el context
-// y ejecuta fn con *sqlc.Queries atado a esa transacción.
-// El tenant NO se acepta como parámetro libre desde handlers.
+// WithTenantTx opens a transaction, sets app.tenant_id from ctx (for RLS)
+// and runs fn with *sqlc.Queries bound to that transaction. Handlers cannot
+// pass an arbitrary tenant.
 func WithTenantTx(ctx context.Context, pool *pgxpool.Pool, fn func(*sqlc.Queries) error) error {
 	tid, ok := tenant.ID(ctx)
 	if !ok || tid == 0 {

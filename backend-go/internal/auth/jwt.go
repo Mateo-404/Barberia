@@ -8,44 +8,43 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Claims son los claims emitidos por el backend. Los cuatro primeros son
-// idénticos a los del Java; "tenant" es aditivo (ADR-002).
+// Claims are the token claims issued by the backend (ADR-002).
 type Claims struct {
 	Email    string `json:"email"`
 	TenantID int64  `json:"tenant,omitempty"`
-	Rol      string `json:"rol,omitempty"`
+	Role     string `json:"role,omitempty"`
 	jwt.RegisteredClaims
 }
 
-// JWTManager emite y valida tokens HS256.
+// JWTManager issues and validates HS256 tokens.
 type JWTManager struct {
 	secret []byte
 	ttl    time.Duration
 	now    func() time.Time
 }
 
-// NewJWTManager crea el emisor. secret debe tener al menos 32 bytes (validado
-// en config); aquí se vuelve a comprobar para uso defensivo.
+// NewJWTManager builds the issuer. The secret must be at least 32 bytes
+// (validated in config; checked again here defensively).
 func NewJWTManager(secret string, ttl time.Duration) (*JWTManager, error) {
 	if len(secret) < 32 {
-		return nil, errors.New("JWT_SECRET debe tener al menos 32 bytes")
+		return nil, errors.New("JWT_SECRET must be at least 32 bytes")
 	}
 	if ttl <= 0 {
-		return nil, errors.New("ttl de JWT inválido")
+		return nil, errors.New("invalid JWT ttl")
 	}
 	return &JWTManager{secret: []byte(secret), ttl: ttl, now: time.Now}, nil
 }
 
-// Issue genera un token para el administrador dado.
-func (m *JWTManager) Issue(adminID int64, email string, tenantID int64, rol string) (string, error) {
+// Issue creates a token for the given admin.
+func (m *JWTManager) Issue(adminID int64, email string, tenantID int64, role string) (string, error) {
 	now := m.now()
-	if rol == "" {
-		rol = RolOwner
+	if role == "" {
+		role = RoleOwner
 	}
 	claims := Claims{
 		Email:    email,
 		TenantID: tenantID,
-		Rol:      rol,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.FormatInt(adminID, 10),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -55,7 +54,7 @@ func (m *JWTManager) Issue(adminID int64, email string, tenantID int64, rol stri
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(m.secret)
 }
 
-// Parse valida firma, algoritmo y expiración, y devuelve los claims.
+// Parse validates signature, algorithm and expiry and returns the claims.
 func (m *JWTManager) Parse(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
@@ -64,13 +63,13 @@ func (m *JWTManager) Parse(tokenString string) (*Claims, error) {
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil || !token.Valid {
-		return nil, errors.New("token inválido")
+		return nil, ErrInvalidToken
 	}
 	if claims.Subject == "" {
-		return nil, errors.New("token sin sub")
+		return nil, errors.New("token without sub")
 	}
 	return claims, nil
 }
 
-// ErrTokenInvalido error para tokens inválidos
-var ErrTokenInvalido = errors.New("token inválido")
+// ErrInvalidToken is returned for any token that fails validation.
+var ErrInvalidToken = errors.New("invalid token")

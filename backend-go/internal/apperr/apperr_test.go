@@ -2,25 +2,26 @@ package apperr
 
 import "testing"
 
-func TestNewFormateaMensaje(t *testing.T) {
-	err := New(KindAlreadyExists, "Ya existe un cliente con el teléfono %s", "115")
-	if err.Kind != KindAlreadyExists {
-		t.Errorf("Kind = %v", err.Kind)
+func TestNewFormatsMessageAndKeepsCode(t *testing.T) {
+	err := New(KindAlreadyExists, "customer.already_exists", Params{"phone": "115"},
+		"a customer with phone %s already exists", "115")
+	if err.Kind != KindAlreadyExists || err.Code != "customer.already_exists" {
+		t.Errorf("kind/code = %v/%q", err.Kind, err.Code)
 	}
-	if err.Error() != "Ya existe un cliente con el teléfono 115" {
-		t.Errorf("mensaje = %q", err.Error())
+	if err.Params["phone"] != "115" {
+		t.Errorf("params = %v", err.Params)
+	}
+	if err.Error() != "a customer with phone 115 already exists" {
+		t.Errorf("message = %q", err.Error())
 	}
 }
 
-func TestKindsDistintos(t *testing.T) {
-	vistos := map[Kind]bool{}
+func TestKindsAreDistinct(t *testing.T) {
+	seen := map[Kind]bool{}
 	for _, k := range []Kind{KindBusinessRule, KindNotFound, KindAlreadyExists, KindInvalidCredentials, KindValidation, KindConflict} {
-		if vistos[k] {
-			t.Fatalf("kind duplicado: %v", k)
+		if seen[k] {
+			t.Fatalf("duplicate kind: %v", k)
 		}
-		vistos[k] = true
-	}
-	if len(vistos) != 6 {
-		t.Fatalf("kinds = %d, want 6", len(vistos))
+		seen[k] = true
 	}
 }

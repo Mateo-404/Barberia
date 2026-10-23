@@ -7,7 +7,7 @@ import (
 )
 
 func TestContrastVectors(t *testing.T) {
-	b := leerTestdata(t, "contrast_vectors.json")
+	b := readTestdata(t, "contrast_vectors.json")
 	var v struct {
 		Tolerance float64 `json:"tolerance"`
 		Contrast  []struct {

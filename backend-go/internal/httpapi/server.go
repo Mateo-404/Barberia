@@ -1,3 +1,5 @@
+// Package httpapi is the HTTP layer: routing, middleware, request
+// validation and the JSON contract described in api/openapi.json.
 package httpapi
 
 import (
@@ -8,43 +10,43 @@ import (
 
 	"github.com/Mateo-404/Barberia/backend-go/internal/auth"
 	"github.com/Mateo-404/Barberia/backend-go/internal/config"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/administradores"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/clientes"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/estadisticas"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/servicios"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/admins"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/appointments"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/customers"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/services"
 	settingsmod "github.com/Mateo-404/Barberia/backend-go/internal/modules/settings"
-	"github.com/Mateo-404/Barberia/backend-go/internal/modules/turnos"
+	"github.com/Mateo-404/Barberia/backend-go/internal/modules/stats"
 	"github.com/Mateo-404/Barberia/backend-go/internal/platform/database/sqlc"
 	"github.com/Mateo-404/Barberia/backend-go/internal/tenant"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Server agrupa el handler HTTP completo.
+// Server holds the complete HTTP handler and its dependencies.
 type Server struct {
 	cfg               *config.Config
 	logger            *slog.Logger
 	pool              *pgxpool.Pool
 	jwt               *auth.JWTManager
-	limiter           *auth.LoginLimiter
-	escrituraLimiter  *auth.LoginLimiter
+	loginLimiter      *auth.LoginLimiter
+	bookingLimiter    *auth.LoginLimiter
 	trustProxyHeaders bool
 	resolver          TenantResolver
-	clientes          *clientes.Service
-	servicios         *servicios.Service
-	admins            *administradores.Service
-	turnos            *turnos.Service
-	stats             *estadisticas.Service
+	customers         *customers.Service
+	services          *services.Service
+	admins            *admins.Service
+	appointments      *appointments.Service
+	stats             *stats.Service
 	settings          *settingsmod.Service
 	now               func() time.Time
 }
 
-// TenantResolver resuelve el tenant por Host de la request.
+// TenantResolver resolves the tenant of a request Host.
 type TenantResolver interface {
 	Resolve(ctx context.Context, host string) (tenant.Tenant, error)
 }
 
-// Deps son las dependencias del servidor HTTP.
+// Deps are the server dependencies.
 type Deps struct {
 	Cfg      *config.Config
 	Logger   *slog.Logger
@@ -53,26 +55,26 @@ type Deps struct {
 	Resolver TenantResolver
 }
 
-// NewServer construye el servidor con todos los módulos.
+// NewServer builds the server with every module.
 func NewServer(d Deps) *Server {
 	q := sqlc.New(d.Pool)
 	return &Server{
 		cfg: d.Cfg, logger: d.Logger, pool: d.Pool, jwt: d.JWT,
-		limiter:           auth.NewLoginLimiter(d.Cfg.LoginRateLimitPerMinute),
-		escrituraLimiter:  auth.NewLoginLimiter(d.Cfg.TurnoRateLimitPerMinute),
+		loginLimiter:      auth.NewLoginLimiter(d.Cfg.LoginRateLimitPerMinute),
+		bookingLimiter:    auth.NewLoginLimiter(d.Cfg.BookingRateLimitPerMinute),
 		trustProxyHeaders: d.Cfg.TrustProxyHeaders,
 		resolver:          d.Resolver,
-		clientes:          clientes.New(d.Pool, q),
-		servicios:         servicios.New(d.Pool, q),
-		admins:            administradores.New(d.Pool, q, d.JWT, d.Logger),
-		turnos:            turnos.New(d.Pool, q),
-		stats:             estadisticas.New(d.Pool, q),
+		customers:         customers.New(d.Pool, q),
+		services:          services.New(d.Pool, q),
+		admins:            admins.New(d.Pool, q, d.JWT, d.Logger),
+		appointments:      appointments.New(d.Pool, q),
+		stats:             stats.New(d.Pool, q),
 		settings:          settingsmod.New(d.Pool, q),
 		now:               time.Now,
 	}
 }
 
-// Handler monta el router chi con el contrato del backend Java.
+// Handler mounts the chi router.
 func (s *Server) Handler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(s.middlewareRecover)
@@ -81,88 +83,73 @@ func (s *Server) Handler() http.Handler {
 	r.Use(s.middlewareHeaders)
 	r.Use(s.middlewareCORS)
 	r.Use(s.middlewareAuth)
-	r.Use(s.middlewareAdminRole)
-	r.Use(s.middlewareLimitarEscrituras)
+	r.Use(s.middlewareBookingRateLimit)
 
-	r.NotFound(func(w http.ResponseWriter, req *http.Request) { notFoundRecurso(w, req) })
-	r.MethodNotAllowed(func(w http.ResponseWriter, req *http.Request) { methodNotAllowed(w, req) })
+	r.NotFound(routeNotFound)
+	r.MethodNotAllowed(methodNotAllowed)
 
-	r.Get("/ping", s.hPing)
-	r.Get("/healthz", s.hHealthz)
-	r.Get("/readyz", s.hReadyz)
+	r.Get("/healthz", s.handleHealthz)
+	r.Get("/readyz", s.handleReadyz)
 
-	r.Route("/administradores", func(r chi.Router) {
-		r.Get("/", s.hAdminList)
-		r.Post("/", s.hAdminCreate)
-		r.Post("/all", s.hAdminCreateAll)
-		r.Post("/login", s.hAdminLogin)
-		r.Get("/exists/{id}", s.hAdminExists)
-		r.Get("/{page}/{size}", s.hAdminPage)
-		r.Get("/{id}", s.hAdminGet)
-		r.Patch("/{id}", s.hAdminPatch)
-		r.Delete("/{id}", s.hAdminDelete)
-	})
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/auth/login", s.handleLogin)
 
-	r.Route("/clientes", func(r chi.Router) {
-		r.Get("/", s.hClienteList)
-		r.Post("/", s.hClienteCreate)
-		r.Post("/all", s.hClienteCreateAll)
-		r.Get("/exists/{telefono}", s.hClienteExists)
-		r.Get("/{page}/{size}", s.hClientePage)
-		r.Get("/{telefono}", s.hClienteGet)
-		r.Patch("/{telefono}", s.hClientePatch)
-		r.Delete("/{telefono}", s.hClienteDelete)
-	})
+		r.Route("/appointments", func(r chi.Router) {
+			r.Get("/", s.handleAppointmentList)
+			r.Post("/", s.handleAppointmentCreate)
+			r.Get("/paged", s.handleAppointmentPage)
+			r.Get("/booked-slots", s.handleBookedSlots)
+			r.Get("/{id}", s.handleAppointmentGet)
+			r.Patch("/{id}", s.handleAppointmentPatch)
+			r.Delete("/{id}", s.handleAppointmentDelete)
+		})
 
-	r.Route("/servicios", func(r chi.Router) {
-		r.Get("/", s.hServicioList)
-		r.Post("/", s.hServicioCreate)
-		r.Post("/all", s.hServicioCreateAll)
-		r.Get("/exists/{id}", s.hServicioExists)
-		r.Get("/{page}/{size}", s.hServicioPage)
-		r.Get("/{id}", s.hServicioGet)
-		r.Patch("/{id}", s.hServicioPatch)
-		r.Delete("/{id}", s.hServicioDelete)
-	})
+		r.Route("/customers", func(r chi.Router) {
+			r.Get("/", s.handleCustomerList)
+			r.Post("/", s.handleCustomerCreate)
+			r.Get("/paged", s.handleCustomerPage)
+			r.Get("/{phone}", s.handleCustomerGet)
+			r.Patch("/{phone}", s.handleCustomerPatch)
+			r.Delete("/{phone}", s.handleCustomerDelete)
+		})
 
-	r.Route("/turnos", func(r chi.Router) {
-		r.Get("/", s.hTurnoList)
-		r.Post("/", s.hTurnoCreate)
-		r.Post("/all", s.hTurnoCreateAll)
-		r.Get("/findDateTimes", s.hTurnoFindDateTimes)
-		r.Get("/exists/{id}", s.hTurnoExists)
-		r.Get("/{page}/{size}", s.hTurnoPage)
-		r.Get("/{id}", s.hTurnoGet)
-		r.Patch("/{id}", s.hTurnoPatch)
-		r.Delete("/{id}", s.hTurnoDelete)
-	})
+		r.Route("/services", func(r chi.Router) {
+			r.Get("/", s.handleServiceList)
+			r.Post("/", s.handleServiceCreate)
+			r.Get("/paged", s.handleServicePage)
+			r.Get("/{id}", s.handleServiceGet)
+			r.Patch("/{id}", s.handleServicePatch)
+			r.Delete("/{id}", s.handleServiceDelete)
+		})
 
-	r.Get("/estadisticas/panel", s.hEstadisticasPanel)
+		// Managing admins is reserved to the owner (privilege escalation guard).
+		r.Route("/admins", func(r chi.Router) {
+			r.Use(requireRole(auth.RoleOwner))
+			r.Get("/", s.handleAdminList)
+			r.Post("/", s.handleAdminCreate)
+			r.Get("/paged", s.handleAdminPage)
+			r.Get("/{id}", s.handleAdminGet)
+			r.Patch("/{id}", s.handleAdminPatch)
+			r.Delete("/{id}", s.handleAdminDelete)
+		})
 
-	// Settings API
-	r.Route("/api/admin/settings", func(r chi.Router) {
-		r.Get("/", s.hAdminSettingsGet)
-		r.Put("/draft", s.hAdminSettingsDraft)
-		r.Post("/publish", s.hAdminSettingsPublish)
-		r.Get("/versions", s.hAdminSettingsVersions)
-		r.Post("/rollback", s.hAdminSettingsRollback)
-		r.Get("/preview/theme.css", s.hAdminSettingsPreview)
-	})
-	r.Route("/api/public", func(r chi.Router) {
-		r.Get("/settings", s.hPublicSettings)
-		r.Get("/theme.css", s.hPublicThemeCSS)
+		r.Get("/stats/dashboard", s.handleDashboard)
+
+		r.Route("/admin/settings", func(r chi.Router) {
+			r.Use(requireRole(auth.RoleOwner, auth.RoleAdmin))
+			r.Get("/", s.handleSettingsGet)
+			r.Put("/draft", s.handleSettingsDraft)
+			r.Post("/publish", s.handleSettingsPublish)
+			r.Get("/versions", s.handleSettingsVersions)
+			r.Post("/rollback", s.handleSettingsRollback)
+			r.Get("/preview/theme.css", s.handleSettingsPreview)
+		})
+
+		r.Route("/public", func(r chi.Router) {
+			r.Get("/settings", s.handlePublicSettings)
+			r.Get("/theme.css", s.handlePublicThemeCSS)
+		})
 	})
 
 	return r
-}
-
-// middlewareLimitarEscrituras corta temprano (antes de tocar la BD) los POST
-// públicos al endpoint de turnos que exceden el límite por IP.
-func (s *Server) middlewareLimitarEscrituras(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !s.limitaEscritura(w, r) {
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-// leerTestdata lee un fixture de backend-go/testdata y falla si no existe
-// (un fixture vacío haría pasar los tests sin validar nada).
-func leerTestdata(t *testing.T, nombre string) []byte {
+// readTestdata reads a fixture from backend-go/testdata and fails when it is
+// missing (an empty fixture would make tests pass without checking anything).
+func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
-	b, err := os.ReadFile(filepath.Join("..", "..", "testdata", nombre))
+	b, err := os.ReadFile(filepath.Join("..", "..", "testdata", name))
 	if err != nil {
-		t.Fatalf("leer testdata %s: %v", nombre, err)
+		t.Fatalf("read testdata %s: %v", name, err)
 	}
 	return b
 }

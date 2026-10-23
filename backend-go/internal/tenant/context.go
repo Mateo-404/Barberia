@@ -6,12 +6,12 @@ type ctxKey int
 
 const key ctxKey = iota
 
-// WithID guarda el tenant_id en el context.
+// WithID stores the tenant id in ctx.
 func WithID(ctx context.Context, id int64) context.Context {
 	return context.WithValue(ctx, key, id)
 }
 
-// ID obtiene el tenant_id del context.
+// ID returns the tenant id stored in ctx.
 func ID(ctx context.Context) (int64, bool) {
 	v := ctx.Value(key)
 	if v == nil {
@@ -21,7 +21,7 @@ func ID(ctx context.Context) (int64, bool) {
 	return id, ok
 }
 
-// MustID obtiene el tenant_id o false si no existe.
+// MustID returns the tenant id, or 0 when there is none.
 func MustID(ctx context.Context) int64 {
 	id, _ := ID(ctx)
 	return id

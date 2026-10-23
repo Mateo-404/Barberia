@@ -5,36 +5,36 @@ import (
 	"time"
 )
 
-// LoginLimiter limita intentos de login por clave (IP) en ventanas de un
-// minuto. Es en memoria y por proceso: suficiente para una instancia; con
-// varias réplicas el límite efectivo se multiplica (documentado).
+// LoginLimiter limits attempts per key (IP) in one-minute windows. It is
+// in-memory and per process: fine for one instance; with several replicas
+// the effective limit multiplies (documented).
 type LoginLimiter struct {
-	mu       sync.Mutex
-	limit    int
-	window   time.Duration
-	now      func() time.Time
-	entradas map[string]*ventana
+	mu      sync.Mutex
+	limit   int
+	window  time.Duration
+	now     func() time.Time
+	entries map[string]*window
 }
 
-type ventana struct {
-	inicio time.Time
-	count  int
+type window struct {
+	start time.Time
+	count int
 }
 
-// NewLoginLimiter crea el limitador con N intentos por minuto.
+// NewLoginLimiter allows limit attempts per minute.
 func NewLoginLimiter(limit int) *LoginLimiter {
-	return &LoginLimiter{limit: limit, window: time.Minute, now: time.Now, entradas: map[string]*ventana{}}
+	return &LoginLimiter{limit: limit, window: time.Minute, now: time.Now, entries: map[string]*window{}}
 }
 
-// Allow indica si la clave puede intentar login ahora.
+// Allow reports whether the key may try now.
 func (l *LoginLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := l.now()
-	v, ok := l.entradas[key]
-	if !ok || now.Sub(v.inicio) >= l.window {
-		l.entradas[key] = &ventana{inicio: now, count: 1}
-		l.limpieza(now)
+	v, ok := l.entries[key]
+	if !ok || now.Sub(v.start) >= l.window {
+		l.entries[key] = &window{start: now, count: 1}
+		l.prune(now)
 		return true
 	}
 	if v.count >= l.limit {
@@ -44,21 +44,21 @@ func (l *LoginLimiter) Allow(key string) bool {
 	return true
 }
 
-// Reset olvida la clave (p. ej. tras login exitoso).
+// Reset forgets the key (e.g. after a successful login).
 func (l *LoginLimiter) Reset(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	delete(l.entradas, key)
+	delete(l.entries, key)
 }
 
-// limpieza evita crecimiento sin límite del mapa.
-func (l *LoginLimiter) limpieza(now time.Time) {
-	if len(l.entradas) < 1024 {
+// prune keeps the map from growing without bound.
+func (l *LoginLimiter) prune(now time.Time) {
+	if len(l.entries) < 1024 {
 		return
 	}
-	for k, v := range l.entradas {
-		if now.Sub(v.inicio) >= l.window {
-			delete(l.entradas, k)
+	for k, v := range l.entries {
+		if now.Sub(v.start) >= l.window {
+			delete(l.entries, k)
 		}
 	}
 }

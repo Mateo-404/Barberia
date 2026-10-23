@@ -1,0 +1,1 @@
+# path-glob:regex — intentional Spanish data allowed by scripts/check_english.py

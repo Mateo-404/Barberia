@@ -1,4 +1,4 @@
-// Package pgutil clasifica errores de PostgreSQL por SQLSTATE.
+// Package pgutil classifies PostgreSQL errors by SQLSTATE.
 package pgutil
 
 import (
@@ -7,19 +7,22 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// IsUniqueViolation indica violación de unicidad (23505).
-func IsUniqueViolation(err error) bool { return codigo(err) == "23505" }
+// IsUniqueViolation reports a unique violation (23505).
+func IsUniqueViolation(err error) bool { return sqlState(err) == "23505" }
 
-// IsForeignKeyViolation indica violación de clave foránea (23503).
-func IsForeignKeyViolation(err error) bool { return codigo(err) == "23503" }
+// IsForeignKeyViolation reports a foreign key violation (23503).
+func IsForeignKeyViolation(err error) bool { return sqlState(err) == "23503" }
 
-func codigo(err error) string {
+// IsExclusionViolation reports an exclusion constraint violation (23P01).
+func IsExclusionViolation(err error) bool { return sqlState(err) == "23P01" }
+
+// IsCheckViolation reports a check constraint violation (23514).
+func IsCheckViolation(err error) bool { return sqlState(err) == "23514" }
+
+func sqlState(err error) string {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		return pgErr.Code
 	}
 	return ""
 }
-
-func IsExclusionViolation(err error) bool { return codigo(err) == "23P01" }
-func IsCheckViolation(err error) bool     { return codigo(err) == "23514" }

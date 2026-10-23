@@ -1,19 +1,15 @@
-// Package tenant resuelve el tenant de cada request.
+// Package tenant resolves the tenant of each request (ADR-002 / SPEC §4):
+//   - exact Host in tenant_domains with verified_at IS NOT NULL;
+//   - otherwise exact match on tenants.host;
+//   - otherwise (and for localhost) the default tenant.
 //
-// Reglas (ADR-002 / SPEC §4):
-//   - Host exacto en tenant_domains con verified_at IS NOT NULL.
-//   - Subdominio de BASE_DOMAIN (env) → slug (simplificado si aplica).
-//   - Solo con APP_ENV=dev: header X-Tenant-Slug.
-//   - El tenant NUNCA se toma de una cabecera enviada por el cliente en prod.
-//   - Tenant desconocido o suspended → error (middleware devuelve 404 genérico).
+// The tenant is never taken from a client-supplied header.
 package tenant
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
 	"strings"
 	"sync"
 
@@ -21,13 +17,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Tenant es el ámbito resuelto.
+// Tenant is the resolved scope.
 type Tenant struct {
 	ID   int64
 	Slug string
 }
 
-// Resolver resuelve y cachea tenants por Host.
+// Resolver resolves tenants by Host and caches the result.
 type Resolver struct {
 	q           *sqlc.Queries
 	defaultSlug string
@@ -39,7 +35,7 @@ type Resolver struct {
 	defaultLoaded bool
 }
 
-// NewResolver construye el resolver.
+// NewResolver builds the resolver.
 func NewResolver(q *sqlc.Queries, defaultSlug string) *Resolver {
 	return &Resolver{
 		q: q, defaultSlug: defaultSlug,
@@ -47,27 +43,23 @@ func NewResolver(q *sqlc.Queries, defaultSlug string) *Resolver {
 	}
 }
 
-// ErrTenantNoConfigurado indica que no existe el tenant por defecto.
-var ErrTenantNoConfigurado = errors.New("tenant por defecto inexistente; ejecute las migraciones")
-var ErrTenantDesconocido = errors.New("tenant desconocido")
-var ErrTenantSuspendido = errors.New("tenant suspendido")
+// ErrDefaultTenantMissing means the default tenant does not exist yet.
+var ErrDefaultTenantMissing = errors.New("default tenant missing; run the migrations")
 
-// Resolve devuelve el tenant para el Host de la request.
+// Resolve returns the tenant for a request Host.
 func (r *Resolver) Resolve(ctx context.Context, host string) (Tenant, error) {
-	host = normalizarHost(host)
+	host = normalizeHost(host)
 	if host == "" {
 		return r.defaultTenant(ctx)
 	}
 	if t, ok := r.cacheGet(host); ok {
 		return t, nil
 	}
-	if r.esMiss(host) {
+	if r.isMiss(host) {
 		return r.defaultTenant(ctx)
 	}
 
-	// Intentar por tenant_domains verificado
 	if r.q != nil {
-		// Buscar dominio verificado
 		row, err := r.q.GetTenantByDomain(ctx, host)
 		if err == nil {
 			res := Tenant{ID: row.ID, Slug: row.Slug}
@@ -87,29 +79,13 @@ func (r *Resolver) Resolve(ctx context.Context, host string) (Tenant, error) {
 		return res, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return Tenant{}, fmt.Errorf("resolver tenant por host: %w", err)
+		return Tenant{}, fmt.Errorf("resolve tenant by host: %w", err)
 	}
 
 	r.mu.Lock()
 	r.misses[host] = struct{}{}
 	r.mu.Unlock()
 	return r.defaultTenant(ctx)
-}
-
-// ResolveFromRequest resuelve considerando header solo en dev
-func (r *Resolver) ResolveFromRequest(ctx context.Context, req *http.Request) (Tenant, error) {
-	if req != nil && os.Getenv("APP_ENV") == "dev" {
-		if h := strings.TrimSpace(req.Header.Get("X-Tenant-Slug")); h != "" {
-			if t, err := r.q.GetTenantBySlug(ctx, h); err == nil {
-				return Tenant{ID: t.ID, Slug: t.Slug}, nil
-			}
-		}
-	}
-	host := ""
-	if req != nil {
-		host = req.Host
-	}
-	return r.Resolve(ctx, host)
 }
 
 func (r *Resolver) cacheGet(host string) (Tenant, bool) {
@@ -119,14 +95,14 @@ func (r *Resolver) cacheGet(host string) (Tenant, bool) {
 	return t, ok
 }
 
-func (r *Resolver) esMiss(host string) bool {
+func (r *Resolver) isMiss(host string) bool {
 	r.mu.RLock()
 	_, ok := r.misses[host]
 	r.mu.RUnlock()
 	return ok
 }
 
-// defaultTenant devuelve el tenant por defecto (Host ausente o desconocido).
+// defaultTenant returns the default tenant (missing or unknown Host).
 func (r *Resolver) defaultTenant(ctx context.Context) (Tenant, error) {
 	r.mu.RLock()
 	if r.defaultLoaded {
@@ -137,14 +113,14 @@ func (r *Resolver) defaultTenant(ctx context.Context) (Tenant, error) {
 	r.mu.RUnlock()
 
 	if r.q == nil {
-		return Tenant{}, ErrTenantNoConfigurado
+		return Tenant{}, ErrDefaultTenantMissing
 	}
 	t, err := r.q.GetTenantBySlug(ctx, r.defaultSlug)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return Tenant{}, ErrTenantNoConfigurado
+		return Tenant{}, ErrDefaultTenantMissing
 	}
 	if err != nil {
-		return Tenant{}, fmt.Errorf("resolver tenant por defecto: %w", err)
+		return Tenant{}, fmt.Errorf("resolve default tenant: %w", err)
 	}
 	res := Tenant{ID: t.ID, Slug: t.Slug}
 
@@ -155,7 +131,7 @@ func (r *Resolver) defaultTenant(ctx context.Context) (Tenant, error) {
 	return res, nil
 }
 
-func normalizarHost(host string) string {
+func normalizeHost(host string) string {
 	host = strings.TrimSpace(strings.ToLower(host))
 	if h, _, ok := strings.Cut(host, ":"); ok && !strings.Contains(host, "]") {
 		host = h
@@ -165,7 +141,7 @@ func normalizarHost(host string) string {
 		}
 	}
 	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
-		// En desarrollo todos los frontends van contra el tenant por defecto.
+		// In development every frontend talks to the default tenant.
 		return ""
 	}
 	return host

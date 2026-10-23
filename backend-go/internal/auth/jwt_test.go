@@ -5,12 +5,14 @@ import (
 	"time"
 )
 
+const testSecret = "test-secret-at-least-32-bytes-long!"
+
 func TestJWTIssueParse(t *testing.T) {
-	m, err := NewJWTManager("test-secret-de-al-menos-32-bytes!!", 24*time.Hour)
+	m, err := NewJWTManager(testSecret, 24*time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
-	token, err := m.Issue(7, "admin@admin.com", 3, "owner")
+	token, err := m.Issue(7, "admin@admin.com", 3, RoleOwner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,49 +20,48 @@ func TestJWTIssueParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if claims.Subject != "7" || claims.Email != "admin@admin.com" || claims.TenantID != 3 {
-		t.Fatalf("claims inesperados: %+v", claims)
+	if claims.Subject != "7" || claims.Email != "admin@admin.com" || claims.TenantID != 3 || claims.Role != RoleOwner {
+		t.Fatalf("unexpected claims: %+v", claims)
 	}
 	if claims.ExpiresAt == nil || time.Until(claims.ExpiresAt.Time) < 23*time.Hour {
-		t.Fatalf("expiración inesperada: %v", claims.ExpiresAt)
+		t.Fatalf("unexpected expiry: %v", claims.ExpiresAt)
 	}
 }
 
-func TestJWTTokenLegadoSinTenant(t *testing.T) {
-	m, err := NewJWTManager("test-secret-de-al-menos-32-bytes!!", 24*time.Hour)
+func TestJWTWithoutTenantParsesWithZeroTenant(t *testing.T) {
+	m, err := NewJWTManager(testSecret, 24*time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Token generado por el Java: solo sub, email, iat, exp.
-	legacy, err := m.Issue(1, "admin@admin.com", 0, "owner")
+	token, err := m.Issue(1, "admin@admin.com", 0, RoleOwner)
 	if err != nil {
 		t.Fatal(err)
 	}
-	claims, err := m.Parse(legacy)
+	claims, err := m.Parse(token)
 	if err != nil {
-		t.Fatalf("token legado debería aceptarse: %v", err)
+		t.Fatalf("token should parse: %v", err)
 	}
+	// The HTTP middleware rejects it with 401; Parse only validates the token.
 	if claims.TenantID != 0 {
-		t.Fatalf("tenant debería resolverse por BD (0 en claims), got %d", claims.TenantID)
+		t.Fatalf("tenant = %d, want 0", claims.TenantID)
 	}
 }
 
-func TestJWTRechazaFirmaInvalida(t *testing.T) {
-	m, _ := NewJWTManager("test-secret-de-al-menos-32-bytes!!", time.Hour)
-	otro, _ := NewJWTManager("otro-secreto-tambien-largo-32bytes!", time.Hour)
-	token, _ := otro.Issue(1, "a@b.com", 1, "owner")
+func TestJWTRejectsWrongSignature(t *testing.T) {
+	m, _ := NewJWTManager(testSecret, time.Hour)
+	other, _ := NewJWTManager("another-secret-also-32-bytes-long!!", time.Hour)
+	token, _ := other.Issue(1, "a@b.com", 1, RoleOwner)
 	if _, err := m.Parse(token); err == nil {
-		t.Fatal("token firmado con otra clave debería rechazarse")
+		t.Fatal("a token signed with another key must be rejected")
 	}
 }
 
-func TestJWTRechazaAlgDistintoDeHS256(t *testing.T) {
-	m, _ := NewJWTManager("test-secret-de-al-menos-32-bytes!!", time.Hour)
+func TestJWTRejectsNonHS256(t *testing.T) {
+	m, _ := NewJWTManager(testSecret, time.Hour)
 	if _, err := m.Parse("eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0."); err == nil {
-		t.Fatal("alg none debería rechazarse")
+		t.Fatal("alg none must be rejected")
 	}
-	if _, err := m.Parse("token-basura"); err == nil {
-		t.Fatal("token basura debería rechazarse")
+	if _, err := m.Parse("garbage-token"); err == nil {
+		t.Fatal("a garbage token must be rejected")
 	}
-	_ = m
 }

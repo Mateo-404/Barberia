@@ -5,78 +5,78 @@ import (
 	"time"
 )
 
-// nuevaConReloj permite controlar la ventana del limitador en tests.
-func nuevaConReloj(limit int, reloj *time.Time) *LoginLimiter {
+// withClock lets tests control the limiter window.
+func withClock(limit int, clock *time.Time) *LoginLimiter {
 	l := NewLoginLimiter(limit)
-	l.now = func() time.Time { return *reloj }
+	l.now = func() time.Time { return *clock }
 	return l
 }
 
-func TestLoginLimiterBloqueaTrasLimite(t *testing.T) {
-	ahora := time.Now()
-	l := nuevaConReloj(3, &ahora)
+func TestLoginLimiterBlocksAfterLimit(t *testing.T) {
+	now := time.Now()
+	l := withClock(3, &now)
 	for i := 0; i < 3; i++ {
 		if !l.Allow("1.1.1.1") {
-			t.Fatalf("intento %d debería permitirse", i+1)
+			t.Fatalf("attempt %d should be allowed", i+1)
 		}
 	}
 	if l.Allow("1.1.1.1") {
-		t.Fatal("el cuarto intento debería bloquearse")
+		t.Fatal("the fourth attempt should be blocked")
 	}
 }
 
-func TestLoginLimiterClavesIndependientes(t *testing.T) {
-	ahora := time.Now()
-	l := nuevaConReloj(1, &ahora)
+func TestLoginLimiterKeysAreIndependent(t *testing.T) {
+	now := time.Now()
+	l := withClock(1, &now)
 	if !l.Allow("1.1.1.1") || l.Allow("1.1.1.1") {
-		t.Fatal("misma clave: solo 1 permitido")
+		t.Fatal("same key: only 1 allowed")
 	}
 	if !l.Allow("2.2.2.2") {
-		t.Fatal("otra clave no debería verse afectada")
+		t.Fatal("another key must not be affected")
 	}
 }
 
-func TestLoginLimiterVentanaSeResetea(t *testing.T) {
-	ahora := time.Now()
-	l := nuevaConReloj(1, &ahora)
+func TestLoginLimiterWindowResets(t *testing.T) {
+	now := time.Now()
+	l := withClock(1, &now)
 	if !l.Allow("1.1.1.1") || l.Allow("1.1.1.1") {
-		t.Fatal("setup: solo 1 permitido por ventana")
+		t.Fatal("setup: only 1 allowed per window")
 	}
-	ahora = ahora.Add(61 * time.Second)
+	now = now.Add(61 * time.Second)
 	if !l.Allow("1.1.1.1") {
-		t.Fatal("tras la ventana debería permitirse de nuevo")
+		t.Fatal("after the window it should be allowed again")
 	}
 }
 
-func TestLoginLimiterResetOlvida(t *testing.T) {
-	ahora := time.Now()
-	l := nuevaConReloj(2, &ahora)
+func TestLoginLimiterResetForgets(t *testing.T) {
+	now := time.Now()
+	l := withClock(2, &now)
 	_ = l.Allow("1.1.1.1")
 	l.Reset("1.1.1.1")
 	if !l.Allow("1.1.1.1") {
-		t.Fatal("tras Reset debería permitirse el primer intento")
+		t.Fatal("after Reset the first attempt should be allowed")
 	}
 	if !l.Allow("1.1.1.1") {
-		t.Fatal("tras Reset debería permitirse el segundo intento (ventana nueva)")
+		t.Fatal("after Reset the second attempt should be allowed (new window)")
 	}
 }
 
-// TestLoginLimiterLimpieza evita crecimiento sin límite del mapa: al superar
-// 1024 claves, las ventanas vencidas se eliminan.
-func TestLoginLimiterLimpieza(t *testing.T) {
-	ahora := time.Now()
-	l := nuevaConReloj(1, &ahora)
+// TestLoginLimiterPrunes keeps the map bounded: past 1024 keys, expired
+// windows are removed.
+func TestLoginLimiterPrunes(t *testing.T) {
+	now := time.Now()
+	l := withClock(1, &now)
 	for i := 0; i < 1025; i++ {
-		l.Allow("clave-vieja")
-		ahora = ahora.Add(time.Second)
+		l.Allow("old-key")
+		now = now.Add(time.Second)
 	}
-	// Tras llenar el mapa con claves vencidas, una clave nueva dispara la
-	// limpieza: solo debe quedar (más o menos) la ventana activa.
-	l.Allow("nueva")
+	// With the map full of expired keys, a new key triggers pruning: roughly
+	// only the active window must remain.
+	l.Allow("new")
 	l.mu.Lock()
-	restantes := len(l.entradas)
+	remaining := len(l.entries)
 	l.mu.Unlock()
-	if restantes > 2 {
-		t.Fatalf("la limpieza no se ejecutó: quedan %d entradas", restantes)
+	if remaining > 2 {
+		t.Fatalf("pruning did not run: %d entries left", remaining)
 	}
 }

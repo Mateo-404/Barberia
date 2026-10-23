@@ -1,13 +1,13 @@
 package auth
 
-// Roles de administrador (SPEC §8).
+// Admin roles (SPEC §8).
 const (
-	RolOwner = "owner"
-	RolAdmin = "admin"
-	RolStaff = "staff"
+	RoleOwner = "owner"
+	RoleAdmin = "admin"
+	RoleStaff = "staff"
 )
 
-// EsAdminRol indica si el rol puede usar /api/admin/*.
-func EsAdminRol(rol string) bool {
-	return rol == RolOwner || rol == RolAdmin
+// IsAdminRole reports whether the role may use /api/admin/*.
+func IsAdminRole(role string) bool {
+	return role == RoleOwner || role == RoleAdmin
 }

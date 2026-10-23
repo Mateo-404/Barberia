@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// RenderCSS renders the theme as CSS custom properties.
 func RenderCSS(s *Settings) string {
 	onp := OnPrimary(s.C.Primary)
 	var b strings.Builder
@@ -26,20 +27,22 @@ func RenderCSS(s *Settings) string {
 	return b.String()
 }
 
+// Hash is a short content hash used for cache busting.
 func Hash(css string) string {
 	h := sha256.Sum256([]byte(css))
 	return hex.EncodeToString(h[:])[:12]
 }
 
+// Escape HTML-escapes s.
 func Escape(s string) string {
 	return template.HTMLEscapeString(s)
 }
 
-// CSSFromRaw renderiza el CSS de un settings ya validado (o defaults).
+// CSSFromRaw renders the CSS of already-validated settings.
 func CSSFromRaw(raw json.RawMessage) (string, error) {
 	res := Validate(raw)
 	if res.Settings == nil {
-		return "", fmt.Errorf("settings inválidos")
+		return "", fmt.Errorf("invalid settings")
 	}
 	return RenderCSS(res.Settings), nil
 }

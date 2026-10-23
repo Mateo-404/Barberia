@@ -3,143 +3,128 @@ package httpapi
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/Mateo-404/Barberia/backend-go/internal/apperr"
 )
 
-// problem replica spring ProblemDetail. El orden de campos es irrelevante.
+// problem is an RFC 7807 problem detail. Code (plus Params) is the stable
+// identifier clients translate; Title and Detail are English, for
+// developers.
 type problem struct {
-	Type     string `json:"type"`
-	Title    string `json:"title"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail,omitempty"`
-	Instance string `json:"instance,omitempty"`
+	Type     string         `json:"type"`
+	Title    string         `json:"title"`
+	Status   int            `json:"status"`
+	Detail   string         `json:"detail,omitempty"`
+	Instance string         `json:"instance,omitempty"`
+	Code     string         `json:"code"`
+	Params   apperr.Params  `json:"params,omitempty"`
+	Errors   []fieldProblem `json:"errors,omitempty"`
 }
 
-func escribirProblem(w http.ResponseWriter, p problem) {
+// fieldProblem is one invalid field of a request body.
+type fieldProblem struct {
+	Field string `json:"field"`
+	Code  string `json:"code"`
+}
+
+func writeProblem(w http.ResponseWriter, r *http.Request, p problem) {
+	if r != nil && p.Instance == "" {
+		p.Instance = r.URL.Path
+	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(p.Status)
 	_ = json.NewEncoder(w).Encode(p)
 }
 
-// unauthorizedSinToken replica el entry point de Spring (sin instance).
-func unauthorizedSinToken(w http.ResponseWriter) {
-	escribirProblem(w, problem{
-		Type: "/errors/unauthorized", Title: "No autorizado", Status: http.StatusUnauthorized,
-		Detail: "Se requiere autenticación para acceder a este recurso",
+func unauthorized(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/unauthorized", Title: "Unauthorized", Status: http.StatusUnauthorized,
+		Detail: "authentication is required", Code: "auth.unauthorized",
 	})
 }
 
-func unauthorizedTokenInvalido(w http.ResponseWriter) {
-	escribirProblem(w, problem{
-		Type: "/errors/unauthorized", Title: "No autorizado", Status: http.StatusUnauthorized,
-		Detail: "Token JWT inválido o expirado",
-	})
-}
-
-// badRequestValidacion replica el 400 genérico de Spring 6.2 para @Valid y
-// JSON ilegible.
-func badRequestValidacion(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "about:blank", Title: "Bad Request", Status: http.StatusBadRequest,
-		Detail: "Invalid request content.", Instance: r.URL.Path,
-	})
-}
-
-func businessRule(w http.ResponseWriter, r *http.Request, detalle string) {
-	escribirProblem(w, problem{
-		Type: "/errors/business-rule-violation", Title: "Violación de regla de negocio",
-		Status: http.StatusBadRequest, Detail: detalle, Instance: r.URL.Path,
-	})
-}
-
-func notFoundConCuerpo(w http.ResponseWriter, r *http.Request, detalle string) {
-	escribirProblem(w, problem{
-		Type: "/errors/resource-not-found", Title: "Recurso no encontrado",
-		Status: http.StatusNotFound, Detail: detalle, Instance: r.URL.Path,
-	})
-}
-
-func alreadyExists(w http.ResponseWriter, r *http.Request, detalle string) {
-	escribirProblem(w, problem{
-		Type: "/errors/resource-already-exists", Title: "El recurso ya existe",
-		Status: http.StatusConflict, Detail: detalle, Instance: r.URL.Path,
-	})
-}
-
-func invalidCredentials(w http.ResponseWriter, r *http.Request, detalle string) {
-	escribirProblem(w, problem{
-		Type: "/errors/invalid-credentials", Title: "Credenciales inválidas",
-		Status: http.StatusUnauthorized, Detail: detalle, Instance: r.URL.Path,
-	})
-}
-
-func rateLimited(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "/errors/rate-limited", Title: "Demasiadas solicitudes",
-		Status:   http.StatusTooManyRequests,
-		Detail:   "Demasiados intentos de inicio de sesión. Intente nuevamente en un minuto.",
-		Instance: r.URL.Path,
-	})
-}
-
-func internalServerError(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "/errors/internal-server-error", Title: "Error interno del servidor",
-		Status:   http.StatusInternalServerError,
-		Detail:   "Ocurrió un error inesperado. Intente nuevamente más tarde.",
-		Instance: r.URL.Path,
-	})
-}
-
-// notFoundVacio replica el 404 sin cuerpo del CRUD genérico.
-func notFoundVacio(w http.ResponseWriter) { w.WriteHeader(http.StatusNotFound) }
-
-// notFoundRecurso replica el 404 de Spring para rutas no mapeadas.
-func notFoundRecurso(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "about:blank", Title: "Not Found", Status: http.StatusNotFound,
-		Detail: "No static resource " + r.URL.Path + ".", Instance: r.URL.Path,
-	})
-}
-
-func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "about:blank", Title: "Method Not Allowed", Status: http.StatusMethodNotAllowed,
-		Detail: "Method '" + r.Method + "' is not supported.", Instance: r.URL.Path,
+func invalidToken(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/invalid-token", Title: "Unauthorized", Status: http.StatusUnauthorized,
+		Detail: "invalid or expired JWT", Code: "auth.invalid_token",
 	})
 }
 
 func forbidden(w http.ResponseWriter, r *http.Request) {
-	escribirProblem(w, problem{
-		Type: "/errors/forbidden", Title: "Prohibido",
-		Status: http.StatusForbidden, Detail: "Acceso prohibido", Instance: r.URL.Path,
+	writeProblem(w, r, problem{
+		Type: "/errors/forbidden", Title: "Forbidden", Status: http.StatusForbidden,
+		Detail: "access denied", Code: "auth.forbidden",
 	})
 }
 
-func conflictSlotTaken(w http.ResponseWriter, r *http.Request) {
-	escribirProblemCode(w, problemWithCode{
-		Type: "/errors/slot-taken", Title: "Horario no disponible",
-		Status: http.StatusConflict, Detail: "El horario seleccionado no está disponible", Code: "slot_taken", Instance: r.URL.Path,
+// badRequest is a malformed body (unreadable JSON, trailing data, too big).
+func badRequest(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/bad-request", Title: "Bad Request", Status: http.StatusBadRequest,
+		Detail: "invalid request content", Code: "request.malformed",
 	})
 }
 
-func unprocessable(w http.ResponseWriter, r *http.Request, detalle string) {
-	escribirProblem(w, problem{
-		Type: "/errors/unprocessable-entity", Title: "Entidad no procesable",
-		Status: http.StatusUnprocessableEntity, Detail: detalle, Instance: r.URL.Path,
+// validationFailed lists every invalid field of a well-formed body.
+func validationFailed(w http.ResponseWriter, r *http.Request, errs []fieldProblem) {
+	writeProblem(w, r, problem{
+		Type: "/errors/validation", Title: "Bad Request", Status: http.StatusBadRequest,
+		Detail: "one or more fields are invalid", Code: "request.invalid_fields", Errors: errs,
 	})
 }
 
-type problemWithCode struct {
-	Type     string `json:"type"`
-	Title    string `json:"title"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail,omitempty"`
-	Instance string `json:"instance,omitempty"`
-	Code     string `json:"code,omitempty"`
+func rateLimited(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/rate-limited", Title: "Too Many Requests", Status: http.StatusTooManyRequests,
+		Detail: "too many attempts; try again in a minute", Code: "request.rate_limited",
+	})
 }
 
-func escribirProblemCode(w http.ResponseWriter, p problemWithCode) {
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(p.Status)
-	_ = json.NewEncoder(w).Encode(p)
+func internalServerError(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/internal-server-error", Title: "Internal Server Error", Status: http.StatusInternalServerError,
+		Detail: "unexpected error; try again later", Code: "server.internal",
+	})
+}
+
+func routeNotFound(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/not-found", Title: "Not Found", Status: http.StatusNotFound,
+		Detail: "no route for " + r.URL.Path, Code: "request.not_found",
+	})
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/method-not-allowed", Title: "Method Not Allowed", Status: http.StatusMethodNotAllowed,
+		Detail: "method " + r.Method + " is not supported", Code: "request.method_not_allowed",
+	})
+}
+
+// resourceNotFound is a 404 for a missing entity (GET/PATCH/DELETE by id).
+func resourceNotFound(w http.ResponseWriter, r *http.Request) {
+	writeProblem(w, r, problem{
+		Type: "/errors/resource-not-found", Title: "Not Found", Status: http.StatusNotFound,
+		Detail: "resource not found", Code: "resource.not_found",
+	})
+}
+
+// fromAppError maps a domain error to its problem detail.
+func fromAppError(w http.ResponseWriter, r *http.Request, e *apperr.Error) {
+	p := problem{Detail: e.Message, Code: e.Code, Params: e.Params}
+	switch e.Kind {
+	case apperr.KindBusinessRule:
+		p.Type, p.Title, p.Status = "/errors/business-rule-violation", "Business Rule Violation", http.StatusBadRequest
+	case apperr.KindNotFound:
+		p.Type, p.Title, p.Status = "/errors/resource-not-found", "Not Found", http.StatusNotFound
+	case apperr.KindAlreadyExists:
+		p.Type, p.Title, p.Status = "/errors/resource-already-exists", "Conflict", http.StatusConflict
+	case apperr.KindConflict:
+		p.Type, p.Title, p.Status = "/errors/conflict", "Conflict", http.StatusConflict
+	case apperr.KindInvalidCredentials:
+		p.Type, p.Title, p.Status = "/errors/invalid-credentials", "Unauthorized", http.StatusUnauthorized
+	default:
+		p.Type, p.Title, p.Status = "/errors/validation", "Bad Request", http.StatusBadRequest
+	}
+	writeProblem(w, r, p)
 }
