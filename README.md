@@ -1,8 +1,8 @@
 # Sistema de Gestión de Barbería
 
-> **Stack:** backend en **Go** (`backend-go/`: chi + pgx + sqlc + PostgreSQL con RLS multi-tenant) y frontend en **React 19** (`frontend/`: Vite + TypeScript + Tailwind) con wizard de reservas y panel de administración. El backend Spring Boot original y el sitio estático vanilla fueron retirados tras la migración (siguen en el historial de git y en las ramas `backend`/`frontend`).
+> **Frontend moderno:** el directorio `frontend/` contiene la app activa (React 19 + Vite + TypeScript + Tailwind), con wizard de reservas y panel de administración. El sitio estático de la raíz (HTML/CSS/JS vanilla) queda como referencia histórica.
 >
-> 📚 **Documentación:** [README del backend](backend-go/README.md) · [README del frontend](frontend/README.md) · [Índice de docs](docs/README.md) · [AGENTS.md](AGENTS.md) (arquitectura y comandos para agentes).
+> 📚 **Documentación:** [README del frontend](frontend/README.md) · [README del backend](backend/README.md) · [Índice de docs](docs/README.md) · `AGENTS.md` (arquitectura y comandos para agentes).
 
 ---
 
@@ -94,16 +94,16 @@ La barbería enfrenta dificultades con la gestión manual de las reservas, lo qu
 
 ## Pruebas de Requerimientos del Sistema
 
-### Suites automatizadas
+### Suite automatizada (backend)
 
-| Suite | Qué cubre | Comando |
-|---|---|---|
-| Backend unitario + HTTP | handlers, contrato JSON, auth (Argon2id/JWT), validación, settings | `make -C backend-go test` |
-| Backend integración | PostgreSQL real: migraciones, adopción de esquema Hibernate, aislamiento de tenant, doble reserva concurrente | `make -C backend-go test-integration` |
-| SQL | políticas RLS y unicidad de turnos (`db/tests/`) | `make test-db` |
-| Frontend | Vitest + Testing Library (unitarios) y Playwright (e2e) | `cd frontend && bun run test && bun run test:e2e` |
+El backend tiene **64 tests automatizados** (controllers con MockMvc, servicios, repositorios sobre H2 e integración de Argon2):
 
-CI: `.github/workflows/backend-go-ci.yml` (gofmt, vet, tests con `-race`, integración y SQL contra Postgres, golangci-lint, govulncheck, build de la imagen Docker) y `.github/workflows/frontend-ci.yml` (oxlint, typecheck, tests, build, e2e).
+```bash
+cd backend && ./mvnw test
+```
+
+En cada push/PR que toque `backend/**` corren en CI (`.github/workflows/backend-ci.yml`).
+El frontend React todavía no tiene tests automatizados ni CI propio.
 
 ### Casos de validación manual
 
@@ -129,38 +129,47 @@ CI: `.github/workflows/backend-go-ci.yml` (gofmt, vet, tests con `-race`, integr
 
 ## Diagramas
 ### Diagrama de Casos de Uso
-![](docs/assets/Diagrama_Barberia-Casos%20de%20Uso.jpg)
+![](public/Diagrama_Barberia-Casos%20de%20Uso.jpg)
 ### Diagrama de Clases
-![](docs/assets/Diagrama_Barberia-Clases.jpg)
+![](public/Diagrama_Barberia-Clases.jpg)
 
 ---
 
 ## Demo en Línea
-El sitio estático legacy (anterior a la app React) sigue publicado para pruebas:
+El sitio estático legacy se encuentra hosteado y disponible de forma pública para pruebas:
 
 🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
 🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html)  
 
 👉 Estado actual del despliegue:
 - **GitHub Pages** sirve el sitio estático legacy desde la rama `frontend`.
-- La **app React** (`frontend/`) y el **backend Go** todavía no tienen despliegue automático; el procedimiento de producción (roles de BD, migraciones, variables) está en [docs/DEPLOY_NOTES.md](docs/DEPLOY_NOTES.md).
+- La **app React** (`frontend/`) todavía no tiene despliegue automático: se ejecuta en local con `bun dev`.
+- El API se puede hostear en Railway u otro PaaS desde la rama `backend`.
 
-> **🔐 Admin inicial:** si el tenant no tiene administradores, el backend crea uno al arrancar
-> con `ADMIN_SEED=true`, usando `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` (hasheada con Argon2id).
-> Lista completa de variables: [`backend-go/.env.example`](backend-go/.env.example).
+> **🔐 Admin de prueba:** El primer administrador se crea automáticamente al iniciar el backend
+> por primera vez si la base de datos está vacía (`AdminSeedRunner`). Las credenciales se
+> configuran vía variables de entorno:
+>
+> ```
+> ADMIN_SEED_EMAIL=admin@barberia.com
+> ADMIN_SEED_PASSWORD=miPasswordSegura123
+> ```
+>
+> Consultá `backend/.env.example` para la lista completa de variables.
+> En Railway (o tu PaaS), configuralas en el panel de Environment Variables.  
 
 ---
 
 ## Capturas de Pantalla
 
 ### 1. Reserva de Turno (Cliente)
-![Reserva de turno](docs/assets/screenshots/reserva_turno.png)
+![Reserva de turno](public/screenshots/reserva_turno.png)
 
 ### 2. Panel de Administración
-![Panel de administración](docs/assets/screenshots/panel_admin.png)
+![Panel de administración](public/screenshots/panel_admin.png)
 
 ### 3. Estadísticas
-![Estadísticas](docs/assets/screenshots/estadisticas.png)
+![Estadísticas](public/screenshots/estadisticas.png)
 
 ---
 
@@ -175,41 +184,55 @@ El sitio estático legacy (anterior a la app React) sigue publicado para pruebas
 
 ### Prerrequisitos
 
-- **Go** 1.27+ (el toolchain exacto se descarga solo vía `go.mod`)
-- **PostgreSQL** 15+ (o Docker para levantarlo con `docker compose`)
-- **Bun** 1.4+ para el frontend
+- **Java 21** (JDK)
+- **Maven Wrapper** (incluido en `backend/mvnw`)
+- **PostgreSQL** 15+ (opcional: con el perfil `h2` corre sobre H2 en memoria)
+- **Bun** (o npm) para el frontend React
 
-### Opción A — todo con Docker (PostgreSQL + backend)
+### Backend
 
-```bash
-JWT_SECRET=$(openssl rand -base64 32) docker compose up --build
-```
+#### Variables de entorno
 
-API en `http://localhost:8080` con migraciones automáticas y admin `admin@admin.com` / `admin1234`.
-
-### Opción B — backend local
-
-```bash
-cd backend-go
-cp .env.example .env        # completar JWT_SECRET (openssl rand -base64 32)
-set -a; source .env; set +a
-make run                    # compila y arranca en :8080
-```
-
-Variables principales (todas en [`backend-go/.env.example`](backend-go/.env.example)):
+El backend lee las siguientes variables de entorno:
 
 | Variable | Descripción | Ejemplo |
 |---|---|---|
-| `DATABASE_URL` | Conexión PostgreSQL de la app | `postgres://postgres:postgres@localhost:5432/barber?sslmode=disable` |
-| `JWT_SECRET` | **Obligatoria**, ≥32 bytes | `openssl rand -base64 32` |
-| `APP_ENV` | `dev` en local; cualquier otro valor (default `prod`) exige un rol sin SUPERUSER/BYPASSRLS | `dev` |
-| `AUTO_MIGRATE` | Aplica las migraciones al arrancar | `true` |
-| `CORS_ALLOW_ORIGINS` | Orígenes permitidos, separados por coma | `http://localhost:5173` |
-| `ADMIN_SEED*` | Admin inicial | `admin@admin.com` / `admin1234` |
+| `DB_URL` | URL de conexión JDBC | `jdbc:postgresql://localhost:5432/barber` |
+| `DB_USER` | Usuario de base de datos | `postgres` |
+| `DB_PASSWORD` | Contraseña del usuario | `postgres` |
+| `JWT_SECRET` | **Obligatoria.** Secreto HS256 de al menos 32 bytes. Generar con `openssl rand -base64 32` | `kR9/xZ...` |
+| `ADMIN_SEED_EMAIL` | Email del admin seed (opcional) | `admin@admin.com` |
+| `ADMIN_SEED_PASSWORD` | Contraseña del admin seed (opcional) | `admin1234` |
 
-> ⚠️ Sin `JWT_SECRET` (o con un rol privilegiado fuera de `APP_ENV=dev`) el backend **no arranca** (fail-closed).
+> ⚠️ Sin `JWT_SECRET` el backend **no arranca** (fail-closed). `ADMIN_SEED_*` tienen defaults.
+> Copiar `backend/.env.example` a `backend/.env` y completar los valores. Ver más detalles en [backend/README.md](backend/README.md).
 
-Más detalle (estructura, tests, multi-tenancy, seguridad): [backend-go/README.md](backend-go/README.md).
+#### Desarrollo sin PostgreSQL (perfil `h2`)
+
+Usar H2 en memoria — ideal para desarrollo rápido sin instalar PostgreSQL. El perfil se llama **`h2`**:
+
+```bash
+SPRING_PROFILES_ACTIVE=h2 JWT_SECRET=$(openssl rand -base64 32) ./mvnw spring-boot:run
+```
+
+#### Comandos (desde `backend/`)
+
+```bash
+# Ejecutar el servidor (Postgres requerido)
+./mvnw spring-boot:run
+
+# Ejecutar con perfil H2 (sin Postgres)
+SPRING_PROFILES_ACTIVE=h2 ./mvnw spring-boot:run
+
+# Ejecutar tests (64 tests)
+./mvnw test
+
+# Build completo (package)
+./mvnw clean package
+```
+
+El servidor arranca en `http://localhost:8080`.
+Documentación interactiva de la API (Swagger UI): [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) — deshabilitada en el perfil `prod`.
 
 ### Frontend (app React)
 
@@ -223,19 +246,15 @@ bun dev                     # dev server en http://localhost:5173
 Build de producción: `bun run build` → `frontend/dist/`.
 Guía completa (estructura, auth, atajos de teclado): [frontend/README.md](frontend/README.md).
 
-### Verificación completa
-
-```bash
-make up          # PostgreSQL (docker compose)
-make verify      # fmt, vet, lint-sql, migraciones, tests Go, tests SQL y frontend
-```
+> El backend debe estar corriendo (en `:8080`) para que la app funcione.
+> En desarrollo el CORS permite `localhost:5173/5174` (perfil por defecto).
 
 ### Ramas
 
 | Rama | Propósito |
 |---|---|
-| `main` | Desarrollo activo (monorepo: `backend-go/`, `frontend/`, `db/` y docs) |
-| `backend` | Histórica — backend Spring Boot (retirado de `main`) |
+| `main` | Desarrollo activo (monorepo: `backend/`, `frontend/`, sitio estático legacy y docs) |
+| `backend` | Histórica — despliegue del API en PaaS (Railway) |
 | `frontend` | Histórica — sitio estático legacy publicado en GitHub Pages |
 
 ---

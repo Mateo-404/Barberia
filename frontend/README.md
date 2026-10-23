@@ -14,8 +14,8 @@ Aplicación moderna de reservas de la barbería: wizard de reserva para clientes
 
 ## Requisitos
 
-- [Bun](https://bun.sh) ≥ 1.4
-- El backend Go corriendo en `http://localhost:8080` (ver [backend-go/README.md](../backend-go/README.md); lo más rápido: `docker compose up` desde la raíz)
+- [Bun](https://bun.sh) ≥ 1.1 (o Node 20+)
+- El backend corriendo en `http://localhost:8080` (ver [backend/README.md](../backend/README.md))
 
 ## Arranque rápido
 
@@ -33,32 +33,15 @@ bun dev                     # http://localhost:5173
 | `bun run build` | Typecheck (`tsc -b`) + build a `dist/` |
 | `bun run preview` | Sirve el build de producción en local |
 | `bun run lint` | Lint con Oxlint |
-| `bun run typecheck` | Typecheck (`tsc -b`) |
-| `bun run test` | Tests unitarios (Vitest + Testing Library) |
-| `bun run test:e2e` | Tests e2e (Playwright sobre `vite preview`, API mockeada) |
-| `bun run types` | Regenera `src/types/api.ts` desde `../backend-go/api/openapi.json` |
+| `bun run types` | Regenera `src/types/api.ts` desde `backend/openapi-spec.json` |
 
 ## Variables de entorno
 
 | Variable | Descripción | Default |
 |---|---|---|
 | `VITE_API_BASE_URL` | URL base del API backend | `http://localhost:8080` |
-| `VITE_TENANT_SLUG` | Tenant usado como clave de caché/tema del frontend | `default` |
-| `VITE_CSP_CONNECT_SRC` | Orígenes **extra** para el `connect-src` de la CSP (separados por espacio) | vacío |
 
 Ver `frontend/.env.example`. `.env` está en `.gitignore`.
-
-### CSP (`connect-src`)
-
-`frontend/index.html` declara una CSP con un placeholder `__CSP_CONNECT_SRC__`
-que `vite.config.ts` reemplaza en build-time por:
-
-- el **origen de `VITE_API_BASE_URL`** (el mismo que usa `api-client.ts`, así la
-  CSP nunca bloquea al backend configurado);
-- en **dev**, además `ws://localhost:5173` (HMR de Vite);
-- los orígenes extra de `VITE_CSP_CONNECT_SRC`, si los hay.
-
-Para producción basta con `VITE_API_BASE_URL=https://api.mibarberia.com bun run build`.
 
 ## Rutas
 
@@ -100,9 +83,12 @@ src/
 
 ## Tipados generados desde el backend
 
-`src/types/api.ts` lo genera `openapi-typescript` a partir de `backend-go/api/openapi.json` (única fuente de verdad, mantenida junto al backend Go). **No editar a mano.** Si cambia la API, actualizar el spec en el mismo cambio y regenerar:
+`src/types/api.ts` lo genera `openapi-typescript` a partir de `backend/openapi-spec.json` (única fuente de verdad). **No editar a mano.** Si cambia la API:
 
 ```bash
+# 1) regenerar el spec desde el backend levantado
+curl -s http://localhost:8080/v3/api-docs > ../backend/openapi-spec.json
+# 2) regenerar los tipos
 bun run types
 ```
 
@@ -115,8 +101,7 @@ Hay atajos en todo el sitio (wizard de reserva, panel admin, turnos, estadístic
 ## Calidad de código
 
 - Lint: `bun run lint` (Oxlint, config en `.oxlintrc.json`).
-- Tests: Vitest (`src/**/__tests__`) y Playwright (`e2e/`).
-- CI: `.github/workflows/frontend-ci.yml` corre lint, typecheck, tests, build y e2e en cada cambio de `frontend/`.
+- **Todavía no hay tests automatizados ni CI para el frontend.** El backend sí tiene 64 tests + CI (ver `.github/workflows/backend-ci.yml`).
 
 ## Deploy
 

@@ -2,11 +2,8 @@ import { lazy, Suspense } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { AuthProvider } from "@/context/AuthContext"
-import { TenantProvider } from "@/context/TenantContext"
-import { ApiError } from "@/lib/api-client"
 import Reserva from "@/pages/Reserva"
 import Login from "@/pages/Login"
-import Onboarding from "@/pages/Onboarding"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { ShortcutsHelp } from "@/components/ShortcutsHelp"
@@ -14,20 +11,11 @@ import { ShortcutsHelp } from "@/components/ShortcutsHelp"
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"))
 const TurnosAdmin = lazy(() => import("@/pages/admin/TurnosAdmin"))
 const EstadisticasAdmin = lazy(() => import("@/pages/admin/EstadisticasAdmin"))
-const MarcaAdmin = lazy(() => import("@/pages/admin/MarcaAdmin"))
-const AjustesAdmin = lazy(() => import("@/pages/admin/AjustesAdmin"))
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60_000,
-      // Reintentar sólo lo transitorio (red, timeout, 5xx). Un 4xx no se
-      // recupera solo y reintentarlo enmascara errores reales.
-      retry: (failureCount, error) => {
-        if (failureCount >= 2) return false
-        if (error instanceof ApiError) return error.isRetriable
-        return true
-      },
     },
   },
 })
@@ -44,96 +32,65 @@ function Shell() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TenantProvider slug={import.meta.env.VITE_TENANT_SLUG ?? "default"}>
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Reserva />} />
-              <Route path="/login" element={<Login />} />
-              <Route element={<ProtectedRoute />}>
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route element={<AdminLayout />}>
-                  <Route
-                    path="/admin"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando panel…
-                          </div>
-                        }
-                      >
-                        <AdminDashboard />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/turnos"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando turnos…
-                          </div>
-                        }
-                      >
-                        <TurnosAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/marca"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando marca…
-                          </div>
-                        }
-                      >
-                        <MarcaAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/ajustes"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando ajustes…
-                          </div>
-                        }
-                      >
-                        <AjustesAdmin />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/admin/estadisticas"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="p-6 text-sm text-muted-foreground">
-                            Cargando estadísticas…
-                          </div>
-                        }
-                      >
-                        <EstadisticasAdmin />
-                      </Suspense>
-                    }
-                  />
-                </Route>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Reserva />} />
+            <Route path="/login" element={<Login />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route
+                  path="/admin"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-6 text-sm text-muted-foreground">
+                          Cargando panel…
+                        </div>
+                      }
+                    >
+                      <AdminDashboard />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/admin/turnos"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-6 text-sm text-muted-foreground">
+                          Cargando turnos…
+                        </div>
+                      }
+                    >
+                      <TurnosAdmin />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/admin/estadisticas"
+                  element={
+                    <Suspense
+                      fallback={
+                        <div className="p-6 text-sm text-muted-foreground">
+                          Cargando estadísticas…
+                        </div>
+                      }
+                    >
+                      <EstadisticasAdmin />
+                    </Suspense>
+                  }
+                />
               </Route>
-              <Route
-                path="/estadisticas/panel"
-                element={<Navigate to="/admin/estadisticas" replace />}
-              />
-            </Routes>
-            <Shell />
-          </AuthProvider>
-        </BrowserRouter>
-      </TenantProvider>
+            </Route>
+            <Route
+              path="/estadisticas/panel"
+              element={<Navigate to="/admin/estadisticas" replace />}
+            />
+          </Routes>
+          <Shell />
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   )
 }

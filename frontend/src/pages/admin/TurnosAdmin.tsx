@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   Pencil, Trash2, Search, List, Calendar, CalendarDays, Filter,
-  RotateCcw, ChevronLeft, ChevronRight, GripVertical, ArrowRight,
+  RotateCcw, ChevronLeft, ChevronRight, X, GripVertical, ArrowRight,
 } from "lucide-react"
 import {
   useTodosTurnos, useActualizarTurno, useEliminarTurno,
@@ -10,31 +11,36 @@ import { useServicios } from "@/api/servicios"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog } from "@/components/ui/dialog"
 import { KpiCard } from "@/components/admin/KpiCard"
 import { ClienteDetalle } from "@/components/admin/ClienteDetalle"
 import {
   formatCurrency, formatFecha, formatHora, isHoy,
 } from "@/lib/format"
-import { timeSlots } from "@/lib/business-config"
-import { isFutureFechaHora, todayInBusinessTz } from "@/lib/datetime"
-import { ApiError } from "@/lib/api-client"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
 import type { components } from "@/types/api"
 
 type Turno = components["schemas"]["TurnoResponseDTO"]
 
+const TIME_SLOTS = [
+  "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
+  "19:00", "19:30",
+]
+
 type Estado = "hoy" | "pendiente" | "confirmado"
 
 function estadoDe(t: Turno): Estado {
   if (isHoy(t.fechaHora)) return "hoy"
-  if (isFutureFechaHora(t.fechaHora)) return "pendiente"
+  if (new Date(t.fechaHora) > new Date()) return "pendiente"
   return "confirmado"
 }
 
 function todayISO(): string {
-  return todayInBusinessTz()
+  const d = new Date()
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  return `${d.getFullYear()}-${mm}-${dd}`
 }
 
 function FiltroFecha({
@@ -64,6 +70,7 @@ function FiltroFecha({
 }
 
 export default function TurnosAdmin() {
+  const queryClient = useQueryClient()
   const { data: turnos, isLoading } = useTodosTurnos()
   const { data: servicios } = useServicios()
   const actualizar = useActualizarTurno()
@@ -160,26 +167,22 @@ export default function TurnosAdmin() {
     setClienteSel({ telefono, nombre })
   }
 
-  async function guardarEdicion(fechaHora: string) {
+  async function guardarEdicion() {
     if (!editando) return
-    try {
-      await actualizar.mutateAsync({
-        id: editando.id,
-        patch: { fechaHora },
-      })
-      setEditando(null)
-    } catch {
-      // El error se muestra dentro del diálogo (actualizar.isError).
-    }
+    await actualizar.mutateAsync({
+      id: editando.id,
+      patch: { fechaHora: new Date(editando.fechaHora).toISOString() },
+    })
+    queryClient.invalidateQueries({ queryKey: ["turnos"] })
+    queryClient.invalidateQueries({ queryKey: ["estadisticas"] })
+    setEditando(null)
   }
 
   async function borrarTurno(id: number) {
-    try {
-      await eliminar.mutateAsync(id)
-      setEliminandoId(null)
-    } catch {
-      // El error se muestra dentro del diálogo (eliminar.isError).
-    }
+    await eliminar.mutateAsync(id)
+    queryClient.invalidateQueries({ queryKey: ["turnos"] })
+    queryClient.invalidateQueries({ queryKey: ["estadisticas"] })
+    setEliminandoId(null)
   }
 
   async function moverTurnoAFecha(turnoId: number, nuevaFechaISO: string) {
@@ -187,18 +190,16 @@ export default function TurnosAdmin() {
     if (!turno) return
     const hora = turno.fechaHora.slice(11, 16)
     const fechaHora = `${nuevaFechaISO}T${hora}:00`
-    try {
-      await actualizar.mutateAsync({
-        id: turnoId,
-        patch: { fechaHora },
-      })
-      setDragTurnoId(null)
-      setDragOverIso(null)
-      setMoverTurnoId(null)
-      setDiaSeleccionado(nuevaFechaISO)
-    } catch {
-      // El error se muestra dentro del diálogo (actualizar.isError).
-    }
+    await actualizar.mutateAsync({
+      id: turnoId,
+      patch: { fechaHora },
+    })
+    queryClient.invalidateQueries({ queryKey: ["turnos"] })
+    queryClient.invalidateQueries({ queryKey: ["estadisticas"] })
+    setDragTurnoId(null)
+    setDragOverIso(null)
+    setMoverTurnoId(null)
+    setDiaSeleccionado(nuevaFechaISO)
   }
 
   // Calendar month navigation
@@ -505,13 +506,10 @@ export default function TurnosAdmin() {
             {turnosFiltrados.length}
           </StatusBadge>
         </h2>
-        <div
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground/60"
-          aria-label="Filtros avanzados no implementados aún"
-        >
+        <button className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
           <Filter className="w-4 h-4" />
           Filtros Avanzados
-        </div>
+        </button>
       </div>
 
       {isLoading ? (
@@ -580,14 +578,14 @@ export default function TurnosAdmin() {
                             <button
                               onClick={() => setEditando(t)}
                               className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
-                              aria-label={`Editar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                              aria-label="Editar turno"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setEliminandoId(t.id)}
                               className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95"
-                              aria-label={`Eliminar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                              aria-label="Eliminar turno"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -640,14 +638,14 @@ export default function TurnosAdmin() {
                         <button
                           onClick={() => setEditando(t)}
                           className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
-                          aria-label={`Editar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                          aria-label="Editar turno"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setEliminandoId(t.id)}
                           className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors active:scale-95"
-                          aria-label={`Eliminar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                          aria-label="Eliminar turno"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -817,7 +815,7 @@ export default function TurnosAdmin() {
                               <button
                                 onClick={() => setEditando(t)}
                                 className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
-                                aria-label={`Editar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                                aria-label="Editar turno"
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
@@ -827,8 +825,8 @@ export default function TurnosAdmin() {
                                   setMoverFecha(t.fechaHora.slice(0, 10))
                                 }}
                                 className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-accent transition-colors active:scale-95"
-                                aria-label={`Mover turno de ${t.nombreCliente} ${t.apellidoCliente}`}
-                                title={`Mover a otra fecha el turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                                aria-label="Mover turno"
+                                title="Mover a otra fecha"
                               >
                                 <ArrowRight className="w-4 h-4" />
                               </button>
@@ -862,7 +860,7 @@ export default function TurnosAdmin() {
                           <button
                             onClick={() => setEditando(t)}
                             className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
-                            aria-label={`Editar turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                            aria-label="Editar turno"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
@@ -872,8 +870,8 @@ export default function TurnosAdmin() {
                               setMoverFecha(t.fechaHora.slice(0, 10))
                             }}
                             className="min-h-10 min-w-10 p-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-accent transition-colors active:scale-95"
-                            aria-label={`Mover turno de ${t.nombreCliente} ${t.apellidoCliente}`}
-                            title={`Mover a otra fecha el turno de ${t.nombreCliente} ${t.apellidoCliente}`}
+                            aria-label="Mover turno"
+                            title="Mover a otra fecha"
                           >
                             <ArrowRight className="w-4 h-4" />
                           </button>
@@ -904,28 +902,20 @@ export default function TurnosAdmin() {
         <EditarModal
           turno={editando}
           guardando={actualizar.isPending}
-          error={
-            actualizar.isError
-              ? actualizar.error instanceof ApiError
-                ? actualizar.error.detail
-                : "No se pudo guardar el turno."
-              : null
-          }
-          onCancel={() => {
-            actualizar.reset()
-            setEditando(null)
-          }}
+          onCancel={() => setEditando(null)}
+          onChangeFecha={(iso) => setEditando({ ...editando, fechaHora: iso })}
           onGuardar={guardarEdicion}
         />
       )}
 
       {eliminandoId !== null && (
-        <Dialog
-          open
-          onClose={() => setEliminandoId(null)}
-          title="¿Eliminar turno?"
-          footer={
-            <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-sm w-full space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
+            <h3 className="text-lg font-semibold text-foreground">¿Eliminar turno?</h3>
+            <p className="text-sm text-muted-foreground">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setEliminandoId(null)}>
                 Cancelar
               </Button>
@@ -934,24 +924,42 @@ export default function TurnosAdmin() {
                 onClick={() => borrarTurno(eliminandoId)}
                 disabled={eliminar.isPending}
               >
-                {eliminar.isPending ? "Eliminando…" : "Eliminar"}
+                Eliminar
               </Button>
-            </>
-          }
-        >
-          <p className="text-sm text-muted-foreground">
-            Esta acción no se puede deshacer.
-          </p>
-        </Dialog>
+            </div>
+          </div>
+        </div>
       )}
 
       {moverTurnoId !== null && (
-        <Dialog
-          open
-          onClose={() => setMoverTurnoId(null)}
-          title="Mover turno"
-          footer={
-            <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0">
+          <div className="bg-card rounded-2xl border border-border p-6 max-w-sm w-full space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Mover turno</h3>
+              <button
+                onClick={() => setMoverTurnoId(null)}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+                aria-label="Cerrar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm text-foreground">Nueva fecha</label>
+              <Input
+                type="date"
+                value={moverFecha}
+                min={todayISO()}
+                onChange={(e) => setMoverFecha(e.target.value)}
+                className="w-full [color-scheme:dark]"
+              />
+              {moverFecha < todayISO() && (
+                <p className="text-xs text-destructive">
+                  No se pueden mover turnos a fechas pasadas.
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setMoverTurnoId(null)}>
                 Cancelar
               </Button>
@@ -961,31 +969,9 @@ export default function TurnosAdmin() {
               >
                 {actualizar.isPending ? "Moviendo…" : "Mover"}
               </Button>
-            </>
-          }
-        >
-          <div className="space-y-1.5">
-            <label htmlFor="mover-fecha" className="text-sm text-foreground">Nueva fecha</label>
-            <Input
-              id="mover-fecha"
-              type="date"
-              value={moverFecha}
-              min={todayISO()}
-              onChange={(e) => setMoverFecha(e.target.value)}
-              className="w-full [color-scheme:dark]"
-            />
-            {moverFecha < todayISO() && (
-              <p className="text-xs text-destructive">
-                No se pueden mover turnos a fechas pasadas.
-              </p>
-            )}
+            </div>
           </div>
-          {actualizar.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              No se pudo mover el turno. {actualizar.error instanceof ApiError ? actualizar.error.detail : "Intentá de nuevo."}
-            </p>
-          )}
-        </Dialog>
+        </div>
       )}
     </div>
   )
@@ -994,106 +980,109 @@ export default function TurnosAdmin() {
 function EditarModal({
   turno,
   guardando,
-  error,
   onCancel,
+  onChangeFecha,
   onGuardar,
 }: {
   turno: Turno
   guardando: boolean
-  error: string | null
   onCancel: () => void
-  onGuardar: (fechaHora: string) => void
+  onChangeFecha: (iso: string) => void
+  onGuardar: () => void
 }) {
   const [fecha, hora] = useMemo(() => {
-    // "YYYY-MM-DDTHH:MM:SS" (hora del negocio): se parsea el string, no con
-    // el reloj/zona del navegador.
-    const [f = "", t = ""] = turno.fechaHora.split("T")
-    const hm = t.slice(0, 5)
-    const slots = timeSlots()
-    const h = slots.includes(hm) ? hm : slots[0]
+    const d = new Date(turno.fechaHora)
+    const f = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    const h = TIME_SLOTS.includes(
+      `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+    )
+      ? `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+      : TIME_SLOTS[0]
     return [f, h]
   }, [turno])
 
   const [nuevaFecha, setNuevaFecha] = useState(fecha)
   const [nuevaHora, setNuevaHora] = useState(hora)
-  const [errorFecha, setErrorFecha] = useState(false)
+  const [error, setError] = useState(false)
 
   function guardar() {
     const valor = `${nuevaFecha}T${nuevaHora}:00`
-    if (!isFutureFechaHora(valor)) {
-      setErrorFecha(true)
+    if (new Date(valor) <= new Date()) {
+      setError(true)
       return
     }
-    onGuardar(valor)
+    onChangeFecha(valor)
+    onGuardar()
   }
 
   return (
-    <Dialog
-      open
-      onClose={onCancel}
-      title="Editar turno"
-      footer={
-        <>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0" role="dialog" aria-modal="true">
+      <div className="bg-card rounded-2xl border border-border p-6 max-w-sm w-full space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">Editar turno</h3>
+          <button
+            onClick={onCancel}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+            aria-label="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            {turno.nombreCliente} {turno.apellidoCliente} · {turno.tipoServicio}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-sm text-foreground">Fecha</label>
+            <Input
+              type="date"
+              value={nuevaFecha}
+              min={todayISO()}
+              onChange={(e) => {
+                setNuevaFecha(e.target.value)
+                setError(false)
+              }}
+              className="[color-scheme:dark]"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm text-foreground">Hora</label>
+            <select
+              value={nuevaHora}
+              onChange={(e) => {
+                setNuevaHora(e.target.value)
+                setError(false)
+              }}
+              className="w-full bg-input border-2 border-primary text-foreground text-sm rounded-xl px-4 py-2.5 focus:outline-none"
+            >
+              {TIME_SLOTS.map((h) => (
+                <option key={h} value={h}>
+                  {h}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-sm text-destructive">
+            La fecha debe ser futura.
+          </p>
+        )}
+
+        <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onCancel}>
             Cancelar
           </Button>
           <Button onClick={guardar} disabled={guardando}>
             {guardando ? "Guardando…" : "Guardar"}
           </Button>
-        </>
-      }
-    >
-      <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">
-          {turno.nombreCliente} {turno.apellidoCliente} · {turno.tipoServicio}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor="editar-fecha" className="text-sm text-foreground">Fecha</label>
-          <Input
-            id="editar-fecha"
-            type="date"
-            value={nuevaFecha}
-            min={todayISO()}
-            onChange={(e) => {
-              setNuevaFecha(e.target.value)
-              setErrorFecha(false)
-            }}
-            className="[color-scheme:dark]"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="editar-hora" className="text-sm text-foreground">Hora</label>
-          <select
-            id="editar-hora"
-            value={nuevaHora}
-            onChange={(e) => {
-              setNuevaHora(e.target.value)
-              setErrorFecha(false)
-            }}
-            className="w-full bg-input border-2 border-primary text-foreground text-sm rounded-xl px-4 py-2.5 focus:outline-none"
-          >
-            {timeSlots().map((h) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
-
-      {errorFecha && (
-        <p role="alert" className="text-sm text-destructive">
-          La fecha debe ser futura.
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </Dialog>
+    </div>
   )
 }

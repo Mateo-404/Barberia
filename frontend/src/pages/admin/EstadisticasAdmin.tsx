@@ -98,7 +98,7 @@ function BarraHorizontal({
 }
 
 export default function EstadisticasAdmin() {
-  const { data: panel, isLoading, isError, error, refetch } = usePanelEstadisticas()
+  const { data: panel, isLoading } = usePanelEstadisticas()
   const { data: todosTurnos } = useTodosTurnos()
   const queryClient = useQueryClient()
 
@@ -237,33 +237,6 @@ export default function EstadisticasAdmin() {
     () => (todosTurnos ?? []).reduce((acc, t) => acc + (t.precioServicio ?? 0), 0),
     [todosTurnos],
   )
-
-  if (isError) {
-    // Sin este estado la página mostraba ceros como si fueran datos reales,
-    // ocultando la caída del backend.
-    const detalle = error instanceof Error ? error.message : "No se pudieron cargar las estadísticas."
-    return (
-      <div className="space-y-8 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Panel de Estadísticas</h1>
-        </div>
-        <div
-          role="alert"
-          className="bg-card rounded-2xl border border-red-500/40 p-6 space-y-3"
-        >
-          <h2 className="text-lg font-semibold text-foreground">No se pudieron cargar los datos</h2>
-          <p className="text-sm text-muted-foreground">{detalle}</p>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   if (isLoading) {
     return (

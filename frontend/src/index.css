@@ -9,7 +9,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-body, "Poppins", sans-serif);
+  --font-sans: "Poppins", sans-serif;
   --font-heading: "Poppins", sans-serif;
 
   --color-background: var(--background);
@@ -58,26 +58,26 @@
 }
 
 :root {
-  --background: var(--color-bg, #1c1c1c);
-  --foreground: var(--color-text, #ffffff);
-  --card: var(--color-surface, #2c2c2c);
+  --background: #1c1c1c;
+  --foreground: #ffffff;
+  --card: #2c2c2c;
   --card-foreground: #ffffff;
   --popover: #2c2c2c;
   --popover-foreground: #ffffff;
-  --primary: var(--color-primary, #ff6600);
-  --primary-foreground: var(--color-on-primary, #ffffff);
+  --primary: #ff6600;
+  --primary-foreground: #ffffff;
   --secondary: #2c2c2c;
   --secondary-foreground: #ffffff;
   --muted: #2c2c2c;
   --muted-foreground: #999999;
-  --accent: var(--color-accent, rgba(255, 102, 0, 0.1));
+  --accent: rgba(255, 102, 0, 0.1);
   --accent-foreground: #ffffff;
   --destructive: #dc3545;
   --success: #28a745;
   --warning: #ffc107;
   --border: rgba(255, 102, 0, 0.2);
   --input: #2c2c2c;
-  --ring: var(--color-primary, #ff6600);
+  --ring: #ff6600;
   --focus-ring: rgba(255, 102, 0, 0.4);
   --radius: 0.75rem;
   --nav-height: 4.5rem;
@@ -94,45 +94,6 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 102, 0, 0.2);
   --sidebar-ring: #ff6600;
-}
-
-
-.light {
-  --background: #f4f1ea;
-  --foreground: #1a1814;
-  --card: #ffffff;
-  --card-foreground: #1a1814;
-  --popover: #ffffff;
-  --popover-foreground: #1a1814;
-  --primary: var(--color-primary, #ff6600);
-  --primary-foreground: #ffffff;
-  --secondary: #ece7dd;
-  --secondary-foreground: #1a1814;
-  --muted: #ece7dd;
-  --muted-foreground: #6b6660;
-  --accent: var(--color-accent, rgba(255, 102, 0, 0.08));
-  --accent-foreground: #1a1814;
-  --destructive: #dc3545;
-  --success: #28a745;
-  --warning: #ffc107;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: #ffffff;
-  --ring: var(--color-primary, #ff6600);
-  --focus-ring: rgba(255, 102, 0, 0.4);
-  --radius: var(--radius, 0.75rem);
-  --chart-1: #ff6600;
-  --chart-2: #28a745;
-  --chart-3: #ffc107;
-  --chart-4: #dc3545;
-  --chart-5: #999999;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1a1814;
-  --sidebar-primary: var(--color-primary, #ff6600);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 102, 0, 0.08);
-  --sidebar-accent-foreground: #1a1814;
-  --sidebar-border: rgba(0, 0, 0, 0.1);
-  --sidebar-ring: var(--color-primary, #ff6600);
 }
 
 @layer base {
