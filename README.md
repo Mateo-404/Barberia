@@ -136,15 +136,15 @@ El frontend React todavía no tiene tests automatizados ni CI propio.
 ---
 
 ## Demo en Línea
-El sitio estático legacy se encuentra hosteado y disponible de forma pública para pruebas:
+Demo interactiva de la app React, 100 % en el navegador (sin backend): la API se simula con
+[MSW](https://mswjs.io) y trae una **visita guiada** que acompaña la reserva de un turno y el panel del barbero.
 
-🔗 **Frontend (Cliente):** [https://mateo-404.github.io/Barberia/](https://mateo-404.github.io/Barberia/)  
-🔗 **Frontend (Administrador):** [https://mateo-404.github.io/Barberia/admin/login.html](https://mateo-404.github.io/Barberia/admin/login.html)  
+🔗 **https://mateo-404.github.io/Barberia/**
 
-👉 Estado actual del despliegue:
-- **GitHub Pages** sirve el sitio estático legacy desde la rama `frontend`.
-- La **app React** (`frontend/`) todavía no tiene despliegue automático: se ejecuta en local con `bun dev`.
-- El API se puede hostear en Railway u otro PaaS desde la rama `backend`.
+- Se publica con `.github/workflows/pages.yml` al hacer push a la rama `demo` (Settings → Pages → Source: *GitHub Actions*).
+- Build local: `cd frontend && VITE_DEMO=true VITE_BASE=/Barberia/ bun run build`.
+- Datos de ejemplo: `frontend/src/mocks/db.ts` (espeja `DemoDataSeedRunner`). Admin demo: `admin@admin.com` / `admin1234`.
+- El backend real (Spring Boot) se corre en local con `SPRING_PROFILES_ACTIVE=h2`; ver más abajo.
 
 > **🔐 Admin de prueba:** El primer administrador se crea automáticamente al iniciar el backend
 > por primera vez si la base de datos está vacía (`AdminSeedRunner`). Las credenciales se

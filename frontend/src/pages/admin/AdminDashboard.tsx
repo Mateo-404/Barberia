@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-tour="kpis">
         <KpiCard
           label="Turnos hoy"
           value={String(panel?.turnosHoy ?? 0)}

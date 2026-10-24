@@ -1,12 +1,16 @@
 import { lazy, Suspense } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { AuthProvider } from "@/context/AuthContext"
 import Reserva from "@/pages/Reserva"
 import Login from "@/pages/Login"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { ShortcutsHelp } from "@/components/ShortcutsHelp"
+
+const DemoControls = import.meta.env.VITE_DEMO === "true"
+  ? lazy(() => import("@/demo/DemoControls"))
+  : null
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"))
 const TurnosAdmin = lazy(() => import("@/pages/admin/TurnosAdmin"))
@@ -32,7 +36,7 @@ function Shell() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <HashRouter>
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Reserva />} />
@@ -89,8 +93,13 @@ function App() {
             />
           </Routes>
           <Shell />
+          {DemoControls && (
+            <Suspense fallback={null}>
+              <DemoControls />
+            </Suspense>
+          )}
         </AuthProvider>
-      </BrowserRouter>
+      </HashRouter>
     </QueryClientProvider>
   )
 }

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Navigate, useNavigate } from "react-router-dom"
+import { Navigate, useNavigate, Link } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { useHotkeys } from "@/hooks/useHotkeys"
 import { useRegisterShortcuts } from "@/hooks/useShortcutsRegistry"
@@ -71,7 +71,7 @@ export default function Login() {
     <main className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-sm space-y-6 page-enter">
         <div className="text-center space-y-2">
-          <img src="/logo.svg" alt="TH Barber Club" className="mx-auto h-16 sm:h-20 mb-4" />
+          <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="TH Barber Club" className="mx-auto h-16 sm:h-20 mb-4" />
           <h1 className="text-xl font-bold text-foreground">¡Bienvenido de vuelta!</h1>
           <p className="text-sm text-muted-foreground">Inicia sesión para acceder a tu cuenta</p>
         </div>
@@ -83,7 +83,7 @@ export default function Login() {
         )}
 
         <div className="bg-card rounded-2xl p-6 animate-in fade-in-0 zoom-in-95 duration-200">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" data-tour="login-form">
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input
@@ -145,7 +145,7 @@ export default function Login() {
           <div className="flex justify-center gap-6">
             <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Términos</a>
             <a href="#" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Privacidad</a>
-            <a href="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Inicio</a>
+            <Link to="/" className="text-xs text-foreground/70 no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded py-1">Inicio</Link>
           </div>
           <p className="text-xs text-muted-foreground">© 2026 TH Barber Club. Todos los derechos reservados.</p>
         </div>

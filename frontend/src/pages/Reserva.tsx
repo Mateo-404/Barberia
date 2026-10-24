@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { useState, useMemo, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -25,7 +26,7 @@ const SuccessView = ({
 }: {
   onReset: () => void
 }) => (
-  <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+  <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-background" data-tour="exito">
     <div className="w-full max-w-md text-center space-y-6 page-enter">
       <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mx-auto" style={{ animation: "pop 0.7s ease-out" }}>
         <svg className="w-10 h-10 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,16 +215,16 @@ export default function Reserva() {
       <nav className="flex items-center justify-between px-4" style={{ height: "var(--nav-height)" }}>
         {step > 0 ? (
           <button onClick={handleBack} className="bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-            <img src="/img/flecha.svg" alt="Volver" className="h-8" />
+            <img src={`${import.meta.env.BASE_URL}img/flecha.svg`} alt="Volver" className="h-8" />
           </button>
         ) : (
           <div className="w-8" />
         )}
-        <a href="/" className="inline-flex">
-          <img src="/logo.svg" alt="TH Barber Club" className="h-12" />
-        </a>
+        <Link to="/" className="inline-flex">
+          <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="TH Barber Club" className="h-12" />
+        </Link>
         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
-          <img src="/img/icono-instagram.svg" alt="Instagram" className="h-8" />
+          <img src={`${import.meta.env.BASE_URL}img/icono-instagram.svg`} alt="Instagram" className="h-8" />
         </a>
       </nav>
 
@@ -286,7 +287,7 @@ export default function Reserva() {
               ) : !servicios?.length ? (
                 <p className="text-muted-foreground">No hay servicios disponibles.</p>
               ) : (
-                <div className="grid gap-3">
+                <div className="grid gap-3" data-tour="servicios">
                   {servicios.map((s) => (
                     <button
                       key={s.id}
@@ -319,7 +320,7 @@ export default function Reserva() {
           {step === 1 && (
             <div className="page-enter space-y-6">
               <h2 className="text-lg font-semibold text-foreground">Elegí fecha y horario</h2>
-              <div>
+              <div data-tour="fecha">
                 <label className="block text-sm font-medium mb-2 text-foreground">
                   Seleccionar fecha
                 </label>
@@ -339,7 +340,7 @@ export default function Reserva() {
                   <label className="block text-sm font-medium mb-3 text-foreground">
                     Horarios disponibles
                   </label>
-                  <div className="flex flex-wrap justify-center gap-2">
+                  <div className="flex flex-wrap justify-center gap-2" data-tour="horarios">
                     {TIME_SLOTS.map((time) => {
                       const occupied = isSlotOccupied(time)
                       const selected = selectedTime === time
@@ -371,7 +372,7 @@ export default function Reserva() {
           )}
 
           {step === 2 && (
-            <div className="page-enter space-y-5">
+            <div className="page-enter space-y-5" data-tour="datos">
               <h2 className="text-lg font-semibold text-foreground">Tus datos</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -428,7 +429,7 @@ export default function Reserva() {
               </Button>
             )}
             {step < 2 ? (
-              <Button type="button" variant="default" onClick={handleNext} className="flex-1">
+              <Button type="button" variant="default" onClick={handleNext} className="flex-1" data-tour="siguiente">
                 Siguiente
               </Button>
             ) : (
@@ -437,6 +438,7 @@ export default function Reserva() {
                 variant="default"
                 disabled={crearTurno.isPending}
                 className="flex-1"
+                data-tour="reservar"
               >
                 {crearTurno.isPending ? "Reservando..." : "Reservar turno"}
               </Button>

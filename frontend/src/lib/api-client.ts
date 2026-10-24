@@ -65,7 +65,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     )
     if (res.status === 401 && path !== "/administradores/login") {
       clearSession()
-      window.location.href = "/login"
+      window.location.hash = "#/login"
     }
     throw error
   }

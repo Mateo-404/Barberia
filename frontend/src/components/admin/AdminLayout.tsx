@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import { NavLink, Outlet, useNavigate, Link } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -56,15 +56,15 @@ export default function AdminLayout() {
         style={{ height: "var(--nav-height)" }}
       >
         <button onClick={() => navigate("/")} className="bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-          <img src="/img/flecha.svg" alt="Volver" className="h-8" />
+          <img src={`${import.meta.env.BASE_URL}img/flecha.svg`} alt="Volver" className="h-8" />
         </button>
 
-        <a href="/" className="inline-flex">
-          <img src="/logo.svg" alt="TH Barber Club" className="h-12" />
-        </a>
+        <Link to="/" className="inline-flex">
+          <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="TH Barber Club" className="h-12" />
+        </Link>
 
         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
-          <img src="/img/icono-instagram.svg" alt="Instagram" className="h-8" />
+          <img src={`${import.meta.env.BASE_URL}img/icono-instagram.svg`} alt="Instagram" className="h-8" />
         </a>
       </nav>
 
@@ -77,7 +77,7 @@ export default function AdminLayout() {
             Cerrar sesión
           </Button>
         </div>
-        <nav className="flex gap-1 bg-card rounded-xl p-1 border border-border overflow-x-auto">
+        <nav data-tour="admin-nav" className="flex gap-1 bg-card rounded-xl p-1 border border-border overflow-x-auto">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
